@@ -1,0 +1,82 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isGM() {
+      return signedIn() && exists(/databases/$(database)/documents/gms/$(request.auth.uid));
+    }
+
+    // One-time GM setup marker. Created together with the first GM passcode.
+    match /config/setup {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['done', 'at']);
+      allow update, delete: if false;
+    }
+
+    // GM passcodes. The document ID is the passcode. Nobody can read these.
+    // A new one can only be created during first-time setup.
+    match /gmKeys/{key} {
+      allow read: if false;
+      allow create: if signedIn()
+        && key.matches('^[A-Za-z0-9_-]{6,64}$')
+        && !exists(/databases/$(database)/documents/config/setup)
+        && existsAfter(/databases/$(database)/documents/config/setup);
+      allow update, delete: if false;
+    }
+
+    // A browser becomes GM by proving it knows a passcode.
+    match /gms/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.key is string
+        && request.resource.data.key.matches('^[A-Za-z0-9_-]{6,64}$')
+        && existsAfter(/databases/$(database)/documents/gmKeys/$(request.resource.data.key));
+      allow update, delete: if false;
+    }
+
+    // Homebrew compendium: everyone reads, only the GM writes.
+    match /homebrew/{id} {
+      allow read: if signedIn();
+      allow write: if isGM();
+    }
+
+    // Character sheets.
+    match /sheets/{id} {
+      allow read: if signedIn();
+
+      // Players can create a sheet that belongs only to them.
+      allow create: if isGM() || (signedIn()
+        && request.resource.data.owners == [request.auth.uid]
+        && request.resource.data.locked == false
+        && request.resource.data.get('npc', false) == false);
+
+      allow delete: if isGM()
+        || (signedIn() && request.auth.uid in resource.data.owners && resource.data.get('locked', false) != true);
+
+      allow update: if isGM() || (signedIn() && (
+        // Owners edit their own unlocked sheet, but not GM-only fields.
+        (request.auth.uid in resource.data.owners
+          && resource.data.get('locked', false) != true
+          && !request.resource.data.diff(resource.data).affectedKeys()
+               .hasAny(['locked', 'overrides', 'effects', 'owners', 'npc']))
+        ||
+        // Anyone can claim an unlocked, non-NPC sheet by adding only themselves.
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['owners'])
+          && resource.data.get('locked', false) != true
+          && resource.data.get('npc', false) != true
+          && request.resource.data.owners.hasAll(resource.data.owners)
+          && request.resource.data.owners.size() == resource.data.owners.size() + 1
+          && request.auth.uid in request.resource.data.owners)
+      ));
+    }
+
+    // Shared dice log.
+    match /rolls/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.by == request.auth.uid;
+      allow delete: if isGM() || (signedIn() && resource.data.by == request.auth.uid);
+      allow update: if false;
+    }
+  }
+}
