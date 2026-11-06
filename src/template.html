@@ -21,7 +21,8 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;color:var(--text);font-family:var(--body);font-size:14px;line-height:1.45}
-body{background:linear-gradient(180deg,var(--sky) 0,var(--ink) 420px,var(--ink) 100%);min-height:100%;background-color:var(--ink)}
+html{background:var(--ink);min-height:100%}
+body{background:linear-gradient(180deg,var(--sky) 0,var(--ink) 420px) no-repeat,var(--ink);min-height:100vh}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--info);outline-offset:2px}
