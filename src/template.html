@@ -1490,7 +1490,7 @@ function renderLog(){
   const btn=`<button class="logbtn" data-act="log-toggle"><span class="dot"></span>Game log</button>`;
   if(!S.logOpen)return btn;
   const all=(S.isGM||S.offline)?[...S.rolls,...S.npcRolls.map(r=>({...r,_npc:true}))].sort((a,b)=>num(b.ts)-num(a.ts)):S.rolls;
-  const list=all.slice(0,60).map(r=>`<div class="entry ${r._npc?"npcentry":""}"><div class="who"><span><b>${esc(r.char||"Someone")}</b>${r.player?" · "+esc(r.player):""}${r._npc?` <span class="tag">GM only</span>`:""}</span><span>${ago(num(r.ts))}</span></div><div class="what">${esc(r.label)}</div>${(r.lines||[]).map(lineHtml).join("")}${r._npc?`<button class="btn sm ghost" style="margin-top:4px" data-act="npc-reveal" data-id="${esc(r.id)}">Show to players</button>`:""}</div>`).join("");
+  const list=all.slice(0,60).reverse().map(r=>`<div class="entry ${r._npc?"npcentry":""}"><div class="who"><span><b>${esc(r.char||"Someone")}</b>${r.player?" · "+esc(r.player):""}${r._npc?` <span class="tag">GM only</span>`:""}</span><span>${ago(num(r.ts))}</span></div><div class="what">${esc(r.label)}</div>${(r.lines||[]).map(lineHtml).join("")}${r._npc?`<button class="btn sm ghost" style="margin-top:4px" data-act="npc-reveal" data-id="${esc(r.id)}">Show to players</button>`:""}</div>`).join("");
   return `<aside class="log" aria-label="Game log"><div class="frame-h"><h3>Game log</h3><span style="display:flex;gap:6px"><button class="btn sm ghost" data-act="fx-toggle" title="Dice animations on this device">🎲 ${fxEnabled()?"On":"Off"}</button>${S.isGM&&S.rolls.length?`<button class="btn sm ghost" data-act="clear-log">${S.confirm==="log"?"Click again":"Clear"}</button>`:""}<button class="iconbtn" data-act="log-toggle" aria-label="Close log">×</button></span></div>
     <div class="log-list">${list||`<div class="empty">No rolls yet. Click any number with a box around it on a sheet.</div>`}</div>
     <form class="log-f" data-form="custom"><input id="custom-roll" placeholder="Roll dice, e.g. 2d6+1" aria-label="Custom roll" autocomplete="off"><button class="btn pri sm" type="submit">Roll</button></form></aside>${btn}`;
@@ -1500,7 +1500,7 @@ function renderLog(){
 function render(){
   const a=document.activeElement;const fidA=a&&a.id;let ss=null,se=null;try{if(a&&a.selectionStart!=null){ss=a.selectionStart;se=a.selectionEnd}}catch(e){}
   const db=document.querySelector(".drawer-body");const dScroll=db?db.scrollTop:0;
-  const ll=document.querySelector(".log-list");const lScroll=ll?ll.scrollTop:0;
+  const ll=document.querySelector(".log-list");const lScroll=ll?ll.scrollTop:0;const lBottom=!ll||ll.scrollHeight-ll.scrollTop-ll.clientHeight<40;
   if(S.view==="sheet"&&(!S.current||!S.docs[S.current])){const ps=sheetPaths();S.current=myPath()||ps[0]||null}
   const notes=[];
   if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
@@ -1510,7 +1510,7 @@ function render(){
   $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
   if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
-  const ll2=document.querySelector(".log-list");if(ll2)ll2.scrollTop=lScroll;
+  const ll2=document.querySelector(".log-list");if(ll2)ll2.scrollTop=lBottom?ll2.scrollHeight:lScroll;
   resolveNames();
 }
 function resolveNames(){}
@@ -1568,7 +1568,7 @@ document.addEventListener("click",e=>{
     case "rule":S.drawer={kind:"rule",key:t.dataset.key};render();break;
     case "item":S.drawer={kind:"item",i:num(t.dataset.i)};render();break;
     case "drawer-close":S.drawer=null;render();break;
-    case "log-toggle":S.logOpen=!S.logOpen;render();if(S.logOpen){const ll=$(".log-list");if(ll)ll.scrollTop=0}break;
+    case "log-toggle":S.logOpen=!S.logOpen;render();if(S.logOpen){const ll=$(".log-list");if(ll)ll.scrollTop=ll.scrollHeight}break;
     case "roll-skill":doSkill(t.dataset.skill);break;
     case "roll-save":doSave(t.dataset.save);break;
     case "roll-init":doInit();break;
