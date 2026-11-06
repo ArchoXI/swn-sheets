@@ -152,6 +152,7 @@ main{padding:0 18px 120px;max-width:1400px;margin:0 auto}
 .save{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 4px 4px 14px;background:var(--card);border:1px solid var(--line);border-radius:999px}
 .save .lbl{cursor:help;font-size:14px;background:none;border:0;padding:0}
 .save .lbl:hover{color:var(--accent)}
+.viewonly .rollbtn,.viewonly [data-act=snap],.viewonly [data-act=missdmg],.viewonly [data-act=total-def],.viewonly .ropts button:not([data-act=rule]),.viewonly .ropts select,.viewonly .ropts input{opacity:.45;pointer-events:none;cursor:not-allowed}
 .rollbtn{min-width:46px;padding:3px 8px;border:1px solid var(--line);background:var(--card);border-radius:4px;font-family:var(--display);font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;text-align:center;color:var(--text)}
 .rollbtn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
 .save .rollbtn{border-radius:999px}
@@ -740,6 +741,15 @@ const hbPaths = ()=>Object.keys(S.docs).filter(p=>p.startsWith("homebrew/")&&!p.
 const isMine = p=>!!(S.me&&S.docs[p]&&(S.docs[p].owners||[]).includes(S.me));
 const myPaths = ()=>sheetPaths().filter(isMine);
 const myPath = ()=>myPaths()[0]||null;
+// Rolling and using a sheet: the GM, or the player who claimed it (even if the GM locked editing).
+function canUse(path){
+  if(!path||!S.docs[path])return false;
+  if(S.offline||S.isGM)return true;
+  const d=S.docs[path];
+  if(d.npc||!/^sheets\//.test(path))return false;
+  return isMine(path);
+}
+const pathOf=c=>c?Object.keys(S.docs).find(p=>S.docs[p]===c)||null:null;
 function canEdit(path){
   if(!path||!S.docs[path]||S.denied[path])return false;
   if(S.offline)return true;
@@ -1009,11 +1019,13 @@ function doAttack(i,mode){
 }
 function doCustom(expr){
   const p=parseDice(expr);if(!p.groups.length&&!p.flat){toastMsg("Type dice like 2d6+1 or 1d20.",true);return}
-  const r=rollGroups(p);const cur=currentChar();
-  emitRoll(cur?cur.c:null,expr,[{name:"Roll",dice:r.dice,parts:p.flat?[{l:"Flat",v:p.flat}]:[],total:r.sum+p.flat}]);
+  const r=rollGroups(p);const cur=currentChar();const mp=cur&&canUse(cur.path)?cur.path:myPath();
+  emitRoll(mp?S.docs[mp]:null,expr,[{name:"Roll",dice:r.dice,parts:p.flat?[{l:"Flat",v:p.flat}]:[],total:r.sum+p.flat}]);
 }
 function emitRoll(c,label,lines){
-  const rec={ts:Date.now(),by:S.me||"",char:c?String(c.name||""):"",player:c?String(c.player||""):"",label,lines};
+  const sp=pathOf(c);
+  if(c&&!canUse(sp)){toastMsg("You can only roll for your own character.",true);return}
+  const rec={ts:Date.now(),by:S.me||"",sheet:sp&&sp.startsWith("sheets/")?sp.slice(7):"",char:c?String(c.name||""):"",player:c?String(c.player||""):"",label,lines};
   showRoll(rec);
   if(S.db&&!S.offline){
     S.db.collection("rolls").add(clone(rec)).then(()=>pruneLog()).catch(err=>{toastMsg("Your roll didn't post to the shared game log. Check your connection.",true)});
@@ -1092,7 +1104,8 @@ function renderSheet(){
   }
   const {path,c}=cur;const R=compute(c);const E=S.edit&&canEdit(path);const can=canEdit(path);
   const who=c.npc?"GM (NPC)":(c.player||((c.owners||[]).length?"a player":"nobody yet"));
-  const claimable=!S.offline&&S.me&&!c.npc&&!isMine(path)&&!S.isGM;
+  const claimable=!S.offline&&S.me&&!c.npc&&!isMine(path)&&!S.isGM&&!(c.owners||[]).length;
+  const claimedBy=!c.npc&&!isMine(path)&&(c.owners||[]).length?(c.player||"another player"):"";
   const cls=c.class==="Adventurer"?"Adventurer ("+(c.partials||[]).map(x=>"Partial "+x).join(", ")+")":c.class;
   const xpPct=R.nextXp?Math.max(0,Math.min(100,(num(c.xp)-R.prevXp)/(R.nextXp-R.prevXp)*100)):100;
   const hpPct=R.hpMax>0?Math.max(0,Math.min(100,num(c.hp?.cur)/R.hpMax*100)):0;
@@ -1122,7 +1135,8 @@ function renderSheet(){
       ${can?`<button class="btn dk" data-act="rest-open" title="Recover Effort, 1 system strain, and HP">☾ Night's rest</button>`:""}
       ${can&&S.edit&&c.portrait?`<button class="btn dk" data-act="portrait-remove">Remove picture</button>`:""}
       ${can&&S.edit?`<button class="btn dk" data-act="del-open" style="color:#ff9b9b;border-color:#7a3a3a">Delete character</button>`:""}
-      ${can?`<button class="btn dk ${S.edit?"on":""}" data-act="edit-toggle">${S.edit?"Done editing":"Edit sheet"}</button>`:claimable&&!c.locked?`<button class="btn dk" data-act="claim">This is my character</button>`:`<span class="hint">${c.locked?"Locked by your GM":"View only"}</span>`}
+      ${can?`<button class="btn dk ${S.edit?"on":""}" data-act="edit-toggle">${S.edit?"Done editing":"Edit sheet"}</button>`:claimable&&!c.locked?`<button class="btn dk" data-act="claim">This is my character</button>`:`<span class="hint">${claimedBy?"Claimed by "+esc(claimedBy)+" · view only":c.locked&&isMine(path)?"Locked by your GM":c.locked?"Locked by your GM · view only":"View only"}</span>`}
+      ${isMine(path)&&!S.isGM&&!S.offline&&(S.edit||c.locked)?`<button class="btn dk" data-act="release-mine">${S.confirm==="release-mine"?"Click again to release":"Release my claim"}</button>`:""}
       <button class="btn dk" data-act="view" data-v="party">Party</button>
     </div>
   </div></section>`;
@@ -1192,9 +1206,9 @@ function renderSheet(){
   const tabBody={actions:()=>renderActions(path,c,R,can),inventory:()=>renderInventory(path,c,R,can),features:()=>renderFeatures(path,c,R,E),notes:()=>renderNotes(path,c,can),gm:()=>renderGM(path,c,R)}[S.tab]();
   const panel=`<div class="frame"><div class="tabs" role="tablist">${tabs.map(t=>`<button class="tab ${S.tab===t[0]?"on":""}" role="tab" aria-selected="${S.tab===t[0]}" data-act="tab" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div><div class="tabbody">${tabBody}</div></div>`;
 
-  return `${head}<section class="toprow">${attrs}${babBox}${initBox}${hpBox}</section>
+  return `<div class="${canUse(path)?"":"viewonly"}" style="display:contents">${head}<section class="toprow">${attrs}${babBox}${initBox}${hpBox}</section>
     <section class="body"><div class="stack">${saves}${ropts}${enc}</div><div class="stack">${skills}</div>
-    <div class="stack col-actions"><div class="cstrip">${acSvg}${strainBox}${thirdBox}${condBox}</div>${panel}</div></section>`;
+    <div class="stack col-actions"><div class="cstrip">${acSvg}${strainBox}${thirdBox}${condBox}</div>${panel}</div></section></div>`;
 }
 
 function renderActions(path,c,R,can){
@@ -1299,7 +1313,7 @@ function renderGM(path,c,R){
   const hb=hbPaths();
   return `<div class="sect"><span class="lbl">Control</span>
       <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">${chk(path,"locked","Lock sheet (players can't edit)")}${chk(path,"npc","NPC (players can't claim it)")}</div>
-      <p class="hint" style="margin:8px 0 0">Claimed on ${(c.owners||[]).length} device${(c.owners||[]).length===1?"":"s"}. ${(c.owners||[]).length?`<button class="btn sm" data-act="release">Release claims</button>`:""}</p>
+      <p class="hint" style="margin:8px 0 0">${(c.owners||[]).length?"Claimed"+((c.owners||[]).length>1?" on "+(c.owners||[]).length+" devices (from before single claims)":"")+".":"Not claimed."} ${(c.owners||[]).length?`<button class="btn sm" data-act="release">Release claims</button>`:""}</p>
     </div>
     <div class="sect"><span class="lbl">Quick adjust</span><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input id="gm-xp" class="inp n" type="number" placeholder="XP" aria-label="XP to award"><button class="btn sm" data-act="gm-xp">Award XP</button>
@@ -1537,13 +1551,16 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  const keepConfirm=["release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
   if(act.startsWith("npc-")&&npcAct(act,t))return;
   const edit=fn=>{if(!cur||!canEdit(cur.path))return;fn(cur.c,cur.path);render()};
+  if(["roll-skill","roll-save","roll-init","attack","damage","snap","missdmg"].includes(act)&&!(cur&&canUse(cur.path))){toastMsg("You can only roll for your own character.",true);return}
   switch(act){
+    case "release-mine":{if(!cur||!isMine(cur.path)||S.isGM)break;if(S.confirm!=="release-mine"){S.confirm="release-mine";render();break}S.confirm=null;
+      S.db.doc(cur.path).update({owners:[]}).then(()=>{cur.c.owners=[];S.edit=false;toastMsg("Claim released. Anyone can claim this character now.");render()}).catch(()=>toastMsg("Couldn't release the claim. Try again.",true));break}
     case "view":S.view=t.dataset.v;S.drawer=null;render();break;
     case "open":S.view="sheet";S.current=t.dataset.doc;S.drawer=null;S.edit=false;try{localStorage.setItem("swn.current",S.current)}catch(e){}render();window.scrollTo({top:0});break;
     case "edit-toggle":S.edit=!S.edit;render();break;
@@ -1614,8 +1631,8 @@ document.addEventListener("click",e=>{
     case "hbf-del":{const p=t.dataset.doc;if(S.confirm!=="hbf"+p){S.confirm="hbf"+p;render();break}S.confirm=null;deleteDoc(p);S.compFSel=null;render();break}
     case "tech-add":edit((c,p)=>{const v=$("#tech-pick")?.value;if(!v)return;const [disc,name]=v.split("|");const ts=c.techniques||[];if(!ts.some(x=>x.name===name))ts.push({disc,name});setField(p,"techniques",ts)});break;
     case "tech-remove":edit((c,p)=>{const ts=c.techniques||[];ts.splice(num(t.dataset.j),1);setField(p,"techniques",ts)});break;
-    case "claim":{if(!cur||!S.me)break;const owners=[...(cur.c.owners||[])];if(owners.includes(S.me))break;owners.push(S.me);
-      S.db.doc(cur.path).update({owners}).then(()=>{cur.c.owners=owners;S.edit=true;render()}).catch(err=>toastMsg(err&&err.code==="permission-denied"?"You can't claim that sheet. It may be locked or an NPC.":"Couldn't claim the sheet. Try again.",true));break}
+    case "claim":{if(!cur||!S.me)break;if((cur.c.owners||[]).length){toastMsg("Someone already claimed this character.",true);break}const owners=[S.me];
+      S.db.doc(cur.path).update({owners}).then(()=>{cur.c.owners=owners;S.edit=true;render()}).catch(err=>toastMsg(err&&err.code==="permission-denied"?"You can't claim that sheet. Someone may have just claimed it, or it's locked or an NPC.":"Couldn't claim the sheet. Try again.",true));break}
     case "release":{if(!cur||!S.isGM)break;setField(cur.path,"owners",[]);render();break}
     case "gm-login":S.drawer={kind:"gm"};render();break;
     case "gm-submit":gmSubmit();break;
