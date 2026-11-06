@@ -1,6 +1,6 @@
-# SWN Sheets
+# Party sheets
 
-Live character sheets for our Stars Without Number campaign.
+Private character sheets for a tabletop group.
 
-- `index.html` is the whole app (served by Netlify).
-- `firestore.rules` holds the database security rules. Paste them into Firebase → Firestore → Rules whenever they change.
+- `src/` holds the source; `python3 build.py` builds `index.html`, which is the whole app.
+- `firestore.rules` holds the database security rules. They deploy automatically when changed.
