@@ -434,17 +434,30 @@ const TARGETS = [
 ];
 const TARGET_NAME = Object.fromEntries(TARGETS);
 
-const CLASS_TEXT = {
-  Warrior:{t:"Warrior",d:"Your attack bonus equals your level, and you gain extra hit points as you level.\nVeteran's Luck: once per scene, turn one of your missed attacks into a hit, or turn an enemy's hit on you into a miss."},
-  Expert:{t:"Expert",d:"Masterful Expertise: once per scene, reroll a non-combat skill check and keep the better result.\nYou also gain an extra skill point to spend each time you level."},
-  Psychic:{t:"Psychic",d:"You learn psychic disciplines as skills and power your techniques with Effort.\nMax Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers."},
-  Adventurer:{t:"Adventurer",d:"Pick two partial classes. Each gives a reduced version of the full class's edge."}
+const CLASS_ABIL = {
+  Warrior:[
+    {t:"Veteran's Luck",d:"Once per scene, as an Instant action, either negate a successful attack roll against you or turn one of your missed attack rolls into a hit. Use it after the dice are rolled. It doesn't work against environmental damage, effects with no attack roll, or hits on a vehicle you're in.",short:"Once per scene: turn your miss into a hit, or an enemy's hit on you into a miss."},
+    {t:"Combat Training",d:"Your attack bonus equals your level (+1 at 1st level), and you gain 2 extra maximum hit points every level."},
+    {t:"Bonus Combat Focus",d:"You gained a free level in a combat focus related to your background."}],
+  Expert:[
+    {t:"Masterful Expertise",d:"Once per scene, reroll a failed skill check and take the new result if it's better. Works on any skill check, not just your specialty.",short:"Once per scene: reroll a failed skill check."},
+    {t:"Quick Learner",d:"Each time you gain a level, you get a bonus skill point to spend on any non-combat, non-psychic skill. You can save it for later."},
+    {t:"Bonus Focus",d:"You gained a free level in a non-combat focus related to your background."}],
+  Psychic:[
+    {t:"Psychic Disciplines",d:"You can learn psychic disciplines and their techniques. You started with two psychic skills (or one at level-1 plus a free level-1 technique).",short:"Fuel psychic techniques with Effort."},
+    {t:"Effort",d:"Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers (minimum 1). Commit it to power techniques; it returns when the scene or day ends."}],
+  "Partial Warrior":[
+    {t:"Partial Warrior",d:"A free level in a combat focus, +1 to your attack bonus at 1st and 5th level, and 2 extra maximum hit points every level.",short:"+1 attack bonus, +2 HP per level, bonus combat focus."}],
+  "Partial Expert":[
+    {t:"Partial Expert",d:"A free level in a non-combat focus, and an extra skill point every level for any non-combat, non-psychic skill.",short:"Bonus non-combat focus and an extra skill point each level."}],
+  "Partial Psychic":[
+    {t:"Partial Psychic",d:"One psychic discipline, which you can raise with foci or skill points but you can never learn another. Max Effort = 1 + that skill + the better of your WIS or CON modifiers (minimum 1).",short:"One psychic discipline, with Effort."}]
 };
-const PARTIAL_TEXT = {
-  Warrior:"Partial Warrior: +1 attack bonus at 1st level and another +1 at 5th.",
-  Expert:"Partial Expert: a reduced version of the Expert's skill edge (see your rulebook).",
-  Psychic:"Partial Psychic: one psychic discipline, with Effort calculated as for a Psychic."
-};
+function classAbilities(c){
+  if(c.class==="Adventurer")return (c.partials||[]).filter(Boolean).flatMap(p=>CLASS_ABIL["Partial "+p]||[]);
+  return CLASS_ABIL[c.class]||[];
+}
+const className=c=>c.class==="Adventurer"?"Adventurer ("+(c.partials||[]).filter(Boolean).map(p=>"Partial "+p).join(" / ")+")":c.class;
 
 const RULES = {
   attr:{t:"Attributes",p:["Each attribute runs from 3 to 18. What matters at the table is the modifier: a 3 gives −2, 4–7 gives −1, 8–13 gives +0, 14–17 gives +1, and 18 gives +2.","Modifiers add to skill checks and to attack and damage rolls with weapons that use that attribute. They also improve your saving throws."]},
@@ -944,7 +957,7 @@ function renderSheet(){
   const effPips=Array.from({length:R.effortMax},(_,i)=>`<i class="${i<effUsed?"":"e"}"></i>`).join("");
   const strainBox=`<div class="ibox"><div class="row">${L("strain","System Strain"+ovBadge(R,"strainMax"))}${can?`<span><button class="iconbtn" data-act="strain" data-d="-1" aria-label="Less strain">−</button> <button class="iconbtn" data-act="strain" data-d="1" aria-label="More strain">+</button></span>`:""}</div><span class="big num">${R.strainCur}<small> / ${R.strainMax}</small></span><div class="pipline" style="justify-content:flex-start" title="Red: permanent from cyberware. Amber: temporary.">${strainPips}</div></div>`;
   const thirdBox=R.effortMax>0?`<div class="ibox"><div class="row">${L("effort","Effort"+ovBadge(R,"effortMax"))}<span class="big num">${Math.max(0,R.effortMax-effUsed)}<small> / ${R.effortMax}</small></span></div><div class="pipline" style="justify-content:flex-start">${effPips}</div>${can?`<div class="row" style="justify-content:flex-start;gap:4px"><span class="hint">Scene</span><button class="iconbtn" data-act="effort" data-k="scene" data-d="-1">−</button><button class="iconbtn" data-act="effort" data-k="scene" data-d="1">+</button><span class="hint">Day</span><button class="iconbtn" data-act="effort" data-k="day" data-d="-1">−</button><button class="iconbtn" data-act="effort" data-k="day" data-d="1">+</button></div>`:""}</div>`
-    :`<div class="ibox"><span class="lbl" style="cursor:default">${esc(CLASS_TEXT[c.class]?.t||c.class)}</span><p>${esc((CLASS_TEXT[c.class]?.d||"").split("\n").pop())}</p></div>`;
+    :`<div class="ibox"><span class="lbl" style="cursor:default">${esc(className(c))}</span>${classAbilities(c).filter(x=>x.short).map(x=>`<p>${esc(x.short)}</p>`).join("")}</div>`;
   const eff=(c.effects||[]).filter(f=>f.active);
   const condBox=`<div class="ibox">${L("mods","Effects & Conditions")}${eff.length?eff.map(f=>`<p><b style="color:var(--text)">${esc(f.name||"Effect")}</b> ${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")}</p>`).join(""):`<p>None active</p>`}</div>`;
 
@@ -1001,7 +1014,6 @@ function renderActions(path,c,R,can){
     <td><button class="rollbtn" data-act="damage" data-i="${i}" title="Roll damage only">${esc(W.dmgText)}</button></td>
     <td>${W.shock?`<span class="shockv" title="Damage dealt on a miss if the target's AC is low enough">${W.shock.dmg}/${W.shock.ac>=99?"any AC":"AC "+W.shock.ac}</span>`:`<span class="hint">—</span>`}${W.missDmg?` <button class="rollbtn" data-act="missdmg" data-i="${i}" title="Unmodified damage on a miss">miss ${W.missDmg}</button>`:""}</td>
     <td class="num">${real&&num(w.mag)>0?`${can?`<button class="iconbtn" data-act="ammo" data-i="${i}" data-d="-1" aria-label="Use ammo">−</button> `:""}${num(w.ammo)}/${num(w.mag)}${can?` <button class="btn sm ghost" data-act="reload" data-i="${i}">Reload</button>`:""}`:`<span class="hint">—</span>`}</td></tr>`}).join("");
-  const cls=CLASS_TEXT[c.class];
   const anyBurst=weapons.some(x=>x.w.burst);
   return `<div class="sect"><span class="lbl">Attacks <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="attack">how attacks work</button></span>
     <div class="tbl-wrap"><table><thead><tr><th>Weapon</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Ammo</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1017,7 +1029,7 @@ function renderActions(path,c,R,can){
         <div class="actbox"><h4>On Turn <span class="tag">any number, your turn</span></h4><p class="hint">Fast, simple things done alongside everything else.</p>
           <ul><li><b>Go Prone</b>: −2 to hit you from range, but adjacent foes get +2.</li><li><b>Draw a Readied item.</b></li><li><b>Speak</b> a few words, <b>drop</b> or <b>activate</b> a simple device.</li></ul></div>
         <div class="actbox"><h4>Instant <span class="tag">any number, any time</span></h4><p class="hint">Even on someone else's turn, or after dice are rolled.</p>
-          <ul><li><b>Snap Attack</b>: attack out of turn at −4 to hit. Spends your upcoming Main Action. Use the Snap button above.</li><li><b>Total Defense</b>: +2 AC and immune to melee Shock until your next turn. Spends your Main Action (can't if already used).</li><li><b>Drop an Item</b> to free your hands.</li><li>Some psychic powers and class abilities, like a Warrior's once-per-scene luck.</li></ul></div>
+          <ul><li><b>Snap Attack</b>: attack out of turn at −4 to hit. Spends your upcoming Main Action. Use the Snap button above.</li><li><b>Total Defense</b>: +2 AC and immune to melee Shock until your next turn. Spends your Main Action (can't if already used).</li><li><b>Drop an Item</b> to free your hands.</li>${c.class==="Warrior"?`<li><b>Veteran's Luck</b> (Warrior): once per scene, turn your miss into a hit or an enemy's hit on you into a miss.</li>`:""}${R.psychic||R.effortMax>0?`<li>Some psychic techniques are Instant; check each one's description.</li>`:""}</ul></div>
       </div></div>`;
 }
 
@@ -1071,8 +1083,7 @@ function renderFeatures(path,c,R,E){
     ${techs.map((t,j)=>{const d=DISC[t.disc];const tt=d?d.t1.find(x=>x[0]===t.name):null;return `<div class="feature"><h4>${esc(t.name)} <span class="tag">${esc(PSYK[t.disc]?.name||"")}</span>${E?` <button class="iconbtn" data-act="tech-remove" data-j="${j}" aria-label="Remove technique">×</button>`:""}</h4><p>${esc(tt?tt[1]:"")}</p></div>`}).join("")}
     ${E&&techOpts.length?`<div style="display:flex;gap:6px;align-items:center"><select id="tech-pick" class="inp" style="max-width:320px"><option value="">Add a level-1 technique…</option>${techOpts.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join("")}</select><button class="btn sm" data-act="tech-add">Add</button></div>`:""}</div>`:"";
   const eff=(c.effects||[]).filter(f=>f.active);
-  const cls=CLASS_TEXT[c.class];
-  const clsHtml=`<div class="sect"><span class="lbl">Class abilities</span><div class="feature"><h4>${esc(cls?.t||c.class)}</h4><p>${esc(cls?.d||"")}</p></div>${c.class==="Adventurer"?(c.partials||[]).map(p=>`<div class="feature"><h4>Partial ${esc(p)}</h4><p>${esc(PARTIAL_TEXT[p]||"")}</p></div>`).join(""):""}</div>`;
+  const clsHtml=`<div class="sect"><span class="lbl">Class abilities: ${esc(className(c))}</span>${classAbilities(c).map(x=>`<div class="feature"><h4>${esc(x.t)}</h4><p>${esc(x.d)}</p></div>`).join("")||`<p class="hint">Pick a class to see its abilities.</p>`}</div>`;
   return `${clsHtml}<div class="sect"><span class="lbl">Foci <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="foci">what are foci?</button></span>${foci||`<div class="empty">No foci yet.${canEdit(path)?" Turn on Edit sheet to add them.":""}</div>`}${E?`<button class="btn sm" data-act="focus-add">+ Add focus</button>`:""}</div>
     ${techHtml}
     <div class="sect"><span class="lbl">Other features</span>${E?ta(path,"features",{ph:"Background perks, ship role, anything else…",rows:5}):c.features?`<div class="feature"><p>${esc(c.features)}</p></div>`:`<p class="hint">Nothing here yet.</p>`}</div>
