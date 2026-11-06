@@ -217,16 +217,16 @@ function renderWizard(){
 const wh=(t,p)=>`<h2 class="wh">${t}</h2>${p?`<p class="wlead">${p}</p>`:""}`;
 
 function wConcept(w){
-  return wh("Who are you playing?","Your hero is an adventurer in the year 3200, leaving an old life behind to take up a starfaring one. Every character needs a reason to act: a goal that pushes them out into the sector.")+
+  return wh("Who are you playing?","Your hero is an adventurer in the year 3200 who has left their old life behind for the stars. Every character should start with a goal, something that gives them a reason to go out and act.")+
   `<div class="grid2"><div class="field"><span class="lbl">Character name</span>${wInp("name",{live:true,ph:"e.g. Basil Hayes"})}</div><div class="field"><span class="lbl">Player name</span>${wInp("player",{live:true,ph:"Your name"})}</div>
    <div class="field"><span class="lbl">Homeworld</span>${wInp("homeworld",{live:true,ph:"Ask your GM for options"})}</div><div class="field"><span class="lbl">Species</span>${wInp("species",{live:true})}</div></div>
    <div class="field" style="margin-top:8px"><span class="lbl">Goal</span>${wInp("goal",{live:true,ph:"e.g. Be known as the greatest pilot in the sector"})}</div>
-   <div class="wport">${w.portrait?`<span class="portrait hasimg"><img src="${esc(w.portrait)}" alt=""></span>`:`<span class="portrait">${esc(initials(w.name||"?"))}</span>`}<label class="btn">${w.portrait?"Change picture":"Add a picture"}<input type="file" accept="image/*" data-wportrait hidden></label>${w.portrait?`<button class="btn ghost" data-act="wset" data-path="portrait" data-v="">Remove</button>`:""}<span class="hint">Optional. Square pictures work best; it's cropped to the center.</span></div>
+   <div class="wport">${w.portrait?`<span class="portrait hasimg"><img src="${esc(w.portrait)}" alt=""></span>`:`<span class="portrait">${esc(initials(w.name||"?"))}</span>`}<label class="btn">${w.portrait?"Change picture":"Add a picture"}<input type="file" accept="image/*" data-wportrait hidden></label>${w.portrait?`<button class="btn ghost" data-act="wset" data-path="portrait" data-v="">Remove</button>`:""}<span class="hint">Optional. The picture is cropped to a square from the center.</span></div>
    <p class="hint" style="margin-top:12px">You can change all of this later. Name is required before you create the sheet.</p>`;
 }
 function wAttributes(w,D){
   const m=w.attrMethod;
-  let h=wh("Attributes","Six scores from 3 to 18. What matters in play is the modifier: 3 is −2, 4–7 is −1, 8–13 is +0, 14–17 is +1, and 18 is +2.")+
+  let h=wh("Attributes","Attributes range from 3 to 18. Rolls use the modifier, not the score: 3 is −2, 4–7 is −1, 8–13 is +0, 14–17 is +1, and 18 is +2.")+
   `<div class="seg"><button class="${m==="roll"?"on":""}" data-act="wset" data-path="attrMethod" data-v="roll">Roll 3d6 in order</button><button class="${m==="array"?"on":""}" data-act="wset" data-path="attrMethod" data-v="array">Use the standard array</button></div>`;
   if(m==="roll"){
     h+=`<p class="hint">Roll 3d6 for each attribute in order (or roll real dice and type the totals). Then you may change any one score to 14.</p><div style="margin:8px 0"><button class="btn sm" data-act="wrollall">🎲 Roll all six</button></div>`;
@@ -253,7 +253,7 @@ function wSkills(w,D){
   const tbl=(name,die,arr)=>`<div class="frame" style="padding:10px 12px"><div class="lbl" style="margin-bottom:4px">${name} (${die})</div>${arr.map((s,i)=>`<div class="trow"><span class="num">${i+1}</span><span>${esc(specName(s))}</span></div>`).join("")}</div>`;
   let h=wh(bg.name+" skills",(specOptions(bg.free)?"Your free skill is <b>"+esc(specName(bg.free))+"-0</b> (choose which below).":"You already have <b>"+esc(specName(bg.free))+"-0</b>.")+" Now choose how to get the rest. Taking a skill a second time raises it to level-1; nobody starts above level-1, so a third time lets you pick a different skill instead.")+
   `<div class="seg"><button class="${m==="quick"?"on":""}" data-act="wset" data-path="bgMethod" data-v="quick">Quick skills</button><button class="${m==="pick"?"on":""}" data-act="wset" data-path="bgMethod" data-v="pick">Pick 2 from Learning</button><button class="${m==="roll"?"on":""}" data-act="wset" data-path="bgMethod" data-v="roll">Roll 3 times</button></div>
-  <p class="hint">${m==="quick"?"The three skills most critical to the profession, all at level-0. Easiest choice.":m==="pick"?"Choose exactly the skills you want from the Learning table (you can pick the same one twice). \"Any Skill\" entries can only be rolled.":"Split three rolls between the Growth table (d6, can raise attributes) and the Learning table (d8). Roll here or roll real dice and type the result."}</p>
+  <p class="hint">${m==="quick"?"The three skills most important to the profession, all at level-0.":m==="pick"?"Choose exactly the skills you want from the Learning table (you can pick the same one twice). \"Any Skill\" entries can only be rolled.":"Split three rolls between the Growth table (d6, can raise attributes) and the Learning table (d8). Roll here or roll real dice and type the result."}</p>
   <div class="grid2" style="margin:10px 0">${tbl("Growth","d6",bg.growth)}${tbl("Learning","d8",bg.learning)}</div>`;
   if(m==="pick"){
     h+=`<div class="grid2">${w.picks.map((p,i)=>`<div class="field"><span class="lbl">Pick ${i+1}</span>${wSel("picks."+i+".idx",bg.learning.map((s,j)=>[j,(j+1)+". "+specName(s)]).filter(o=>bg.learning[o[0]]!=="any_skill"))}</div>`).join("")}</div>`;
@@ -278,7 +278,7 @@ function wClass(w){
     ["Expert","Best at non-combat skills. A bonus non-combat focus, an extra skill point each level, and once per scene reroll a failed skill check."],
     ["Psychic","Trained to control psychic powers. Pick two psychic disciplines and fuel techniques with Effort."],
     ["Adventurer","A mix: choose two partial classes and get a weaker version of each."]];
-  let h=wh("Class","Your class is your hero's best toolkit. It doesn't have to match your background; a starport clerk can be a born Warrior.")+
+  let h=wh("Class","Your class is your hero's best set of tools for dealing with problems. It doesn't have to match your background.")+
     `<div class="clsgrid">${cards.map(([k,d])=>`<button class="bgcard ${w.cls===k?"on":""}" data-act="wset" data-path="cls" data-v="${k}"><span class="bgn">${k}</span><span class="isub" style="font-size:13px">${esc(d)}</span></button>`).join("")}</div>`;
   if(w.cls==="Adventurer"){
     const pd={Warrior:"Bonus combat focus, +1 attack bonus at 1st and 5th level, +2 hit points per level.",Expert:"Bonus non-combat focus and an extra non-combat skill point each level.",Psychic:"One psychic discipline at level-0 with Effort; you can't learn other disciplines."};
@@ -290,7 +290,7 @@ function focusOption(w,slot,f){return [f.key,f.name+(f.hb?" (homebrew)":"")+(foc
 function wFoci(w,D){
   const slots=focusSlots(w);
   const list=allFoci();
-  let h=wh("Foci","Foci are special talents. Everyone gets one; Experts and Warriors (or their partial versions) get a bonus pick. Picking the same focus twice gives you level 2 in it.")+
+  let h=wh("Foci","A focus is an extra knack, perk, or aptitude. Everyone picks one level of a focus. Experts get a bonus non-combat focus level and Warriors a bonus combat one (Partial versions too). Spend both on the same focus to start at level 2.")+
     `<label class="toggle" style="margin-bottom:10px"><input type="checkbox" data-w="anyFocus" ${w.anyFocus?"checked":""}>GM approved: allow any focus in any slot</label>`;
   h+=slots.map((s,i)=>{
     const e=w.foci[i]||{};const f=focusDef(e.key);
@@ -348,7 +348,7 @@ function wEquip(w,D){
     h+=`<div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center"><span>Die 1 ${rollBox("equip.d1",6,1)}</span><span>Die 2 ${rollBox("equip.d2",6,1)}</span></div>
       <div class="calc" style="max-width:300px"><div><span>Starting credits</span><span>${D.credits??"—"}</span></div></div><p class="hint">After creating the sheet, add the gear you buy in the Inventory tab or from your GM's compendium.</p>`;
   }
-  h+=`<div class="wnote">Hit bonus with a weapon = attack bonus + Shoot/Stab/Punch skill + the weapon's attribute modifier (energy weapons +1). Without even level-0 in the skill it's −2. The sheet works all of this out for you.</div>`;
+  h+=`<div class="wnote">Hit bonus with a weapon = attack bonus + Shoot/Stab/Punch skill + the weapon's attribute modifier (energy weapons +1). Without even level-0 in the skill it's −2. The sheet calculates this for you.</div>`;
   return h;
 }
 function wReview(w,D){
@@ -357,7 +357,7 @@ function wReview(w,D){
   const skills=SKILLS.filter(s=>D.skills[s[0]]>=0).map(s=>s[1]+"-"+D.skills[s[0]]).join(", ");
   const psy=PSY.filter(s=>D.psy[s[0]]>=0).map(s=>s[1]+"-"+D.psy[s[0]]).join(", ");
   return wh("Review & Create","Check everything below. Anything with a ! in the step list still needs attention.")+
-  `${all.length?`<div class="wissues"><b>Still needed:</b>${all.map(([k,v])=>v.map(x=>`<div>• <button class="linkbtn" data-act="wgo" data-i="${WSTEPS.findIndex(s=>s[0]===k)}">${esc(WSTEPS.find(s=>s[0]===k)[1])}</button>: ${esc(x)}</div>`).join("")).join("")}</div>`:`<div class="wok">Everything's filled in. Ready to create.</div>`}
+  `${all.length?`<div class="wissues"><b>Still needed:</b>${all.map(([k,v])=>v.map(x=>`<div>• <button class="linkbtn" data-act="wgo" data-i="${WSTEPS.findIndex(s=>s[0]===k)}">${esc(WSTEPS.find(s=>s[0]===k)[1])}</button>: ${esc(x)}</div>`).join("")).join("")}</div>`:`<div class="wok">All steps are complete.</div>`}
   <div class="grid2" style="margin-top:12px">
    <div class="calc" style="margin:0">${ATTRS.map(([k,n])=>`<div><span>${n}</span><span>${D.final[k]??"—"} (${D.final[k]!=null?sgn(D.mods[k]):"—"})</span></div>`).join("")}</div>
    <div class="calc" style="margin:0"><div><span>Name</span><span>${esc(w.name||"—")}</span></div><div><span>Background</span><span>${esc(BG[w.bg]?.name||"—")}</span></div><div><span>Class</span><span>${esc(cls)}</span></div><div><span>Foci</span><span>${esc(D.foci.map(f=>f.name+" "+f.level).join(", ")||"—")}</span></div><div><span>Max HP</span><span>${D.hp??"—"}</span></div><div><span>Gear</span><span>${esc(w.equip.mode==="package"?(PACKAGES[w.equip.pkg]?.name||"—")+" package":(D.credits??"—")+" credits")}</span></div></div>

@@ -47,11 +47,11 @@ function npcAct(act,t){
     case "npc-atk-add":if(n){const a=n.attacks||[];a.push({id:rid(),name:"Attack",atk:num(n.hd,1),dmg:"1d6",times:1});setField(p,"attacks",a);render()}return true;
     case "npc-atk-del":if(n){const a=n.attacks||[];a.splice(num(t.dataset.j),1);setField(p,"attacks",a);render()}return true;
     case "npc-hit":if(n){const a=(n.attacks||[])[num(t.dataset.j)];if(!a)return true;const d={v:rand(20),s:20};const parts=[{l:"Attack bonus",v:num(a.atk)},...(t.dataset.snap?[{l:"Snap Attack",v:-4}]:[])];
-      npcRoll(n,(a.name||"Attack")+(t.dataset.snap?" snap attack":" to hit"),[{name:"To hit",dice:[d],parts,total:d.v+parts.reduce((s,x)=>s+x.v,0),verdict:d.v===20?["crit","Natural 20"]:d.v===1?["no","Natural 1"]:null,note:"vs target AC"}])}return true;
+      npcRoll(n,(a.name||"Attack")+(t.dataset.snap?" snap attack":" to hit"),[{name:"To hit",dice:[d],parts,total:d.v+parts.reduce((s,x)=>s+x.v,0),verdict:null,note:"vs target AC"}])}return true;
     case "npc-dmg":if(n){const a=(n.attacks||[])[num(t.dataset.j)];if(!a)return true;const pd=parseDice(a.dmg||"1d6");const r=rollGroups(pd);npcRoll(n,(a.name||"Attack")+" damage",[{name:"Damage",dice:r.dice,parts:pd.flat?[{l:"Bonus",v:pd.flat}]:[],total:Math.max(0,r.sum+pd.flat)}])}return true;
     case "npc-skill":if(n){const dice=[{v:rand(6),s:6},{v:rand(6),s:6}];const parts=t.dataset.untrained?[]:[{l:"Skill bonus",v:num(n.skill)}];const diff=num(S.opts.diff);const tot=dice[0].v+dice[1].v+parts.reduce((s,x)=>s+x.v,0);
       npcRoll(n,t.dataset.untrained?"unrelated skill check":"skill check",[{name:"Check",dice,parts,total:tot,verdict:diff?(tot>=diff?["ok","Success"]:["no","Failure"]):null,note:diff?"vs difficulty "+diff:(t.dataset.untrained?"no skill bonus":"related to their role")}])}return true;
-    case "npc-save":if(n){const d={v:rand(20),s:20};npcRoll(n,"saving throw",[{name:"Save",dice:[d],parts:[],total:d.v,verdict:d.v>=num(n.save)?["ok","Saved"]:["no","Failed"],note:"needs "+num(n.save)+"+"}])}return true;
+    case "npc-save":if(n){const d={v:rand(20),s:20};npcRoll(n,"saving throw",[{name:"Save",dice:[d],parts:[],total:d.v,verdict:(d.v===20||d.v>=num(n.save))?["ok","Saved"]:["no","Failed"],note:"needs "+num(n.save)+"+"}])}return true;
     case "npc-morale":if(n){const dice=[{v:rand(6),s:6},{v:rand(6),s:6}];const tot=dice[0].v+dice[1].v;npcRoll(n,"morale check",[{name:"Morale",dice,parts:[],total:tot,verdict:tot<=num(n.morale)?["ok","Holds"]:["no","Breaks"],note:"holds on "+num(n.morale)+" or less"}])}return true;
     case "npc-init":if(n){const d={v:rand(8),s:8};npcRoll(n,"initiative",[{name:"Initiative",dice:[d],parts:[],total:d.v}])}return true;
     case "npc-reveal":{const r=[...S.npcRolls].find(x=>x.id===t.dataset.id);if(!r)return true;const rec={ts:Date.now(),by:S.me||"",char:r.char,player:"GM",label:r.label,lines:r.lines};
@@ -82,7 +82,7 @@ function npcStatBlock(p){
     ${gm?`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><select id="npc-wpick" class="inp" style="max-width:320px">${itemPickOpts("Add a weapon…",true)}</select><button class="btn sm pri" data-act="npc-wadd" data-doc="${esc(p)}">Add weapon</button><button class="btn sm" data-act="npc-atk-add" data-doc="${esc(p)}">+ Custom attack</button></div>
     <p class="hint">Weapons use this NPC's attack bonus (+1 for energy weapons) and add its damage bonus to damage and Shock.</p>`:""}</div>
     <div class="sect"><span class="lbl">Notes</span>${E?ta(p,"notes",{rows:4,ph:"Personality, gear, special abilities, loot…"}):`<p style="white-space:pre-wrap">${esc(n.notes||"")}</p>`}</div>
-    ${gm?`<p class="hint">Rules of thumb from the book: attack bonus usually equals hit dice; save is 15 minus half the hit dice; morale checks on 2d6 hold on a roll at or under Morale. NPC psychics get a third of their hit dice in Effort.</p>`:""}
+    ${gm?`<p class="hint">From the book: an NPC's attack bonus usually equals its hit dice, and its save is 15 minus half its hit dice, rounded down. For a morale check, roll 2d6: at or under Morale they keep fighting, over it they break. NPC psychics get Effort equal to a third of their hit dice, rounded up.</p>`:""}
   </div>`;
 }
 function renderNPCs(){

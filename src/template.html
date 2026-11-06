@@ -417,25 +417,25 @@ const ATTRS = [
   ["int","Intelligence"],["wis","Wisdom"],["cha","Charisma"]
 ];
 const SKILLS = [
-  ["administer","Administer","INT","Running organizations, handling bureaucracy, keeping records straight, and knowing how institutions actually work."],
-  ["connect","Connect","CHA","Finding the right person, calling in favors, and knowing who to ask for what in a new place."],
-  ["exert","Exert","STR","Climbing, swimming, running, lifting, throwing, and any feat of raw physical effort."],
-  ["fix","Fix","INT","Repairing, jury-rigging, and building technology, from blasters to starship drives."],
-  ["heal","Heal","INT","First aid, surgery, diagnosis, and medical treatment, including treating system strain carefully."],
-  ["know","Know","INT","Academic knowledge: sciences, history, alien cultures, and other scholarly subjects."],
-  ["lead","Lead","CHA","Inspiring, commanding, and keeping others steady when things go bad."],
-  ["notice","Notice","WIS","Spotting hidden things, reading a room, catching an ambush before it springs."],
-  ["perform","Perform","CHA","Music, acting, oratory, and other arts meant to move an audience."],
-  ["pilot","Pilot","DEX","Driving and flying vehicles, including starships, and handling them under pressure."],
-  ["program","Program","INT","Computers, code, hacking, and working with expert systems and data."],
-  ["punch","Punch","STR","Unarmed fighting. Also used as the combat skill for unarmed attacks."],
-  ["shoot","Shoot","DEX","Firing guns, lasers, bows, and other ranged weapons. Combat skill for ranged attacks."],
-  ["sneak","Sneak","DEX","Moving silently, hiding, slipping past security, and getting places you shouldn't be."],
-  ["stab","Stab","STR","Fighting with knives, blades, clubs, and other melee weapons. Combat skill for melee attacks."],
-  ["survive","Survive","WIS","Living off hostile land, tracking, navigating wilderness, and enduring harsh worlds."],
-  ["talk","Talk","CHA","Persuading, lying, negotiating, and convincing people to see things your way."],
-  ["trade","Trade","CHA","Buying, selling, appraising goods, and finding black markets."],
-  ["work","Work","INT","A profession or trade not covered by another skill. Note what job it represents."]
+  ["administer","Administer","INT","Manage an organization, handle paperwork, analyze records, and deal with bureaucracies, laws, and government agencies."],
+  ["connect","Connect","CHA","Find people who can help you and get them to cooperate. Also covers finding illicit goods and services, and foreign cultures and languages."],
+  ["exert","Exert","STR","Run, jump, lift, swim, climb, and throw. Can be used as the combat skill for thrown weapons."],
+  ["fix","Fix","INT","Create and repair devices, simple or complex, and work out what something is supposed to do."],
+  ["heal","Heal","INT","Cure diseases, stabilize the critically injured, treat psychological disorders, and diagnose illnesses."],
+  ["know","Know","INT","Facts about academic and scientific fields: planetary ecologies, history, science mysteries, and esoteric topics."],
+  ["lead","Lead","CHA","Get others to do what you're doing, even when they think it's a bad idea. Lead troops and keep morale and discipline."],
+  ["notice","Notice","WIS","Search places, detect ambushes, spot things, and read other people's emotional state."],
+  ["perform","Perform","CHA","Dance, sing, orate, act, or otherwise put on a convincing or moving performance."],
+  ["pilot","Pilot","DEX","Fly spaceships, drive vehicles, ride animals, and handle basic vehicle repair."],
+  ["program","Program","INT","Program or hack computers, control computer-operated hardware, operate communications tech, and decrypt things."],
+  ["punch","Punch","STR","The combat skill for unarmed fighting. Take the Unarmed Combatant focus if you mean to make a habit of it."],
+  ["shoot","Shoot","DEX","The combat skill for ranged weapons: thrown rocks, bows, laser pistols, combat rifles, and ship's gunnery."],
+  ["sneak","Sneak","DEX","Stealth, disguise, infiltration, sleight of hand, pickpocketing, and defeating security measures."],
+  ["stab","Stab","STR","The combat skill for melee weapons, primitive or advanced."],
+  ["survive","Survive","WIS","Get food, water, and shelter in hostile places, handle animals, navigate difficult terrain, scrounge, and make basic tools."],
+  ["talk","Talk","CHA","Persuade, charm, or deceive others in conversation."],
+  ["trade","Trade","CHA","Buy and sell, find hard-to-get or illicit goods, deal with customs agents, and run a business."],
+  ["work","Work","INT","A catch-all for professions not covered by other skills. Note which job it represents."]
 ];
 const PSY = [
   ["biopsionics","Biopsionics","Healing, body control, and shaping living flesh."],
@@ -456,7 +456,7 @@ const TARGETS = [
   ...ATTRS.map(a=>[a[0],a[1]+" score"]),
   ["ac","Armor Class"],["attack","Attack rolls"],["damage","Damage rolls"],["hpMax","Max hit points"],
   ["initiative","Initiative"],["skillChecks","All skill checks"],
-  ["save:all","All saving throws"],["save:physical","Physical save"],["save:evasion","Evasion save"],["save:mental","Mental save"],["save:luck","Luck save"],
+  ["save:all","All saving throws"],["save:physical","Physical save"],["save:evasion","Evasion save"],["save:mental","Mental save"],
   ["strainMax","Max system strain"],["effortMax","Max Effort"],["readied","Readied item limit"],["stowed","Stowed item limit"],
   ...SKILLS.map(s=>["skill:"+s[0],s[1]+" skill level"]),
   ...PSY.map(s=>["skill:"+s[0],s[1]+" skill level"])
@@ -465,12 +465,12 @@ const TARGET_NAME = Object.fromEntries(TARGETS);
 
 const CLASS_ABIL = {
   Warrior:[
-    {t:"Veteran's Luck",d:"Once per scene, as an Instant action, either negate a successful attack roll against you or turn one of your missed attack rolls into a hit. Use it after the dice are rolled. It doesn't work against environmental damage, effects with no attack roll, or hits on a vehicle you're in.",short:"Once per scene: turn your miss into a hit, or an enemy's hit on you into a miss."},
-    {t:"Combat Training",d:"Your attack bonus equals your level (+1 at 1st level), and you gain 2 extra maximum hit points every level."},
+    {t:"Warrior's luck",d:"Once per scene, as an Instant action, either negate a successful attack roll against you or turn one of your missed attack rolls into a hit. You can use it after the dice are rolled. It doesn't work against environmental damage, effects without an attack roll, or hits on a vehicle you're in.",short:"Once per scene: negate a hit against you, or turn your miss into a hit."},
+    {t:"Attack bonus and hit points",d:"Your attack bonus equals your level (+1 at 1st level), and you gain 2 extra maximum hit points every level."},
     {t:"Bonus Combat Focus",d:"You gained a free level in a combat focus related to your background."}],
   Expert:[
-    {t:"Masterful Expertise",d:"Once per scene, reroll a failed skill check and take the new result if it's better. Works on any skill check, not just your specialty.",short:"Once per scene: reroll a failed skill check."},
-    {t:"Quick Learner",d:"Each time you gain a level, you get a bonus skill point to spend on any non-combat, non-psychic skill. You can save it for later."},
+    {t:"Expert's reroll",d:"Once per scene, reroll a failed skill check, taking the new roll if it's better. This works on any skill check, not just your specialty.",short:"Once per scene: reroll a failed skill check."},
+    {t:"Bonus skill point",d:"Each time you gain a level, you get a bonus skill point to spend on any non-combat, non-psychic skill. You can save it for later."},
     {t:"Bonus Focus",d:"You gained a free level in a non-combat focus related to your background."}],
   Psychic:[
     {t:"Psychic Disciplines",d:"You can learn psychic disciplines and their techniques. You started with two psychic skills (or one at level-1 plus a free level-1 technique).",short:"Fuel psychic techniques with Effort."},
@@ -489,30 +489,30 @@ function classAbilities(c){
 const className=c=>c.class==="Adventurer"?"Adventurer ("+(c.partials||[]).filter(Boolean).map(p=>"Partial "+p).join(" / ")+")":c.class;
 
 const RULES = {
-  attr:{t:"Attributes",p:["Each attribute runs from 3 to 18. What matters at the table is the modifier: a 3 gives −2, 4–7 gives −1, 8–13 gives +0, 14–17 gives +1, and 18 gives +2.","Modifiers add to skill checks and to attack and damage rolls with weapons that use that attribute. They also improve your saving throws."]},
-  str:{t:"Strength",p:["Melee attacks and damage with STR weapons, Exert checks, the Physical save, and how much gear you can carry."]},
-  dex:{t:"Dexterity",p:["Ranged and finesse attacks, Armor Class, initiative, Pilot and Sneak checks, and the Evasion save."]},
-  con:{t:"Constitution",p:["Hit points per level, the Physical save, and your maximum system strain (equal to your CON score)."]},
-  int:{t:"Intelligence",p:["Technical and academic skills like Fix, Program, Heal, and Know, and the Evasion save."]},
-  wis:{t:"Wisdom",p:["Notice and Survive checks, the Mental save, and psychic Effort."]},
-  cha:{t:"Charisma",p:["Talk, Lead, Connect, Trade, and Perform checks, and the Mental save."]},
-  skillcheck:{t:"Skill Checks",p:["Roll 2d6, add your skill level and the attribute modifier that best fits what you're doing, and try to meet or beat the difficulty the GM sets.","A rough scale: 6 is a modest challenge, 8 needs real competence, 10 is hard even for a pro, 12 is a feat for experts, and 14+ borders on impossible.","An untrained skill counts as level −1. The GM can call for a different attribute than the usual one; use the attribute picker in Roll Options for that."]},
-  skilllevels:{t:"Skill Levels",p:["−1 untrained, 0 basic competence, 1 a real professional, 2 an expert, 3 among the best on a world, 4 among the best in the sector."]},
-  keep3:{t:"3d6, keep best 2",p:["Some foci let you roll 3d6 and keep the two highest dice on checks with a particular skill. Turn this on before rolling when it applies."]},
-  attack:{t:"Attack Rolls",p:["Roll 1d20 + attack bonus + your combat skill (Shoot, Stab, or Punch) + the weapon's attribute modifier. If the total meets or beats the target's Armor Class, you hit.","A natural 20 always hits and a natural 1 always misses.","Attacking with a combat skill you're untrained in costs −2 instead of the usual −1.","Damage is the weapon's dice + the same attribute modifier."]},
-  shock:{t:"Shock",p:["Many melee weapons list Shock, like 2/AC 15. If your attack misses a target whose AC is at or below that number, they still take the Shock damage plus your attribute modifier.","Targets with higher AC, and many heavily armored foes, ignore it."]},
-  bab:{t:"Attack Bonus",p:["A Warrior's attack bonus equals their level. Everyone else uses half their level, rounded down.","A Partial Warrior adds +1 at 1st level and another +1 at 5th."]},
-  saves:{t:"Saving Throws",p:["Roll 1d20 and meet or beat the target number to resist an effect.","Each save starts at 16 minus your level, then subtracts the better of two attribute modifiers.","Physical (STR or CON): poison, disease, exhaustion. Evasion (DEX or INT): dodging blasts and fast reactions. Mental (WIS or CHA): psychic attacks and mind control. Luck uses no attribute and covers pure chance.","Bonuses to a save lower its target number."]},
-  ac:{t:"Armor Class",p:["Attackers must meet or beat your AC to hit you. Start with your worn armor's AC (10 with none) and add your DEX modifier.","Only one suit of armor counts; the sheet uses the best Readied (worn) one. A Readied shield sets your base AC to 13, or adds +1 if your armor is already that good."]},
-  hp:{t:"Hit Points",p:["Hit points measure how much punishment you can take before going down.","Each level you roll 1d6 and add your CON modifier (minimum 1 per die). Some classes add extra hit points per level.","At 0 HP a character is mortally wounded and dies without fast medical help."]},
-  strain:{t:"System Strain",p:["System strain tracks how hard your body has been pushed by cyberware, drugs, and medical treatment. Your maximum is your CON score.","Installed cyberware adds permanent strain. Stims and healing add temporary strain, which drops by 1 after each night of good rest.","You can't accept strain past your maximum."]},
-  effort:{t:"Effort",p:["Psychics fuel techniques with Effort. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Effort can be committed for a scene, for a day, or for as long as a power stays active. It comes back when that period ends."]},
-  init:{t:"Initiative",p:["At the start of combat, roll 1d8 + DEX modifier. Higher results act first."]},
-  enc:{t:"Encumbrance",p:["Readied items are in hand or instantly usable. You can have Readied items up to half your STR score, rounded down.","Stowed items are packed away and take a moment to dig out. You can have Stowed items up to your STR score.","You can carry more if you accept being slower. Up to 2 extra Readied or 4 extra Stowed items makes you Lightly Encumbered: movement drops from 10 to 7 meters per round. Up to 2 more Readied or 4 more Stowed beyond that makes you Heavily Encumbered: 5 meters per round. Past that you can't carry it.","Worn armor counts as Readied; ordinary clothes don't. Very small items in small numbers don't count. Small items can be bundled (about 6 power cells or 3 magazines per item), but getting into a bundle takes an extra round.","Stored items are left on the ship or at home and don't count."]},
-  xp:{t:"Experience & Levels",p:["XP to reach each level: 2nd 3, 3rd 6, 4th 12, 5th 18, 6th 27, 7th 39, 8th 54, 9th 72, 10th 93."]},
-  foci:{t:"Foci",p:["Foci are special talents that set your character apart. Most have two levels; the second builds on the first.","You start with one (sometimes more) and pick up new ones at certain levels."]},
-  mods:{t:"Item & Effect Bonuses",p:["Equipped items and active effects apply their bonuses automatically everywhere they matter.","On a weapon, Attack and Damage bonuses apply only to that weapon. On anything else, they apply to all your attacks.","Save bonuses lower the save's target number. Attribute bonuses raise the score, which can change the modifier."]},
-  overrides:{t:"GM Overrides",p:["Type a number to replace the sheet's calculated value. Leave a box blank to go back to the automatic result.","Overridden values show a GM tag on the sheet so players know where the number came from."]}
+  attr:{t:"Attributes",p:["Attributes range from 3 to 18. Rolls use the attribute's modifier, not the score: 3 is −2, 4–7 is −1, 8–13 is +0, 14–17 is +1, and 18 is +2.","Modifiers apply to skill checks, attack and damage rolls, and saving throws."]},
+  str:{t:"Strength",p:["Physical prowess, melee combat, carrying gear, brute force.","Used for STR weapons, the Physical save, and how many items you can carry."]},
+  dex:{t:"Dexterity",p:["Speed, evasion, manual dexterity, reaction time, combat initiative.","Used for most ranged weapons, Armor Class, initiative, and the Evasion save."]},
+  con:{t:"Constitution",p:["Hardiness, enduring injury, resisting toxins, going without food or sleep.","Used for hit points, the Physical save, and your maximum system strain (equal to your CON score)."]},
+  int:{t:"Intelligence",p:["Memory, reasoning, technical skills, general education.","Used for the Evasion save and many technical skill checks."]},
+  wis:{t:"Wisdom",p:["Noticing things, making judgments, reading situations, intuition.","Used for the Mental save and psychic Effort."]},
+  cha:{t:"Charisma",p:["Commanding, charming, attracting attention, being taken seriously.","Used for the Mental save and most social skill checks."]},
+  skillcheck:{t:"Skill Checks",p:["Roll 2d6 and add your skill level and the most applicable attribute modifier. If the total equals or beats the difficulty, you succeed.","Difficulty 6: a simple task, but more than your background would usually expect. 8: a significant challenge for a competent professional. 10: too hard for anyone but a skilled expert. 12: only a true master could do it reliably. 14+: even a master will probably fail.","Without even level-0 in the skill, take −1. Very good or bad circumstances can add up to +2 or −2.","The GM may call for a different attribute than usual; use Skill attribute in Roll Options."]},
+  skilllevels:{t:"Skill Levels",p:["Level-0: basic competence. Level-1: an experienced professional. Level-2: a veteran expert. Level-3: a master, likely one of the best on the planet. Level-4: one of the best in the sector.","Untrained skills count as −1. No starting character has a skill above level-1."]},
+  keep3:{t:"3d6, keep best 2",p:["Some foci let you roll 3d6 and drop the lowest die on checks with a particular skill. Turn this on before rolling when it applies."]},
+  attack:{t:"Attack Rolls",p:["Roll 1d20 and add your attack bonus, your Shoot, Stab, or Punch skill, and the weapon's attribute modifier (the better one if two are listed). Energy weapons add +1. If the total equals or beats the target's Armor Class, you hit.","Without even level-0 in the combat skill, take −2.","Damage is the weapon's damage dice plus the same attribute modifier. Punch attacks also add your Punch skill."]},
+  shock:{t:"Shock",p:["Many melee weapons have a Shock score, like 2/AC 15. If you miss a target whose AC is equal to or less than that number, they still take the Shock damage, plus your attribute modifier and any other damage bonuses.","A hit never does less damage than its Shock would on a miss."]},
+  bab:{t:"Attack Bonus",p:["Your attack bonus is half your level, rounded down. Warriors use their full level.","Partial Warriors add +1 at 1st level and another +1 at 5th."]},
+  saves:{t:"Saving Throws",p:["Roll 1d20. If you equal or beat the save, you resist. A natural 20 always succeeds.","Each save is 16 minus your level, minus the better of two attribute modifiers (so 15 minus the modifier at 1st level).","Physical (STR or CON): poison, disease, exhaustion. Evasion (DEX or INT): dodging sudden perils and explosions. Mental (WIS or CHA): psychic influence and mind-bending technology.","Bonuses to a save lower its target number."]},
+  ac:{t:"Armor Class",p:["To hit you, an enemy rolls 1d20 plus their attack bonus and must equal or beat your AC. Your AC is your armor's AC (10 with none) plus your DEX modifier.","Suits of armor don't stack; the sheet uses your best Readied armor. A Readied shield gives base AC 13, or +1 if your armor is already that good."]},
+  hp:{t:"Hit Points",p:["Hit points show how close you are to being defeated.","At 1st level, roll 1d6 + CON modifier (minimum 1). Warriors and Partial Warriors add 2. When you level up you re-roll; the level-up wizard handles it.","At 0 HP from a lethal attack you're mortally wounded and die after six rounds unless someone stabilizes you (Int/Heal or Dex/Heal: difficulty 10 plus the rounds since you fell, 8 with a medkit, 6 with a Lazarus patch). Stabilized characters regain 1 HP after ten minutes.","If you're hurt but not mortally wounded, you regain your level in hit points after each night's peaceful rest."]},
+  strain:{t:"System Strain",p:["System strain measures the stress on your body from psionic healing, cybernetic implants, and powerful drugs. Your maximum is your CON score.","If something would push your strain past your CON, it simply doesn't work on you.","Installed cyberware adds permanent strain. Other strain drops by 1 after each night of rest, if you're well-fed and not sick."]},
+  effort:{t:"Effort",p:["Psychics use Effort to power their techniques. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Effort is committed for a scene, for a day, or for as long as a power stays active, and comes back when that time ends."]},
+  init:{t:"Initiative",p:["At the start of combat, everyone rolls 1d8 + DEX modifier. Actors go from high to low, and PCs win ties. Initiative isn't re-rolled each round."]},
+  enc:{t:"Encumbrance",p:["You can have Readied items up to half your STR score, rounded down. Readied items are worn, in hand, or in sheaths, holsters and belt pouches.","You can have Stowed items up to your full STR score. Getting a Stowed item out in a hurry takes your Main Action.","Up to 2 extra Readied or 4 extra Stowed items makes you Lightly Encumbered: movement drops from 10 to 7 meters per round. Up to 2 more Readied or 4 more Stowed beyond that makes you Heavily Encumbered: 5 meters per round.","Worn armor counts as Readied; normal clothes don't. Very small items in small numbers don't count. Small items can be bundled (about 6 power cells or 3 magazines per item), but getting into a bundle takes an extra round.","Stored items are left on the ship or at home and don't count."]},
+  xp:{t:"Experience & Levels",p:["XP to reach each level: 2nd 3, 3rd 6, 4th 12, 5th 18, 6th 27, 7th 39, 8th 54, 9th 72, 10th 93.","A successful session usually earns about 3 XP."]},
+  foci:{t:"Foci",p:["A focus is an extra knack, perk, or aptitude. Most have two levels, and level 2 includes everything from level 1.","Everyone starts with one focus level. Experts and Warriors (and their partial versions) get a bonus level. You gain another at levels 2, 5, 7, and 10."]},
+  mods:{t:"Item & Effect Bonuses",p:["Readied items, installed cyberware, foci, and active effects apply their bonuses automatically.","On a weapon, Attack and Damage bonuses apply only to that weapon. On anything else, they apply to all your attacks.","Save bonuses lower the save's target number. Attribute bonuses raise the score, which can change the modifier."]},
+  overrides:{t:"GM Overrides",p:["Type a number to replace the sheet's calculated value. Leave a box blank to go back to the automatic result.","Overridden values show a GM tag on the sheet."]}
 };
 
 /* ================= UTIL ================= */
@@ -702,7 +702,7 @@ function compute(c){
     br("save:"+key).forEach(p=>parts.push({l:p.l,v:-p.v}));br("save:all").forEach(p=>parts.push({l:p.l,v:-p.v}));
     return ovr("save_"+key,parts.reduce((s,p)=>s+p.v,0),parts);
   };
-  R.save={physical:save("physical","str","con"),evasion:save("evasion","dex","int"),mental:save("mental","wis","cha"),luck:save("luck",null,null)};
+  R.save={physical:save("physical","str","con"),evasion:save("evasion","dex","int"),mental:save("mental","wis","cha")};
   // AC: best of worn armor or Ironhide, then shield, DEX, bonuses
   const armor=items.filter(i=>isActive(i)&&i.type==="armor").sort((a,b)=>num(b.ac)-num(a.ac))[0];
   let base=armor?{l:"Armor: "+(armor.name||"armor"),v:num(armor.ac,10)}:{l:"No armor",v:10};
@@ -821,7 +821,7 @@ function doSave(key){
   const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
   const t=R.save[key];const d={v:rand(20),s:20};const parts=sitPart();
   const total=d.v+parts.reduce((s,p)=>s+p.v,0);
-  emitRoll(c,key[0].toUpperCase()+key.slice(1)+" save",[{name:"Save",dice:[d],parts,total,verdict:total>=t?["ok","Saved"]:["no","Failed"],note:"needs "+t+"+"}]);
+  emitRoll(c,key[0].toUpperCase()+key.slice(1)+" save",[{name:"Save",dice:[d],parts,total,verdict:(d.v===20||total>=t)?["ok",d.v===20?"Natural 20: saved":"Saved"]:["no","Failed"],note:"needs "+t+"+"}]);
 }
 function doInit(){
   const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
@@ -840,7 +840,7 @@ function doAttack(i,mode){
     const d={v:rand(20),s:20};const crit=d.v===20,fumble=d.v===1;
     const parts=[...W.atkParts,...(burst?[{l:"Burst fire",v:2}]:[]),...(mode==="snap"?[{l:"Snap Attack",v:-4}]:[]),...sitPart()];
     const total=d.v+parts.reduce((s,p)=>s+p.v,0);
-    emitRoll(c,nm+(burst?" burst":"")+(mode==="snap"?" snap attack":" to hit"),[{name:"To hit",dice:[d],parts,total,verdict:crit?["crit","Natural 20"]:fumble?["no","Natural 1"]:null,note:"vs target AC"}]);
+    emitRoll(c,nm+(burst?" burst":"")+(mode==="snap"?" snap attack":" to hit"),[{name:"To hit",dice:[d],parts,total,verdict:null,note:"vs target AC"}]);
     if(burst&&!w.virtual&&canEdit(cur.path)&&num(i,-1)>=0&&num(c.inventory[num(i)]?.ammo)>0){setField(cur.path,"inventory."+num(i)+".ammo",Math.max(0,num(c.inventory[num(i)].ammo)-3));render()}
     return;
   }
@@ -932,7 +932,7 @@ function renderSheet(){
   if(!cur){
     if(S.loading)return `<div class="welcome frame"><h1>Loading the party…</h1><p>${S.slow?"The saved sheets can't be reached yet. Check your connection; this page will keep trying.":"Fetching sheets and the compendium."}</p></div>`;
     return `<div class="welcome frame"><h1>Your party's sheets live here</h1>
-      <p>${S.me?"Make your character to get started. Your GM can see and adjust every sheet, and everyone's rolls show up in the shared game log.":"Connecting…"}</p>
+      <p>${S.me?"Make your character to get started. Your GM can see and adjust every sheet, and everyone's rolls appear in the shared game log.":"Connecting…"}</p>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">${S.me||S.offline?`<button class="btn pri" data-act="wiz-open">Create my character</button>`:""}${S.isGM?`<button class="btn" data-act="view" data-v="npcs">Make NPCs</button>`:""}</div></div>`;
   }
   const {path,c}=cur;const R=compute(c);const E=S.edit&&canEdit(path);const can=canEdit(path);
@@ -998,12 +998,12 @@ function renderSheet(){
   const condBox=`<div class="ibox">${L("mods","Effects & Conditions")}${eff.length?eff.map(f=>`<p><b style="color:var(--text)">${esc(f.name||"Effect")}</b> ${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")}</p>`).join(""):`<p>None active</p>`}</div>`;
 
   const saves=`<div class="frame"><div class="frame-b" style="padding-top:14px"><div class="saves">
-    ${["physical","evasion","mental","luck"].map(k=>`<div class="save"><button class="lbl" data-act="rule" data-key="save_${k}">${k}${ovBadge(R,"save_"+k)}</button><button class="rollbtn tgt" data-act="roll-save" data-save="${k}" title="Roll 1d20, need ${R.save[k]} or more">${R.save[k]}</button></div>`).join("")}
+    ${["physical","evasion","mental"].map(k=>`<div class="save"><button class="lbl" data-act="rule" data-key="save_${k}">${k}${ovBadge(R,"save_"+k)}</button><button class="rollbtn tgt" data-act="roll-save" data-save="${k}" title="Roll 1d20, need ${R.save[k]} or more">${R.save[k]}</button></div>`).join("")}
   </div><p class="hint" style="margin:8px 0 0;text-align:center">Roll 1d20, meet or beat the number</p></div><div class="frame-f">Saving Throws <button class="iconbtn" data-act="rule" data-key="saves" aria-label="Saving throw rules">?</button></div></div>`;
 
   const ropts=`<div class="frame"><div class="frame-b ropts" style="padding-top:14px">
     <div class="grp"><span class="hint">Situational mod</span><span style="display:flex;align-items:center;gap:4px"><button class="iconbtn" data-act="opt-sit" data-d="-1">−</button><span class="num" style="min-width:26px;text-align:center;font-family:var(--display);font-size:17px">${sgn(S.opts.sit)}</span><button class="iconbtn" data-act="opt-sit" data-d="1">+</button></span></div>
-    <div class="grp"><label class="hint" for="opt-diff">Difficulty</label><select id="opt-diff" data-opt="diff"><option value="0">None</option>${[6,7,8,9,10,11,12,13,14].map(n=>`<option value="${n}" ${S.opts.diff==n?"selected":""}>${n}${n===6?" modest":n===8?" competent":n===10?" hard":n===12?" expert":n===14?" near impossible":""}</option>`).join("")}</select></div>
+    <div class="grp"><label class="hint" for="opt-diff">Difficulty</label><select id="opt-diff" data-opt="diff"><option value="0">None</option>${[6,7,8,9,10,11,12,13,14].map(n=>`<option value="${n}" ${S.opts.diff==n?"selected":""}>${n}${n===6?" simple":n===8?" significant":n===10?" expert":n===12?" master":n===14?" near impossible":""}</option>`).join("")}</select></div>
     <div class="grp"><label class="hint" for="opt-attr">Skill attribute</label><select id="opt-attr" data-opt="attr"><option value="auto">Usual</option>${ATTRS.map(a=>`<option value="${a[0].toUpperCase()}" ${S.opts.attr===a[0].toUpperCase()?"selected":""}>${a[0].toUpperCase()}</option>`).join("")}</select></div>
     <label class="toggle"><input type="checkbox" id="opt-keep3" data-opt="keep3" ${S.opts.keep3?"checked":""}>3d6, keep best 2</label>
   </div><div class="frame-f">Roll Options <button class="iconbtn" data-act="rule" data-key="skillcheck" aria-label="How checks work">?</button></div></div>`;
@@ -1065,7 +1065,7 @@ function renderActions(path,c,R,can){
         <div class="actbox"><h4>On Turn <span class="tag">any number, your turn</span></h4><p class="hint">Fast, simple things done alongside everything else.</p>
           <ul><li><b>Go Prone</b>: −2 to hit you from range, but adjacent foes get +2.</li><li><b>Draw a Readied item.</b></li><li><b>Speak</b> a few words, <b>drop</b> or <b>activate</b> a simple device.</li></ul></div>
         <div class="actbox"><h4>Instant <span class="tag">any number, any time</span></h4><p class="hint">Even on someone else's turn, or after dice are rolled.</p>
-          <ul><li><b>Snap Attack</b>: attack out of turn at −4 to hit. Spends your upcoming Main Action. Use the Snap button above.</li><li><b>Total Defense</b>: +2 AC and immune to melee Shock until your next turn. Spends your Main Action (can't if already used).</li><li><b>Drop an Item</b> to free your hands.</li>${c.class==="Warrior"?`<li><b>Veteran's Luck</b> (Warrior): once per scene, turn your miss into a hit or an enemy's hit on you into a miss.</li>`:""}${R.psychic||R.effortMax>0?`<li>Some psychic techniques are Instant; check each one's description.</li>`:""}</ul></div>
+          <ul><li><b>Snap Attack</b>: attack out of turn at −4 to hit. Spends your upcoming Main Action. Use the Snap button above.</li><li><b>Total Defense</b>: +2 AC and immune to melee Shock until your next turn. Spends your Main Action (can't if already used).</li><li><b>Drop an Item</b> to free your hands.</li>${c.class==="Warrior"?`<li><b>Warrior's luck</b>: once per scene, negate a hit against you or turn your miss into a hit.</li>`:""}${R.psychic||R.effortMax>0?`<li>Some psychic techniques are Instant; check each one's description.</li>`:""}</ul></div>
       </div></div>`;
 }
 
@@ -1136,7 +1136,7 @@ function modsEditor(doc,base,dis){
     ${dis?"":`<button class="btn sm" data-act="mod-add" data-doc="${esc(doc)}" data-base="${esc(base)}">+ Add bonus</button>`}`;
 }
 function renderGM(path,c,R){
-  const ovs=[["ac","Armor Class",R.b.ac],["bab","Attack bonus",R.b.bab],["init","Initiative bonus",R.b.init],["hpMax","Max HP",R.b.hpMax],["save_physical","Physical save",R.b.save_physical],["save_evasion","Evasion save",R.b.save_evasion],["save_mental","Mental save",R.b.save_mental],["save_luck","Luck save",R.b.save_luck],["strainMax","Max strain",R.b.strainMax],["effortMax","Max Effort",R.b.effortMax||[]],["readied","Readied limit",R.b.readied],["stowed","Stowed limit",R.b.stowed]];
+  const ovs=[["ac","Armor Class",R.b.ac],["bab","Attack bonus",R.b.bab],["init","Initiative bonus",R.b.init],["hpMax","Max HP",R.b.hpMax],["save_physical","Physical save",R.b.save_physical],["save_evasion","Evasion save",R.b.save_evasion],["save_mental","Mental save",R.b.save_mental],["strainMax","Max strain",R.b.strainMax],["effortMax","Max Effort",R.b.effortMax||[]],["readied","Readied limit",R.b.readied],["stowed","Stowed limit",R.b.stowed]];
   const autoOf=parts=>(parts||[]).filter(p=>!p.ov&&p.v!=null).reduce((s,p)=>s+p.v,0);
   const hb=hbPaths();
   return `<div class="sect"><span class="lbl">Control</span>

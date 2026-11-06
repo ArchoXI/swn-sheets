@@ -141,7 +141,7 @@ function renderLevelUp(){
 }
 function luOverview(c,lu,D){
   const sv=n=>`${n} → ${n-1}`;
-  return wh("Reaching level "+D.L,"Here's everything that comes with the new level. The wizard walks through each choice; nothing changes on the sheet until you hit Apply at the end.")+
+  return wh("Reaching level "+D.L,"Everything that comes with the new level is listed below. Nothing on the sheet changes until you click Apply at the end.")+
   `${D.xpOk?`<div class="wok">${num(c.xp)} XP: enough for level ${D.L} (needs ${D.xpNeed}).</div>`:`<div class="wissues"><b>Not enough XP yet:</b> ${num(c.xp)} of ${D.xpNeed} needed for level ${D.L}. ${S.isGM||S.offline?"As GM you can level them up anyway.":"Ask your GM to award XP first."}</div>`}
   <div class="calc" style="max-width:520px">
     <div><span>Hit points</span><span>re-roll ${D.L}d6${D.con?" "+sgn(D.con)+" each":""}${D.warrior?" + "+2*D.L:""}</span></div>
@@ -213,7 +213,7 @@ function luReview(c,lu,D){
   const bought=D.spendResults.filter(r=>r.ok).map(r=>r.desc+" ("+r.cost+")");
   const free=D.freeNeeded.filter(f=>f.pick).map(f=>f.pick+" (free)");
   return wh("Review & apply","This is what will change on the sheet.")+
-  `${all.length?`<div class="wissues"><b>Still needed:</b>${all.map(([k,v])=>v.map(x=>`<div>• <button class="linkbtn" data-act="lugo" data-i="${steps.findIndex(s=>s[0]===k)}">${esc((steps.find(s=>s[0]===k)||[,k])[1])}</button>: ${esc(x)}</div>`).join("")).join("")}</div>`:`<div class="wok">All set.</div>`}
+  `${all.length?`<div class="wissues"><b>Still needed:</b>${all.map(([k,v])=>v.map(x=>`<div>• <button class="linkbtn" data-act="lugo" data-i="${steps.findIndex(s=>s[0]===k)}">${esc((steps.find(s=>s[0]===k)||[,k])[1])}</button>: ${esc(x)}</div>`).join("")).join("")}</div>`:`<div class="wok">All steps are complete.</div>`}
   ${gate?`<div class="wissues">You need ${D.xpNeed} XP to reach level ${D.L} (you have ${num(c.xp)}). Ask your GM.</div>`:""}
   <div class="calc" style="max-width:560px">
     <div><span>Level</span><span>${D.L0} → ${D.L}</span></div>
