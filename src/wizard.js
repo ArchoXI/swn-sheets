@@ -369,7 +369,8 @@ function wizToSheet(w,D){
     skills:{...D.skills},psy:{...D.psy},hp:{cur:D.hp,max:D.hp}});
   c.foci=D.foci.map(f=>({id:rid(),key:f.key,name:f.name,level:f.level,skill:f.skill||"",text:f.note||""}));
   c.techniques=D.techniques.map(([d,t])=>({disc:d,name:t}));
-  if(w.equip.mode==="package"){const p=PACKAGES[w.equip.pkg];c.inventory=p.items.map(([g,q])=>gearItem(g,q));c.credits=p.credits}
+  if(w.equip.mode==="package"){const p=PACKAGES[w.equip.pkg];c.inventory=p.items.map(([g,q])=>gearItem(g,q));c.credits=p.credits;
+    const armors=c.inventory.filter(i=>i.type==="armor").sort((a,b)=>num(b.ac)-num(a.ac));armors.slice(1).forEach(a=>a.location="stowed")}
   else{c.inventory=[];c.credits=D.credits}
   c.features=c.techniques.length?"Psychic techniques: "+c.techniques.map(t=>t.name+" ("+PSYK[t.disc].name+")").join(", "):"";
   c.creation={method:w.attrMethod,bgMethod:w.bgMethod,at:Date.now()};

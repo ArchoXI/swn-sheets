@@ -174,11 +174,11 @@ const PACKAGES = {
   technician:{name:"Technician",items:[["laser_pistol"],["undersuit"],["monoblade_knife"],["toolkit"],["spare_parts",6],["cells",4],["backpack"],["dataslab"],["metatool"]],credits:200}
 };
 function gearItem(key,qty){
-  const t=G[key];const it={id:rid(),qty:1,location:"stowed",equipped:false,mods:[],description:"",...clone(t)};
+  const t=G[key];const it={id:rid(),qty:1,location:"stowed",mods:[],description:"",...clone(t)};
   const q=qty||1;
   if(t.bundle&&q>1){it.qty=q;it.enc=Math.ceil(q/t.bundle);it.encFixed=true}else it.qty=q;
-  if(t.type==="weapon"){it.location="readied";it.equipped=true;it.ammo=num(t.mag);it.shock=t.shock||"";it.range=t.range||"";it.mag=num(t.mag)}
-  if(t.type==="armor"||t.type==="shield"){it.equipped=true;it.location="readied"}
+  if(t.type==="weapon"){it.location="readied";it.ammo=num(t.mag);it.shock=t.shock||"";it.range=t.range||"";it.mag=num(t.mag)}
+  if(t.type==="armor"||t.type==="shield")it.location="readied";
   delete it.bundle;
   return it;
 }

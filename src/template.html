@@ -448,7 +448,7 @@ const RULES = {
   shock:{t:"Shock",p:["Many melee weapons list Shock, like 2/AC 15. If your attack misses a target whose AC is at or below that number, they still take the Shock damage plus your attribute modifier.","Targets with higher AC, and many heavily armored foes, ignore it."]},
   bab:{t:"Attack Bonus",p:["A Warrior's attack bonus equals their level. Everyone else uses half their level, rounded down.","A Partial Warrior adds +1 at 1st level and another +1 at 5th."]},
   saves:{t:"Saving Throws",p:["Roll 1d20 and meet or beat the target number to resist an effect.","Each save starts at 16 minus your level, then subtracts the better of two attribute modifiers.","Physical (STR or CON): poison, disease, exhaustion. Evasion (DEX or INT): dodging blasts and fast reactions. Mental (WIS or CHA): psychic attacks and mind control. Luck uses no attribute and covers pure chance.","Bonuses to a save lower its target number."]},
-  ac:{t:"Armor Class",p:["Attackers must meet or beat your AC to hit you. Start with your worn armor's AC (10 with none) and add your DEX modifier.","Only one suit of armor counts; the sheet uses the best equipped one."]},
+  ac:{t:"Armor Class",p:["Attackers must meet or beat your AC to hit you. Start with your worn armor's AC (10 with none) and add your DEX modifier.","Only one suit of armor counts; the sheet uses the best Readied (worn) one. A Readied shield sets your base AC to 13, or adds +1 if your armor is already that good."]},
   hp:{t:"Hit Points",p:["Hit points measure how much punishment you can take before going down.","Each level you roll 1d6 and add your CON modifier (minimum 1 per die). Some classes add extra hit points per level.","At 0 HP a character is mortally wounded and dies without fast medical help."]},
   strain:{t:"System Strain",p:["System strain tracks how hard your body has been pushed by cyberware, drugs, and medical treatment. Your maximum is your CON score.","Installed cyberware adds permanent strain. Stims and healing add temporary strain, which drops by 1 after each night of good rest.","You can't accept strain past your maximum."]},
   effort:{t:"Effort",p:["Psychics fuel techniques with Effort. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Effort can be committed for a scene, for a day, or for as long as a power stays active. It comes back when that period ends."]},
@@ -611,11 +611,12 @@ function resolveFocus(e){
   return {...e,level:lvl,name:def.name+(e.skill&&e.key==="specialist"?" ("+specName(e.skill)+")":""),d:def.d,l1:def.l1,l2:def.l2,type:def.type,mods:[]};
 }
 const hasFocus=(R,k,l=1)=>R.foci.some(f=>f.key===k&&f.level>=l);
+const isActive=i=>i.type==="cyber"||(i.location||"stowed")==="readied";
 function compute(c){
   const items=(c.inventory||[]).map(resolveItem);
   const mods=[];
   const lvl=Math.max(1,Math.min(20,num(c.level,1)));
-  items.forEach(i=>{if(!i.equipped)return;(i.mods||[]).forEach(m=>{if(i.type==="weapon"&&(m.target==="attack"||m.target==="damage"))return;mods.push({target:m.target,value:num(m.value),src:i.name||"Item"})})});
+  items.forEach(i=>{if(!isActive(i))return;(i.mods||[]).forEach(m=>{if(i.type==="weapon"&&(m.target==="attack"||m.target==="damage"))return;mods.push({target:m.target,value:num(m.value),src:i.name||"Item"})})});
   (c.effects||[]).forEach(f=>{if(!f.active)return;(f.mods||[]).forEach(m=>mods.push({target:m.target,value:num(m.value),src:(f.name||"Effect")}))});
   const foci=(c.foci||[]).map(resolveFocus).filter(f=>f&&(f.key||f.name||f.text));
   foci.forEach(f=>{
@@ -648,11 +649,11 @@ function compute(c){
   };
   R.save={physical:save("physical","str","con"),evasion:save("evasion","dex","int"),mental:save("mental","wis","cha"),luck:save("luck",null,null)};
   // AC: best of worn armor or Ironhide, then shield, DEX, bonuses
-  const armor=items.filter(i=>i.equipped&&i.type==="armor").sort((a,b)=>num(b.ac)-num(a.ac))[0];
+  const armor=items.filter(i=>isActive(i)&&i.type==="armor").sort((a,b)=>num(b.ac)-num(a.ac))[0];
   let base=armor?{l:"Armor: "+(armor.name||"armor"),v:num(armor.ac,10)}:{l:"No armor",v:10};
   if(hasFocus(R,"ironhide")){const ih=15+Math.ceil(lvl/2);if(ih>base.v)base={l:"Ironhide (15 + half level)",v:ih}}
   const acParts=[base];
-  const shield=items.find(i=>i.equipped&&i.type==="shield");
+  const shield=items.find(i=>isActive(i)&&i.type==="shield");
   if(shield){const sb=num(shield.ac,13);if(base.v>=sb)acParts.push({l:(shield.name||"Shield")+" (+1)",v:1});else acParts.push({l:(shield.name||"Shield")+" (raises base to "+sb+")",v:sb-base.v})}
   acParts.push({l:"DEX modifier",v:R.mod.dex},...br("ac"));
   R.ac=ovr("ac",acParts.reduce((s,p)=>s+p.v,0),acParts);
@@ -662,7 +663,7 @@ function compute(c){
   // strain
   const stParts=[{l:"CON score",v:R.score.con},...br("strainMax")];
   R.strainMax=ovr("strainMax",stParts.reduce((s,p)=>s+p.v,0),stParts);
-  R.strainPerm=items.filter(i=>i.type==="cyber"&&i.equipped).reduce((s,i)=>s+num(i.strain)*Math.max(1,num(i.qty,1)),0);
+  R.strainPerm=items.filter(i=>i.type==="cyber").reduce((s,i)=>s+num(i.strain)*Math.max(1,num(i.qty,1)),0);
   R.strainTemp=num(c.strain?.temp);R.strainCur=R.strainPerm+R.strainTemp;
   // effort
   R.psychic=isPsy(c);
@@ -684,7 +685,7 @@ function compute(c){
   const sParts=[{l:"STR score",v:R.score.str},...br("stowed")];
   R.readiedLimit=ovr("readied",rParts.reduce((s,p)=>s+p.v,0),rParts);
   R.stowedLimit=ovr("stowed",sParts.reduce((s,p)=>s+p.v,0),sParts);
-  const encOf=loc=>items.filter(i=>(i.location||"stowed")===loc).reduce((s,i)=>s+(i.encFixed?num(i.enc):num(i.enc)*Math.max(0,num(i.qty,1))),0);
+  const encOf=loc=>items.filter(i=>i.type!=="cyber"&&(i.location||"stowed")===loc).reduce((s,i)=>s+(i.encFixed?num(i.enc):num(i.enc)*Math.max(0,num(i.qty,1))),0);
   R.readied=encOf("readied");R.stowed=encOf("stowed");
   // xp
   R.nextXp=XP_TABLE[lvl]??null;R.prevXp=XP_TABLE[lvl-1]??0;
@@ -770,28 +771,27 @@ function doInit(){
   emitRoll(c,"Initiative",[{name:"Initiative",dice,parts,total:kept+parts.reduce((s,p)=>s+p.v,0),note:R.initTwice?"Alert: rolled twice, kept the best":""}]);
 }
 function weaponAt(R,i){return i==="unarmed"?unarmedWeapon(R):R.items[num(i,-1)]}
-function doAttack(i,dmgOnly){
+function doAttack(i,mode){
   const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
   const w=weaponAt(R,i);if(!w)return;const W=weaponStats(c,R,w);
-  const burst=S.opts.burst&&w.burst;
-  const lines=[];
-  if(!dmgOnly){
+  const burst=S.opts.burst&&w.burst;const nm=w.name||"Weapon";
+  if(mode==="hit"){
     const d={v:rand(20),s:20};const crit=d.v===20,fumble=d.v===1;
     const parts=[...W.atkParts,...(burst?[{l:"Burst fire",v:2}]:[]),...sitPart()];
     const total=d.v+parts.reduce((s,p)=>s+p.v,0);
-    lines.push({name:"To hit",dice:[d],parts,total,verdict:crit?["crit","Natural 20"]:fumble?["no","Natural 1"]:null,note:"vs target AC"});
+    emitRoll(c,nm+(burst?" burst":"")+" to hit",[{name:"To hit",dice:[d],parts,total,verdict:crit?["crit","Natural 20"]:fumble?["no","Natural 1"]:null,note:"vs target AC"}]);
+    if(burst&&!w.virtual&&canEdit(cur.path)&&num(i,-1)>=0&&num(c.inventory[num(i)]?.ammo)>0){setField(cur.path,"inventory."+num(i)+".ammo",Math.max(0,num(c.inventory[num(i)].ammo)-3));render()}
+    return;
   }
-  const p=parseDice(w.dmg||"1d6");const r=rollGroups(p);
-  const dparts=[...(p.flat?[{l:"Weapon",v:p.flat}]:[]),...W.dmgParts,...(burst?[{l:"Burst fire",v:2}]:[])];
-  let dmgTotal=Math.max(0,r.sum+dparts.reduce((s,x)=>s+x.v,0));
-  if(W.shock&&dmgTotal<W.shock.dmg)dmgTotal=W.shock.dmg;
-  lines.push({name:"Damage",dice:r.dice,parts:dparts,total:dmgTotal,note:"on a hit"});
-  if(W.shock&&!dmgOnly)lines.push({name:"Shock",dice:[],parts:[],total:W.shock.dmg,note:"on a miss vs AC "+(W.shock.ac>=99?"any":W.shock.ac+" or lower")});
-  if(W.missDmg&&!dmgOnly){const mp=parseDice(W.missDmg);const mr=rollGroups(mp);lines.push({name:"Miss damage",dice:mr.dice,parts:[],total:mr.sum,note:"unmodified, if you miss"})}
-  if(burst&&!dmgOnly&&!w.virtual&&canEdit(cur.path)&&num(i,-1)>=0&&num(c.inventory[num(i)]?.ammo)>0){setField(cur.path,"inventory."+num(i)+".ammo",Math.max(0,num(c.inventory[num(i)].ammo)-3))}
-  emitRoll(c,(w.name||"Weapon")+(dmgOnly?" damage":burst?" burst":" attack"),lines);
+  if(mode==="dmg"){
+    const p=parseDice(w.dmg||"1d6");const r=rollGroups(p);
+    const dparts=[...(p.flat?[{l:"Weapon",v:p.flat}]:[]),...W.dmgParts,...(burst?[{l:"Burst fire",v:2}]:[])];
+    let t=Math.max(0,r.sum+dparts.reduce((s,x)=>s+x.v,0));const floor=W.shock&&t<W.shock.dmg;if(floor)t=W.shock.dmg;
+    emitRoll(c,nm+" damage",[{name:"Damage",dice:r.dice,parts:dparts,total:t,note:floor?"raised to the Shock value":""}]);return;
+  }
+  if(mode==="shock"&&W.shock){emitRoll(c,nm+" Shock",[{name:"Shock",dice:[],parts:[],total:W.shock.dmg,note:"on a miss vs AC "+(W.shock.ac>=99?"any":W.shock.ac+" or lower")}]);return}
+  if(mode==="miss"&&W.missDmg){const mp=parseDice(W.missDmg);const mr=rollGroups(mp);emitRoll(c,nm+" miss damage",[{name:"Miss damage",dice:mr.dice,parts:[],total:mr.sum,note:"unmodified"}])}
 }
-
 function doCustom(expr){
   const p=parseDice(expr);if(!p.groups.length&&!p.flat){toastMsg("Type dice like 2d6+1 or 1d20.",true);return}
   const r=rollGroups(p);const cur=currentChar();
@@ -981,17 +981,17 @@ function renderActions(path,c,R,can){
   const weapons=R.items.map((w,i)=>({w,i})).filter(x=>x.w.type==="weapon");
   weapons.push({w:unarmedWeapon(R),i:"unarmed"});
   const rows=weapons.map(({w,i})=>{const W=weaponStats(c,R,w);const real=i!=="unarmed";return `<tr>
-    <td>${real?`<button class="iname" data-act="item" data-i="${i}">`:`<span class="iname" style="cursor:default">`}${esc(w.name||"Weapon")}${w.linked?`<span class="tag hb">Homebrew</span>`:""}${w.energy?`<span class="tag" title="Energy weapons get +1 to hit">Energy</span>`:""}${w.burst?`<span class="tag" title="Can fire in burst mode">Burst</span>`:""}${real&&!w.equipped?`<span class="tag">Not equipped</span>`:""}${real?`</button>`:`</span>`}<span class="isub">${esc(SKILL[W.sk]?.name||W.sk)} · ${esc(W.best.toUpperCase())}${w.range?" · "+esc(w.range)+" m":""}${W.missDmg?" · "+W.missDmg+" on a miss":""}</span></td>
-    <td><button class="rollbtn" data-act="attack" data-i="${i}" title="1d20 ${sgn(W.atk)}: rolls to-hit and damage">${sgn(W.atk+(S.opts.burst&&w.burst?2:0))}</button></td>
+    <td>${real?`<button class="iname" data-act="item" data-i="${i}">`:`<span class="iname" style="cursor:default">`}${esc(w.name||"Weapon")}${w.linked?`<span class="tag hb">Homebrew</span>`:""}${w.energy?`<span class="tag" title="Energy weapons get +1 to hit">Energy</span>`:""}${w.burst?`<span class="tag" title="Can fire in burst mode">Burst</span>`:""}${real&&!isActive(w)?`<span class="tag" title="Stowed weapons take a Main Action to ready">Stowed</span>`:""}${real?`</button>`:`</span>`}<span class="isub">${esc(SKILL[W.sk]?.name||W.sk)} · ${esc(W.best.toUpperCase())}${w.range?" · "+esc(w.range)+" m":""}${W.missDmg?" · "+W.missDmg+" on a miss":""}</span></td>
+    <td><button class="rollbtn" data-act="attack" data-i="${i}" title="Roll 1d20 ${sgn(W.atk)} to hit">${sgn(W.atk+(S.opts.burst&&w.burst?2:0))}</button></td>
     <td><button class="rollbtn" data-act="damage" data-i="${i}" title="Roll damage only">${esc(W.dmgText)}</button></td>
-    <td>${W.shock?`<button class="rollbtn" style="cursor:help" data-act="rule" data-key="shock">${W.shock.dmg}/${W.shock.ac>=99?"any AC":"AC "+W.shock.ac}</button>`:`<span class="hint">—</span>`}</td>
+    <td>${W.shock?`<button class="rollbtn" data-act="shock" data-i="${i}" title="Post Shock damage to the log (on a miss)">${W.shock.dmg}/${W.shock.ac>=99?"any AC":"AC "+W.shock.ac}</button>`:`<span class="hint">—</span>`}${W.missDmg?` <button class="rollbtn" data-act="missdmg" data-i="${i}" title="Unmodified damage on a miss">miss ${W.missDmg}</button>`:""}</td>
     <td class="num">${real&&num(w.mag)>0?`${can?`<button class="iconbtn" data-act="ammo" data-i="${i}" data-d="-1" aria-label="Use ammo">−</button> `:""}${num(w.ammo)}/${num(w.mag)}${can?` <button class="btn sm ghost" data-act="reload" data-i="${i}">Reload</button>`:""}`:`<span class="hint">—</span>`}</td></tr>`}).join("");
   const cls=CLASS_TEXT[c.class];
   const anyBurst=weapons.some(x=>x.w.burst);
   return `<div class="sect"><span class="lbl">Attacks <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="attack">how attacks work</button></span>
     <div class="tbl-wrap"><table><thead><tr><th>Weapon</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Ammo</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${anyBurst?`<label class="toggle" style="margin-top:8px"><input type="checkbox" id="opt-burst" data-opt="burst" ${S.opts.burst?"checked":""}>Burst fire (+2 to hit and damage, uses 3 rounds)</label>`:""}
-    <p class="hint">Click Hit to roll to-hit and damage together. Natural 20 always hits; natural 1 always misses.</p></div>
+    <p class="hint">Hit rolls the d20, Damage rolls damage, Shock posts the Shock damage for a miss. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="shock">What's Shock?</button> Natural 20 always hits; natural 1 always misses.</p></div>
     <div class="sect"><span class="lbl">Class abilities</span>
       <div class="feature"><h4>${esc(cls?.t||c.class)}</h4><p>${esc(cls?.d||"")}</p></div>
       ${c.class==="Adventurer"?(c.partials||[]).map(p=>`<div class="feature"><h4>Partial ${esc(p)}</h4><p>${esc(PARTIAL_TEXT[p]||"")}</p></div>`).join(""):""}
@@ -1002,19 +1002,18 @@ function renderActions(path,c,R,can){
 function renderInventory(path,c,R,can){
   const inv=c.inventory||[];
   const rows=inv.map((e,i)=>{const it=R.items[i];return `<tr>
-    <td style="width:30px"><input type="checkbox" aria-label="Equipped" id="${fid(path,"inventory."+i+".equipped")}" data-doc="${esc(path)}" data-path="inventory.${i}.equipped" ${e.equipped?"checked":""} ${can?"":"disabled"}></td>
     <td><button class="iname" data-act="item" data-i="${i}">${esc(it.name||"Item")}${it.linked?`<span class="tag hb">Homebrew</span>`:""}${(it.mods||[]).length?`<span class="tag on">${(it.mods||[]).length} bonus${(it.mods||[]).length>1?"es":""}</span>`:""}</button><span class="isub">${esc((ITEM_TYPES.find(t=>t[0]===it.type)||[0,"Gear"])[1])}${it.type==="armor"?" · AC "+num(it.ac,10):""}${it.type==="cyber"?" · strain "+num(it.strain):""}</span></td>
     <td style="width:70px">${can?inp(path,"inventory."+i+".qty",{type:"number",cls:"inp n",min:0}):num(e.qty,1)}</td>
-    <td style="width:150px">${can?sel(path,"inventory."+i+".location",LOCATIONS):esc((LOCATIONS.find(l=>l[0]===e.location)||["","Stowed"])[1])}</td>
+    <td style="width:150px">${it.type==="cyber"?`<span class="hint">Installed</span>`:can?sel(path,"inventory."+i+".location",LOCATIONS):esc((LOCATIONS.find(l=>l[0]===e.location)||["","Stowed"])[1])}</td>
     <td class="num" style="width:50px">${num(it.enc)}</td>
     <td style="width:40px">${can?`<button class="iconbtn" data-act="inv-remove" data-i="${i}" aria-label="Remove ${esc(it.name)}">${S.confirm==="inv"+i?"!":"×"}</button>`:""}</td></tr>`}).join("");
   const hb=hbPaths();
   return `${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="hb-pick" class="inp" style="max-width:260px"><option value="">Add from compendium…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)} (${esc(S.docs[p].type||"gear")})</option>`).join("")}</select>
       <button class="btn" data-act="inv-add-hb">Add</button><button class="btn ghost" data-act="inv-add-custom">+ Custom item</button></div>`:""}
-    ${inv.length?`<div class="tbl-wrap"><table><thead><tr><th title="Equipped items apply their bonuses">Eq.</th><th>Item</th><th>Qty</th><th>Carried</th><th>Enc</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">Nothing carried yet.</div>`}
+    ${inv.length?`<div class="tbl-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Carried</th><th>Enc</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">Nothing carried yet.</div>`}
     ${S.confirm&&S.confirm.startsWith("inv")?`<p class="hint" style="color:var(--bad)">Click the ! again to remove that item.</p>`:""}
-    <p class="hint">Check Eq. to equip: equipped armor sets your AC, and equipped items apply their bonuses. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>`;
+    <p class="hint">Readied items are worn, in hand, or instantly usable: readied armor and shields set your AC, and readied items apply their bonuses. Stowed items are packed away and don't. Cyberware always applies. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>`;
 }
 
 function focusSelectOpts(){
@@ -1102,7 +1101,7 @@ function itemFields(doc,b,dis){
     ${t==="armor"||t==="shield"?`<div class="grid3" style="margin-top:8px">${f("ac",t==="shield"?"Shield base AC":"Armor AC",{type:"number",min:0})}</div>${t==="shield"?`<p class="hint">A shield sets your base AC to this number, or gives +1 if your armor is already that good.</p>`:""}`:""}
     ${t==="cyber"?`<div class="grid3" style="margin-top:8px">${f("strain","System strain",{type:"number",min:0})}</div>`:""}
     <div class="field" style="margin-top:8px"><span class="lbl">Description / rules text</span>${ta(doc,b+"description",{rows:4,dis})}</div>
-    <div class="field" style="margin-top:10px"><span class="lbl">Automatic bonuses ${t==="weapon"?"(attack/damage apply to this weapon only)":"(apply while equipped)"}</span>${modsEditor(doc,b+"mods",dis)}</div>`;
+    <div class="field" style="margin-top:10px"><span class="lbl">Automatic bonuses ${t==="weapon"?"(attack/damage apply to this weapon only)":"(apply while Readied; cyberware always)"}</span>${modsEditor(doc,b+"mods",dis)}</div>`;
 }
 function itemSummary(it){
   const bits=[];
@@ -1278,8 +1277,10 @@ document.addEventListener("click",e=>{
     case "roll-skill":doSkill(t.dataset.skill);break;
     case "roll-save":doSave(t.dataset.save);break;
     case "roll-init":doInit();break;
-    case "attack":doAttack(num(t.dataset.i),false);break;
-    case "damage":doAttack(num(t.dataset.i),true);break;
+    case "attack":doAttack(t.dataset.i,"hit");break;
+    case "damage":doAttack(t.dataset.i,"dmg");break;
+    case "shock":doAttack(t.dataset.i,"shock");break;
+    case "missdmg":doAttack(t.dataset.i,"miss");break;
     case "opt-sit":S.opts.sit=Math.max(-10,Math.min(10,num(S.opts.sit)+num(t.dataset.d)));render();break;
     case "hp":edit((c,p)=>{const amt=Math.abs(num($("#hp-amt")?.value));if(!amt)return;const R=compute(c);const v=Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.sign)*amt));setField(p,"hp.cur",v)});break;
     case "strain":edit((c,p)=>{const R=compute(c);setField(p,"strain.temp",Math.max(0,Math.min(Math.max(0,R.strainMax-R.strainPerm),num(c.strain?.temp)+num(t.dataset.d))))});break;
@@ -1288,7 +1289,7 @@ document.addEventListener("click",e=>{
     case "ammo":edit((c,p)=>{const i=num(t.dataset.i);setField(p,"inventory."+i+".ammo",Math.max(0,num(c.inventory[i].ammo)+num(t.dataset.d)))});break;
     case "reload":edit((c,p)=>{const i=num(t.dataset.i);const R=compute(c);setField(p,"inventory."+i+".ammo",num(R.items[i].mag))});break;
     case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addHb(c,p,id)});break;
-    case "inv-add-custom":edit((c,p)=>{const inv=c.inventory||[];inv.push({id:rid(),type:"gear",name:"New item",qty:1,location:"stowed",equipped:false,enc:1,mods:[],description:""});setField(p,"inventory",inv);S.drawer={kind:"item",i:inv.length-1}});break;
+    case "inv-add-custom":edit((c,p)=>{const inv=c.inventory||[];inv.push({id:rid(),type:"gear",name:"New item",qty:1,location:"readied",enc:1,mods:[],description:""});setField(p,"inventory",inv);S.drawer={kind:"item",i:inv.length-1}});break;
     case "inv-remove":edit((c,p)=>{const i=num(t.dataset.i);if(S.confirm!=="inv"+i){S.confirm="inv"+i;return}S.confirm=null;const inv=c.inventory||[];inv.splice(i,1);setField(p,"inventory",inv);S.drawer=null});break;
     case "focus-add":edit((c,p)=>{const f=c.foci||[];f.push({id:rid(),key:"",name:"",level:1,skill:"",text:""});setField(p,"foci",f)});break;
     case "focus-remove":edit((c,p)=>{const f=c.foci||[];f.splice(num(t.dataset.j),1);setField(p,"foci",f)});break;
@@ -1327,7 +1328,7 @@ document.addEventListener("click",e=>{
 function addHb(c,p,id){
   const hb=S.docs["homebrew/"+id];if(!hb)return;
   const inv=c.inventory||[];
-  inv.push({id:rid(),hb:id,name:hb.name,qty:1,location:hb.type==="armor"||hb.type==="weapon"||hb.type==="cyber"?"readied":"stowed",equipped:hb.type!=="gear",ammo:num(hb.mag)});
+  inv.push({id:rid(),hb:id,name:hb.name,qty:1,location:hb.type==="gear"?"stowed":"readied",ammo:num(hb.mag)});
   setField(p,"inventory",inv);
 }
 
