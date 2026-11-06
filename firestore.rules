@@ -47,10 +47,17 @@ service cloud.firestore {
       allow write: if isGM();
     }
 
-    // NPCs: only the GM sees them, unless the GM marks one shared.
+    // NPCs: only the GM sees them, unless the GM shares one or makes it a character's companion.
+    // A companion's player can change its hit points.
     match /npcs/{id} {
-      allow read: if isGM() || (signedIn() && resource.data.shared == true);
-      allow write: if isGM();
+      allow read: if isGM() || (signedIn() && (resource.data.shared == true || resource.data.get('companion', false) == true));
+      allow create, delete: if isGM();
+      allow update: if isGM() || (signedIn()
+        && resource.data.get('companion', false) == true
+        && resource.data.get('companionOf', '') is string
+        && resource.data.get('companionOf', '') != ''
+        && request.auth.uid in get(/databases/$(database)/documents/sheets/$(resource.data.companionOf)).data.get('owners', [])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hp', 'updatedAt']));
     }
 
     // NPC dice rolls: GM only.

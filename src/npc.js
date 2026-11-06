@@ -9,6 +9,7 @@ const NPC_TEMPLATES=[
   ["Pirate King",7,18,"powered",9,2,10,11,3,12],["Police Officer",1,14,"",1,0,10,8,1,15],["Serial Killer",6,12,"",8,3,10,12,3,12],
   ["Skilled Professional",1,10,"",0,0,10,6,2,15],["Warrior Tyrant",8,20,"powered",10,3,10,11,3,11]
 ];
+function npcCtl(n){if(S.isGM||S.offline)return true;return !!(n&&n.companionOf&&isMine("sheets/"+n.companionOf))}
 const npcPaths=()=>Object.keys(S.docs).filter(p=>p.startsWith("npcs/")).sort((a,b)=>String(S.docs[a].name).localeCompare(String(S.docs[b].name)));
 function rollHD(hd){let t=0;for(let i=0;i<Math.max(1,num(hd,1));i++)t+=rand(8);return t}
 function npcFromTemplate(ti,name){
@@ -18,6 +19,13 @@ function npcFromTemplate(ti,name){
     attacks:[{id:rid(),name:weapon.name,atk:t[4],dmg:weapon.dmg+(t[5]?"+"+t[5]:""),times:t[10]||1}],notes:"",shared:false,createdAt:Date.now()};
 }
 function npcRoll(npc,label,lines){
+  if(npc.companionOf){// companions roll in the public log, like a party member
+    const owner=S.docs["sheets/"+npc.companionOf];
+    const rec={ts:Date.now(),by:S.me||"",sheet:npc.companionOf,char:String(npc.name||"Companion"),player:owner?String(owner.player||owner.name||""):"",label,lines};
+    showRoll(rec);
+    if(S.db&&!S.offline)S.db.collection("rolls").add(clone(rec)).catch(()=>toastMsg("Your roll didn't post to the shared game log.",true));
+    else{S.rolls.unshift({id:rid(),...rec});S.rolls=S.rolls.slice(0,60);render()}
+    return}
   const rec={ts:Date.now(),by:S.me||"",char:String(npc.name||"NPC"),npc:true,label,lines};
   showRoll(rec);
   if(S.db&&!S.offline){S.db.collection("npcrolls").add(clone(rec)).catch(()=>toastMsg("NPC roll didn't save to the GM log.",true))}
@@ -25,6 +33,9 @@ function npcRoll(npc,label,lines){
 }
 function npcAct(act,t){
   const p=t.dataset.doc;const n=p?S.docs[p]:null;
+  const gmOnly=["npc-new","npc-share","npc-dup","npc-del","npc-rerollhp","npc-wadd","npc-atk-add","npc-atk-del","npc-reveal"];
+  if(gmOnly.includes(act)&&!(S.isGM||S.offline))return true;
+  if(n&&!npcCtl(n)){toastMsg("Only the GM or this companion's player can do that.",true);return true}
   switch(act){
     case "npc-new":{
       if(!(S.isGM||S.offline))return true;
@@ -59,8 +70,8 @@ function npcAct(act,t){
   }
   return false;
 }
-function npcStatBlock(p){
-  const n=S.docs[p];const gm=S.isGM||S.offline;const E=gm;
+function npcStatBlock(p,opt={}){
+  const n=S.docs[p];const inSheet=!!opt.inSheet;const gmReal=S.isGM||S.offline;const gm=gmReal&&!inSheet;const ctl=npcCtl(n);const E=gm;
   const f=(k,l,o={})=>`<div class="field"><span class="lbl">${l}</span>${E?inp(p,k,{type:"number",cls:"inp",...o}):`<b class="big2">${esc(getPath(n,k)??"—")}</b>`}</div>`;
   const hpPct=num(n.hp?.max)>0?Math.max(0,Math.min(100,num(n.hp?.cur)/num(n.hp?.max)*100)):0;
   const atks=(n.attacks||[]).map((a,j)=>`<tr>
@@ -69,15 +80,15 @@ function npcStatBlock(p){
     <td style="width:120px">${E?inp(p,"attacks."+j+".dmg",{live:true,ph:"1d6+1"}):esc(a.dmg)}</td>
     <td style="width:90px">${E?inp(p,"attacks."+j+".shock",{live:true,ph:"—",attrs:'title="Shock: damage/AC, e.g. 2/13"'}):esc(a.shock||"—")}</td>
     <td style="width:70px">${E?inp(p,"attacks."+j+".times",{type:"number",cls:"inp n",min:1,attrs:'title="Attacks per Main Action"'}):"×"+num(a.times,1)}</td>
-    <td style="white-space:nowrap">${gm?`<button class="rollbtn" data-act="npc-hit" data-doc="${esc(p)}" data-j="${j}">Hit ${sgn(a.atk)}</button> <button class="rollbtn" data-act="npc-dmg" data-doc="${esc(p)}" data-j="${j}">Dmg</button> <button class="rollbtn snap" data-act="npc-hit" data-snap="1" data-doc="${esc(p)}" data-j="${j}">Snap</button> <button class="iconbtn" data-act="npc-atk-del" data-doc="${esc(p)}" data-j="${j}" aria-label="Remove attack">×</button>`:""}</td></tr>`).join("");
-  return `<div class="frame-h"><h3>${gm?"NPC":"Shared NPC"}${n.kind?` <span class="tag">${esc(n.kind)}</span>`:""}${n.shared?` <span class="tag on">Visible to players</span>`:gm?` <span class="tag">Hidden</span>`:""}</h3>
-    ${gm?`<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm ${n.shared?"on":""}" data-act="npc-share" data-doc="${esc(p)}">${n.shared?"Hide from players":"Share with players"}</button><button class="btn sm" data-act="npc-dup" data-doc="${esc(p)}">Duplicate</button><button class="btn sm danger" data-act="npc-del" data-doc="${esc(p)}">${S.confirm==="npc"+p?"Click again":"Delete"}</button></div>`:""}</div>
+    <td style="white-space:nowrap">${ctl?`<button class="rollbtn" data-act="npc-hit" data-doc="${esc(p)}" data-j="${j}">Hit ${sgn(a.atk)}</button> <button class="rollbtn" data-act="npc-dmg" data-doc="${esc(p)}" data-j="${j}">Dmg</button> <button class="rollbtn snap" data-act="npc-hit" data-snap="1" data-doc="${esc(p)}" data-j="${j}">Snap</button>${gm?` <button class="iconbtn" data-act="npc-atk-del" data-doc="${esc(p)}" data-j="${j}" aria-label="Remove attack">×</button>`:""}`:""}</td></tr>`).join("");
+  return `<div class="frame-h"><h3>${inSheet?"Companion":gm?"NPC":"Shared NPC"}${n.kind?` <span class="tag">${esc(n.kind)}</span>`:""}${inSheet?"":n.shared?` <span class="tag on">Visible to players</span>`:gm?` <span class="tag">Hidden</span>`:""}${gm&&n.companionOf&&S.docs["sheets/"+n.companionOf]?` <span class="tag on">Companion of ${esc(S.docs["sheets/"+n.companionOf].name||"?")}</span>`:""}</h3>
+    ${gm?`<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm ${n.shared?"on":""}" data-act="npc-share" data-doc="${esc(p)}">${n.shared?"Hide from players":"Share with players"}</button><button class="btn sm" data-act="npc-dup" data-doc="${esc(p)}">Duplicate</button><button class="btn sm danger" data-act="npc-del" data-doc="${esc(p)}">${S.confirm==="npc"+p?"Click again":"Delete"}</button><select class="inp" style="max-width:220px;padding:3px 6px" data-npccomp="${esc(p)}" title="Attach this NPC to a character as their companion"><option value="">Not a companion</option>${sheetPaths().filter(x=>x.startsWith("sheets/")&&!S.docs[x].npc).map(x=>`<option value="${esc(x.slice(7))}" ${n.companionOf===x.slice(7)?"selected":""}>Companion of ${esc(S.docs[x].name||"Unnamed")}</option>`).join("")}</select></div>`:inSheet&&gmReal?`<button class="btn sm" data-act="view" data-v="npcs" onclick="S.npcSel='${esc(p)}'">Edit in NPCs</button>`:""}</div>
   <div class="frame-b">
     <div class="field" style="margin-bottom:10px">${E?inp(p,"name",{live:true,cls:"inp npcname"}):`<h3 style="font-size:26px">${esc(n.name)}</h3>`}</div>
     <div class="npchp"><div><span class="lbl">Hit points</span><div class="big num" style="font-family:var(--display);font-size:34px">${num(n.hp?.cur)} <small class="hint">/ ${num(n.hp?.max)}</small></div><div class="hpbar"><i style="width:${hpPct}%;background:${hpPct<34?"var(--bad)":hpPct<67?"var(--warn)":"var(--good)"}"></i></div></div>
-      ${gm?`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn sm" style="color:var(--bad)" data-act="npc-hp" data-doc="${esc(p)}" data-d="-1">Damage</button><input id="npc-hp-amt" class="inp n" type="number" min="1" placeholder="1"><button class="btn sm" style="color:var(--good)" data-act="npc-hp" data-doc="${esc(p)}" data-d="1">Heal</button><button class="btn sm ghost" data-act="npc-hp" data-doc="${esc(p)}" data-d="full">Full</button><button class="btn sm ghost" data-act="npc-rerollhp" data-doc="${esc(p)}" title="Roll ${num(n.hd)}d8">Re-roll HP (${num(n.hd)}d8)</button></div>`:""}</div>
+      ${ctl?`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn sm" style="color:var(--bad)" data-act="npc-hp" data-doc="${esc(p)}" data-d="-1">Damage</button><input id="npc-hp-amt" class="inp n" type="number" min="1" placeholder="1"><button class="btn sm" style="color:var(--good)" data-act="npc-hp" data-doc="${esc(p)}" data-d="1">Heal</button><button class="btn sm ghost" data-act="npc-hp" data-doc="${esc(p)}" data-d="full">Full</button>${gm?`<button class="btn sm ghost" data-act="npc-rerollhp" data-doc="${esc(p)}" title="Roll ${num(n.hd)}d8">Re-roll HP (${num(n.hd)}d8)</button>`:""}</div>`:""}</div>
     <div class="npcgrid">${f("hd","Hit dice",{min:1})}${f("ac","AC")}${f("atkBase","Attack bonus",{ph:String(num(n.hd,1))})}${f("dmgBonus","Damage bonus",{ph:"0"})}${f("move","Move (m)")}${f("morale","Morale")}${f("skill","Skill bonus")}${f("save","Save")}${E?`<div class="field"><span class="lbl">Max HP</span>${inp(p,"hp.max",{type:"number",cls:"inp",min:1})}</div><div class="field"><span class="lbl">AC note</span>${inp(p,"acNote",{live:true,ph:"combat, powered…"})}</div>`:""}</div>
-    ${gm?`<div class="npcrolls"><button class="btn" data-act="npc-init" data-doc="${esc(p)}">Initiative 1d8</button><button class="btn" data-act="npc-skill" data-doc="${esc(p)}">Skill check 2d6${sgn(num(n.skill))}</button><button class="btn ghost" data-act="npc-skill" data-untrained="1" data-doc="${esc(p)}" title="For checks unrelated to their role">Unrelated check 2d6</button><button class="btn" data-act="npc-save" data-doc="${esc(p)}">Save ${num(n.save)}+</button><button class="btn" data-act="npc-morale" data-doc="${esc(p)}">Morale (${num(n.morale)})</button></div><p class="hint">NPC rolls go to your GM log only. Use "Show to players" on a log entry to reveal one.</p>`:""}
+    ${ctl?`<div class="npcrolls"><button class="btn" data-act="npc-init" data-doc="${esc(p)}">Initiative 1d8</button><button class="btn" data-act="npc-skill" data-doc="${esc(p)}">Skill check 2d6${sgn(num(n.skill))}</button><button class="btn ghost" data-act="npc-skill" data-untrained="1" data-doc="${esc(p)}" title="For checks unrelated to their role">Unrelated check 2d6</button><button class="btn" data-act="npc-save" data-doc="${esc(p)}">Save ${num(n.save)}+</button><button class="btn" data-act="npc-morale" data-doc="${esc(p)}">Morale (${num(n.morale)})</button></div><p class="hint">${n.companionOf?"Companion rolls show in the shared game log.":"NPC rolls go to your GM log only. Use \"Show to players\" on a log entry to reveal one."}</p>`:""}
     <div class="sect" style="margin-top:12px"><span class="lbl">Attacks</span><div class="tbl-wrap"><table><thead><tr><th>Attack</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Per action</th><th></th></tr></thead><tbody>${atks||`<tr><td colspan="6" class="hint">No attacks.</td></tr>`}</tbody></table></div>
     ${gm?`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><select id="npc-wpick" class="inp" style="max-width:320px">${itemPickOpts("Add a weapon…",true)}</select><button class="btn sm pri" data-act="npc-wadd" data-doc="${esc(p)}">Add weapon</button><button class="btn sm" data-act="npc-atk-add" data-doc="${esc(p)}">+ Custom attack</button></div>
     <p class="hint">Weapons use this NPC's attack bonus (+1 for energy weapons) and add its damage bonus to damage and Shock.</p>`:""}</div>
@@ -86,7 +97,7 @@ function npcStatBlock(p){
   </div>`;
 }
 function renderNPCs(){
-  const gm=S.isGM||S.offline;const ps=npcPaths();
+  const gm=S.isGM||S.offline;const ps=npcPaths().filter(p=>gm||S.docs[p].shared);
   const sel=S.npcSel&&S.docs[S.npcSel]?S.npcSel:ps[0];
   const q=(S.npcQ||"").toLowerCase();const list=ps.filter(p=>!q||String(S.docs[p].name).toLowerCase().includes(q)||String(S.docs[p].kind||"").toLowerCase().includes(q));
   return `<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px;gap:8px;flex-wrap:wrap"><h2 class="pagetitle" style="margin:0">NPCs</h2>${gm?`<span class="hint">Hidden from players unless you share them.</span>`:`<span class="hint">NPCs your GM has shared.</span>`}</div>

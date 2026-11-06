@@ -1088,7 +1088,7 @@ function renderTop(){
     <button class="navbtn ${S.view==="party"?"on":""}" data-act="view" data-v="party">Party</button>
     <button class="navbtn ${S.view==="compendium"?"on":""}" data-act="view" data-v="compendium">Compendium</button>
     ${S.me||S.offline?`<button class="btn pri sm" data-act="wiz-open">+ New character</button>`:""}
-    ${S.isGM||S.offline||npcPaths().length?`<button class="navbtn ${S.view==="npcs"?"on":""}" data-act="view" data-v="npcs">NPCs</button>`:""}
+    ${S.isGM||S.offline||npcPaths().some(p=>S.docs[p].shared)?`<button class="navbtn ${S.view==="npcs"?"on":""}" data-act="view" data-v="npcs">NPCs</button>`:""}
     ${S.isGM||S.offline?`<span class="role gm">${S.offline?"Preview":"GM"}</span>`:`<button class="role" style="background:none;cursor:pointer" data-act="gm-login">${S.setupDone===false?"Set up GM":"GM login"}</button>`}
   </div>`;
 }
@@ -1239,6 +1239,9 @@ function renderActions(path,c,R,can){
       </div></div>`;
 }
 
+function companionPaths(path){const id=path.startsWith("sheets/")?path.slice(7):path;return npcPaths().filter(p=>S.docs[p].companionOf===id)}
+function renderCompanions(path){const ps=companionPaths(path);if(!ps.length)return "";
+  return ps.map(p=>`<div class="frame companion" style="margin-top:16px">${npcStatBlock(p,{inSheet:true})}</div>`).join("")}
 function renderInventory(path,c,R,can){
   const inv=c.inventory||[];
   const row=(e,i)=>{const it=R.items[i];const loc=e.location||"stowed";return `<tr>
@@ -1263,7 +1266,7 @@ function renderInventory(path,c,R,can){
     ${cyber.length?sect("Cyberware","installed, always active, no encumbrance",cyber,""):""}
     ${stored.length?sect("Stored","left on the ship or at home, not carried",stored,""):""}
     ${S.confirm&&S.confirm.startsWith("inv")?`<p class="hint" style="color:var(--bad)">Click the ! again to remove that item.</p>`:""}
-    <p class="hint">Check the box to ready an item; uncheck it to stow it. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="enc">Encumbrance rules</button> · <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>`;
+    <p class="hint">Check the box to ready an item; uncheck it to stow it. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="enc">Encumbrance rules</button> · <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>${renderCompanions(path)}`;
 }
 
 function focusSelectOpts(){
@@ -1519,6 +1522,7 @@ function resolveNames(){}
 document.addEventListener("input",e=>{const el=e.target;if(el.id==="del-confirm"){S.delText=el.value;render();return}if(el.id==="npc-q"){S.npcQ=el.value;render();return}if(el.dataset&&el.dataset.lu&&el.dataset.lulive!==undefined){luInput(el,true);return}if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
 document.addEventListener("change",e=>{
   const el=e.target;
+  if(el.dataset&&el.dataset.npccomp){if(!(S.isGM||S.offline))return;const np=el.dataset.npccomp;setField(np,"companionOf",el.value||"");setField(np,"companion",!!el.value);toastMsg(el.value?"Linked as a companion. It shows on that character's Inventory tab.":"Companion link removed.");render();return}
   if(el.id==="theme-pick"){applyTheme(el.value);try{localStorage.setItem("swn.theme",el.value)}catch(e){}render();return}
   if(el.dataset&&el.dataset.lu){luInput(el,false);return}
   if(el.dataset&&(el.dataset.portrait||el.dataset.wportrait!==undefined)&&el.files&&el.files[0]){
@@ -1721,10 +1725,12 @@ render();
     done(snap);render();
   },onErr);
   watch("sheets");watch("homebrew");watch("foci");
-  const watchQ=(coll,q)=>q.onSnapshot(snap=>{const seen=new Set();snap.docs.forEach(d=>{const p=coll+"/"+d.id;seen.add(p);mergeRemote(p,d.data())});
-    Object.keys(S.docs).forEach(p=>{if(p.startsWith(coll+"/")&&!seen.has(p)&&S.exists[p]&&!(Q[p]&&Q[p].inflight)){delete S.docs[p];delete S.exists[p]}});render()},err=>console.warn("npcs",err));
+  const qSeen={};
+  const watchQ=(coll,q,key=coll)=>q.onSnapshot(snap=>{const seen=new Set();snap.docs.forEach(d=>{const p=coll+"/"+d.id;seen.add(p);mergeRemote(p,d.data())});qSeen[key]=seen;
+    const all=new Set();Object.values(qSeen).forEach(x=>x.forEach(p=>all.add(p)));
+    Object.keys(S.docs).forEach(p=>{if(p.startsWith(coll+"/")&&!all.has(p)&&S.exists[p]&&!(Q[p]&&Q[p].inflight)){delete S.docs[p];delete S.exists[p]}});render()},err=>console.warn(key,err));
   if(S.isGM){watchQ("npcs",db.collection("npcs"));db.collection("npcrolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{S.npcRolls=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>console.warn("npcrolls",err))}
-  else watchQ("npcs",db.collection("npcs").where("shared","==",true));
+  else{watchQ("npcs",db.collection("npcs").where("shared","==",true),"npcs-shared");watchQ("npcs",db.collection("npcs").where("companion","==",true),"npcs-comp")}
   db.collection("rolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{
     const before=new Set(S.rolls.map(r=>r.id));const first=!S.rollsInit;S.rollsInit=true;
     S.rolls=snap.docs.map(d=>({id:d.id,...d.data()}));
