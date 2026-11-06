@@ -47,6 +47,16 @@ service cloud.firestore {
       allow write: if isGM();
     }
 
+    // Ships: the GM builds them. Players can see shared ships and change their combat state
+    // (hit points, Command Points, crises, stations, fuel and so on), but not the ship's design.
+    match /ships/{id} {
+      allow read: if isGM() || (signedIn() && resource.data.get('shared', false) == true);
+      allow create, delete: if isGM();
+      allow update: if isGM() || (signedIn()
+        && resource.data.get('shared', false) == true
+        && resource.data.get('npc', false) != true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hp', 'cp', 'crises', 'roles', 'tmp', 'fuel', 'ammo', 'sys', 'escape', 'dcUses', 'round', 'ecmUsed', 'trip', 'scanQ', 'updatedAt']));
+    }
     // NPCs: only the GM sees them, unless the GM shares one or makes it a character's companion.
     // A companion's player can change its hit points.
     match /npcs/{id} {
@@ -106,6 +116,9 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.by == request.auth.uid && (
         isGM()
         || (request.resource.data.get('sheet', '') == '' && request.resource.data.get('char', '') == '')
+        || (request.resource.data.get('ship', '') is string && request.resource.data.get('ship', '') != ''
+            && exists(/databases/$(database)/documents/ships/$(request.resource.data.ship))
+            && get(/databases/$(database)/documents/ships/$(request.resource.data.ship)).data.get('shared', false) == true)
         || (request.resource.data.get('sheet', '') is string && request.resource.data.get('sheet', '') != ''
             && exists(/databases/$(database)/documents/sheets/$(request.resource.data.sheet))
             && request.auth.uid in get(/databases/$(database)/documents/sheets/$(request.resource.data.sheet)).data.get('owners', [])));

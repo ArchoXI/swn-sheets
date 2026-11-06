@@ -435,6 +435,92 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
   .portrait{width:64px;height:64px;font-size:28px}
 }
 
+/* ---------- ships ---------- */
+.shiplist{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0 12px}
+.shiplist .chip{background:var(--topbg);color:#eee;border:1px solid var(--dark-line)}
+.shiplist .chip.on{border-color:var(--accent)}
+.shipicon{display:flex;align-items:center;justify-content:center;font-size:40px;color:#fff}
+.shiptop{display:grid;grid-template-columns:minmax(260px,1.6fr) repeat(5,minmax(0,1fr));gap:12px;margin:16px 0}
+.shipstat{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:10px 8px;gap:4px}
+.shipstat .lbl{font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.shipstat .big{font-family:var(--display);font-size:34px;font-weight:700;line-height:1}
+.shipstat .big small{font-size:16px;color:var(--muted)}
+.shipstat .hint{font-size:11px}
+.cpctl{display:flex;gap:4px}
+.cpbox .big{color:var(--accent)}
+.shiphp{display:grid;grid-template-columns:120px 1fr;gap:12px;align-items:center;padding:12px}
+.shiphp .hpnums{font-family:var(--display);font-size:34px;text-align:center}
+.shipbody{display:grid;grid-template-columns:320px minmax(0,1fr);gap:14px;align-items:start}
+.shipbody .stack{display:flex;flex-direction:column;gap:14px;min-width:0}
+.col-panel{min-width:0}
+.roles{display:flex;flex-direction:column;gap:8px}
+.rolerow{display:grid;grid-template-columns:96px 1fr;gap:2px 8px;align-items:center}
+.rolerow .rlbl{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-size:13px}
+.rolerow .hint{grid-column:2;font-size:11px}
+.deptsect{border-top:1px solid var(--line-soft);padding-top:10px;margin-top:10px}
+.deptsect:first-of-type{border-top:0;margin-top:0}
+.deptttl{display:flex;gap:10px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.deptttl .duty{display:inline-flex;gap:6px;align-items:center}
+.deptttl .lbl{font-size:15px;color:var(--accent)}
+.sact{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;margin:6px 0}
+.sact>.btn{display:inline-flex;align-items:center;gap:8px;min-width:170px;justify-content:space-between}
+.sact>.btn.off,.sact>.btn:disabled{opacity:.45;cursor:not-allowed}
+.sact>.hint{flex:1;min-width:200px}
+.sact .pick{display:flex;gap:6px;flex-wrap:wrap;flex-basis:100%;padding-left:2px}
+.sact .pick .inp{width:auto;padding:4px 6px;font-size:13px}
+.cpcost{font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;letter-spacing:.03em}
+.cpcost.disc{background:#2f855a}
+.esc{display:flex;align-items:center;gap:8px;margin:6px 0}
+.esc b{font-family:var(--display);font-size:18px}
+.gen{margin:6px 0 2px}
+.gen>summary{cursor:pointer;padding:4px 0}
+.tgtbox{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;background:var(--soft,rgba(0,0,0,.03));border:1px dashed var(--line-soft);border-radius:8px;padding:8px 10px}
+.tgtbox label{display:flex;align-items:center;gap:6px;font-size:13px}
+.tgtbox .inp{width:64px;padding:4px 6px}
+.tgtbox .hint{flex-basis:100%;font-size:11px}
+.wrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line-soft)}
+.wrow.dead{opacity:.6}
+.wrow .sact{margin:0}
+.wrow .sact>.btn{min-width:110px}
+.wrow .sact>.hint{display:none}
+.crisis{display:flex;justify-content:space-between;gap:8px;padding:8px;border:1px solid var(--line-soft);border-radius:8px;margin-bottom:6px}
+.crisis.acute{border-color:var(--bad);background:rgba(200,40,40,.05)}
+.sysrow{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-soft)}
+button.tag{cursor:pointer;border:0;font:inherit;font-size:11px}
+.tag.sys-disabled{background:#c27b13;color:#fff}.tag.sys-destroyed{background:var(--bad);color:#fff}
+.budget{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 16px}
+.bud .budl{display:flex;justify-content:space-between;font-size:12px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.bud .bar{height:6px;background:var(--line-soft);border-radius:3px;overflow:hidden;margin-top:4px}
+.bud .bar i{display:block;height:100%;background:var(--accent)}
+.bud.over .budl b{color:var(--bad)}.bud.over .bar i{background:var(--bad)}
+.drill{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:6px 0}
+.drill label{display:flex;align-items:center;gap:6px;font-size:13px}
+.drill .inp{width:auto;padding:4px 6px}
+.drill input[type=number]{width:64px}
+.drillres,.swsum{display:flex;flex-wrap:wrap;gap:8px 22px;margin:8px 0}
+.drillres>div,.swsum>div{display:flex;flex-direction:column}
+.drillres b,.swsum b{font-family:var(--display);font-size:22px}
+table.mini{border-collapse:collapse;width:100%;font-size:14px;margin:4px 0}
+table.mini td{padding:5px 4px;border-bottom:1px solid var(--line-soft)}
+table.mini td:first-child{color:var(--muted);width:45%}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px}
+.hulls{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:10px}
+.hull{text-align:left;background:var(--card,#fff);border:1px solid var(--line-soft);border-radius:8px;padding:10px;cursor:pointer;color:inherit}
+.hull.on{border:2px solid var(--accent);padding:9px}
+.hull .hint{font-size:12px}
+.picklist{display:flex;flex-direction:column}
+.pickrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.pickrow.na{opacity:.45}
+.swbud{position:sticky;top:0;z-index:5;margin-bottom:12px}
+.swiz{max-width:1100px;margin:0 auto}
+.swiz>.frame{margin-bottom:12px}
+.swsteps{display:flex;gap:4px;overflow-x:auto;margin:0 0 12px;border-bottom:2px solid var(--line-soft)}
+.swsteps button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 14px;font-family:var(--display);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);white-space:nowrap;cursor:pointer}
+.swsteps button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.swnav{display:flex;gap:8px;align-items:center;margin:14px 0 40px}
+@media (max-width:1000px){.shiptop{grid-template-columns:repeat(3,minmax(0,1fr))}.shiptop .shiphp{grid-column:1/-1}.shipbody{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:640px){.shiptop{grid-template-columns:repeat(2,minmax(0,1fr))}.sact>.btn{min-width:0;flex:1 1 100%}.wrow .sact>.btn{flex:0 0 auto}.shiphp{grid-template-columns:100px 1fr}.swbud{top:0}}
+
 /* ---------- phones ---------- */
 .menubtn,.mvitals,.mshow{display:none}
 .navrest{display:contents}
@@ -1189,6 +1275,7 @@ function renderTop(){
     <button class="navbtn ${S.view==="party"?"on":""}" data-act="view" data-v="party">Party</button>
     <button class="navbtn ${S.view==="compendium"?"on":""}" data-act="view" data-v="compendium">Compendium</button>
     ${S.me||S.offline?`<button class="btn pri sm" data-act="wiz-open">+ New character</button>`:""}
+    ${shipNav()?`<button class="navbtn ${S.view==="ships"||S.view==="shipwiz"?"on":""}" data-act="view" data-v="ships">Ships</button>`:""}
     ${S.isGM||S.offline||npcPaths().some(p=>S.docs[p].shared)?`<button class="navbtn ${S.view==="npcs"?"on":""}" data-act="view" data-v="npcs">NPCs</button>`:""}
     ${S.isGM||S.offline?`<span class="role gm">${S.offline?"Preview":"GM"}</span>`:`<button class="role" style="background:none;cursor:pointer" data-act="gm-login">${S.setupDone===false?"Set up GM":"GM login"}</button>`}
     </div>
@@ -1617,7 +1704,7 @@ function render(){
   if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
   if(S.slow&&!S.offline)notes.push(`<div class="notice"><b>Can't reach the saved sheets yet.</b> What you see may be out of date. The page keeps trying on its own.</div>`);
   if(S.view==="create"&&!S.wiz)S.wiz=loadWiz();
-  const main=S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
+  const main=S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
   $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
   if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
@@ -1630,6 +1717,10 @@ function resolveNames(){}
 document.addEventListener("input",e=>{const el=e.target;if(el.id==="del-confirm"){S.delText=el.value;render();return}if(el.id==="npc-q"){S.npcQ=el.value;render();return}if(el.dataset&&el.dataset.lu&&el.dataset.lulive!==undefined){luInput(el,true);return}if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
 document.addEventListener("change",e=>{
   const el=e.target;
+  if(el.dataset&&el.dataset.shiprole){const sp=el.dataset.shiprole;if(!shipCanAny(sp))return;const s=S.docs[sp];setField(sp,"roles",{...(s.roles||{}),[el.dataset.dept]:el.value||""});render();return}
+  if(el.dataset&&el.dataset.shiptrip){const sp=el.dataset.shiptrip;if(!shipCanAny(sp))return;const s=S.docs[sp];const k=el.dataset.k;const v=el.type==="checkbox"?el.checked:k==="hexes"?Math.max(1,num(el.value,1)):el.value;setField(sp,"trip",{...(s.trip||{}),[k]:v});render();return}
+  if(el.dataset&&el.dataset.sw!==undefined&&S.sw){const k=el.dataset.sw;S.sw[k]=el.type==="checkbox"?el.checked:["drive","crew","crewSkill","npcCP","npcHit"].includes(k)?num(el.value):el.value;render();return}
+  if(el.dataset&&el.dataset.shiptgt){S.shipTgt={...(S.shipTgt||{}),[el.dataset.shiptgt]:el.value===""?null:num(el.value)};render();return}
   if(el.dataset&&el.dataset.npccomp){if(!(S.isGM||S.offline))return;const np=el.dataset.npccomp;setField(np,"companionOf",el.value||"");setField(np,"companion",!!el.value);toastMsg(el.value?"Linked as a companion. It shows on that character's Inventory tab.":"Companion link removed.");render();return}
   if(el.id==="theme-pick"){applyTheme(el.value);try{localStorage.setItem("swn.theme",el.value)}catch(e){}render();return}
   if(el.dataset&&el.dataset.lu){luInput(el,false);return}
@@ -1663,11 +1754,13 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  const keepConfirm=["ship-del","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
   if(act.startsWith("npc-")&&npcAct(act,t))return;
+  if(act.startsWith("ship-")&&shipAct(act,t))return;
+  if(act.startsWith("sw-")&&swAct(act,t))return;
   const edit=fn=>{if(!cur||!canEdit(cur.path))return;fn(cur.c,cur.path);render()};
   if(["roll-skill","roll-save","roll-init","attack","damage","snap","missdmg"].includes(act)&&!(cur&&canUse(cur.path))){toastMsg("You can only roll for your own character.",true);return}
   if(act!=="menu-toggle"&&S.menuOpen&&t.closest(".topbar")){S.menuOpen=false}
@@ -1790,6 +1883,7 @@ function addHb(c,p,id){
 /*@@WIZARD@@*/
 /*@@LEVELUP@@*/
 /*@@NPC@@*/
+/*@@SHIPS@@*/
 /*@@FX@@*/
 /* ================= BOOT ================= */
 async function gmSubmit(){
@@ -1845,6 +1939,7 @@ render();
   const watchQ=(coll,q,key=coll)=>q.onSnapshot(snap=>{const seen=new Set();snap.docs.forEach(d=>{const p=coll+"/"+d.id;seen.add(p);mergeRemote(p,d.data())});qSeen[key]=seen;
     const all=new Set();Object.values(qSeen).forEach(x=>x.forEach(p=>all.add(p)));
     Object.keys(S.docs).forEach(p=>{if(p.startsWith(coll+"/")&&!all.has(p)&&S.exists[p]&&!(Q[p]&&Q[p].inflight)){delete S.docs[p];delete S.exists[p]}});render()},err=>console.warn(key,err));
+  if(S.isGM)watchQ("ships",db.collection("ships"));else watchQ("ships",db.collection("ships").where("shared","==",true),"ships-shared");
   if(S.isGM){watchQ("npcs",db.collection("npcs"));db.collection("npcrolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{S.npcRolls=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>console.warn("npcrolls",err))}
   else{watchQ("npcs",db.collection("npcs").where("shared","==",true),"npcs-shared");watchQ("npcs",db.collection("npcs").where("companion","==",true),"npcs-comp")}
   db.collection("rolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{
