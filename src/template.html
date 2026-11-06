@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SWN Party Sheets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: D&D Beyond-style sheet — dark header band, framed attribute row with HP box, saves/skills columns, combat strip + tabbed panel. Light page, red frames. */
+  --ink:#e7e4dd; --panel:#ffffff; --panel-2:#f7f5f0; --raised:#eeeae2; --line:#cfc8ba; --line-soft:#e6e1d6;
+  --text:#1d1d1f; --muted:#5f5f63; --faint:#9a958c;
+  --accent:#c53131; --accent-ink:#ffffff; --accent-soft:rgba(197,49,49,.08);
+  --dark:#1f1f21; --dark-2:#2b2b2e; --dark-line:#45454a;
+  --info:#2c7a94; --good:#2e8a4f; --bad:#c53131; --warn:#b7791f;
+  --display:"Roboto Condensed","Arial Narrow",sans-serif; --body:"Roboto",system-ui,sans-serif; --mono:"Roboto Mono",ui-monospace,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;color:var(--text);font-family:var(--body);font-size:14px;line-height:1.45}
+body{background:linear-gradient(180deg,#d9dde3 0,#e7e4dd 420px,#e7e4dd 100%);min-height:100%;background-color:var(--ink)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
+.lbl{font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--text)}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:8px 18px;background:#141416;color:#eee;border-bottom:1px solid #000;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.04em;text-transform:uppercase;color:#fff}
+.brand .mark{width:24px;height:24px}
+.nav{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--dark-line);background:var(--dark-2);color:#eee;border-radius:4px;font-family:var(--display);font-weight:700;white-space:nowrap}
+.chip:hover{border-color:#777}
+.chip.on{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
+.chip .av{width:24px;height:24px;border-radius:3px;display:grid;place-items:center;background:#3a3a3e;font-size:12px}
+.chip .hpmini{width:34px;height:4px;border-radius:2px;background:#444;overflow:hidden}
+.chip .hpmini i{display:block;height:100%;background:var(--good)}
+.navbtn{padding:6px 12px;border:1px solid transparent;background:none;border-radius:3px;font-family:var(--display);font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:14px;color:#bbb}
+.navbtn:hover{color:#fff}
+.navbtn.on{color:#fff;border-color:var(--dark-line)}
+.role{font-family:var(--display);font-weight:700;font-size:12px;letter-spacing:.06em;padding:4px 10px;border-radius:3px;border:1px solid var(--dark-line);color:#ccc;text-transform:uppercase}
+.role.gm{color:#fff;border-color:var(--accent);background:var(--accent)}
+
+.notice{margin:12px 18px 0;padding:10px 14px;border:1px solid var(--line);border-left:4px solid var(--warn);background:#fff;border-radius:4px;color:var(--muted)}
+.notice b{color:var(--text)}
+main{padding:0 18px 120px;max-width:1400px;margin:0 auto}
+
+/* framed box */
+.frame{position:relative;background:var(--panel);border:2px solid var(--accent);border-radius:10px;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(197,49,49,.28),0 1px 2px rgba(0,0,0,.08)}
+.frame-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px 6px}
+.frame-h h3{font-size:15px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.frame-b{padding:8px 14px 12px}
+.frame-f{display:flex;align-items:center;justify-content:center;gap:6px;padding:4px 14px 10px;font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.03em;text-transform:uppercase}
+.frame-f .iconbtn{width:20px;height:20px;font-size:11px;border-radius:50%;color:var(--faint)}
+
+/* header band */
+.sheethead{margin:0 -18px 16px;padding:18px 18px 22px;background:linear-gradient(180deg,#232325,#1b1b1d);color:#fff;border-bottom:3px solid #111}
+.sheethead-in{max-width:1364px;margin:0 auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center}
+.portrait{width:88px;height:88px;border-radius:4px;display:grid;place-items:center;font-family:var(--display);font-size:38px;font-weight:700;background:linear-gradient(160deg,#4a4a50,#2a2a2e);border:3px solid var(--accent);color:#fff;box-shadow:0 0 0 1px #000}
+.cname{font-family:var(--display);font-size:38px;font-weight:700;line-height:1.05;color:#fff}
+.cname input{font-family:var(--display);font-size:34px;font-weight:700;background:transparent;border:0;border-bottom:1px dashed #666;width:100%;max-width:460px;padding:0;color:#fff}
+.csub{color:#aaa;margin-top:2px;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:15px}
+.csub b{color:#ddd;font-weight:500}
+.sheethead .inp,.sheethead select.inp{background:#2b2b2e;border-color:#4a4a50;color:#fff}
+.sheethead .lbl{color:#aaa}
+.sheethead .hint{color:#999}
+.xp{margin-top:10px;display:flex;align-items:center;gap:10px;max-width:440px;font-family:var(--display);font-size:11px;color:#bbb;font-weight:700}
+.xpbar{flex:1;height:3px;background:#444;border-radius:2px;overflow:hidden}
+.xpbar i{display:block;height:100%;background:#ddd}
+.bactions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;border:1px solid var(--line);background:#fff;border-radius:3px;font-family:var(--display);font-weight:700;letter-spacing:.03em;text-transform:uppercase;font-size:13px;color:var(--text)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{filter:brightness(1.08);color:#fff}
+.btn.ghost{background:none}
+.btn.sm{padding:4px 8px;font-size:12px}
+.btn.danger{color:var(--bad);border-color:rgba(197,49,49,.5)}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+.btn.dk{background:transparent;color:#fff;border-color:#555;padding:9px 16px;font-size:15px}
+.btn.dk:hover{border-color:var(--accent);color:#fff;background:rgba(197,49,49,.15)}
+.btn.dk.on{border-color:var(--accent);background:var(--accent)}
+.iconbtn{width:26px;height:26px;display:inline-grid;place-items:center;border:1px solid var(--line);background:#fff;border-radius:3px;padding:0;font-weight:700;line-height:1;color:var(--text)}
+.iconbtn:hover{border-color:var(--accent);color:var(--accent)}
+.topbar .btn{background:transparent;color:#eee;border-color:var(--dark-line)}
+.topbar .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* top row */
+.toprow{display:grid;grid-template-columns:repeat(6,minmax(0,1fr)) minmax(0,1fr) minmax(0,1fr) minmax(0,2.3fr);gap:12px;margin-bottom:22px;align-items:stretch}
+.attr{position:relative;text-align:center;padding:8px 6px 26px;background:#fff;border:2px solid var(--accent);border-radius:12px 12px 16px 16px;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(197,49,49,.28)}
+.attr .lbl{display:block;font-size:12px;cursor:help;color:var(--text)}
+.attr .lbl:hover{color:var(--accent)}
+.attr .mod{font-family:var(--display);font-size:34px;font-weight:400;line-height:1.2;margin:4px auto 0;width:78%;border:1px solid var(--line);border-radius:6px;background:#fff}
+.attr .score{position:absolute;left:50%;bottom:-14px;transform:translateX(-50%);min-width:56px;height:30px;padding:0 10px;display:grid;place-items:center;background:#fff;border:2px solid var(--accent);border-radius:50%/50%;font-family:var(--display);font-weight:700;font-size:20px;box-shadow:inset 0 0 0 2px #fff,inset 0 0 0 3px rgba(197,49,49,.28)}
+.attr .score input{width:38px;text-align:center;background:transparent;border:0;padding:0;font-weight:700;font-family:var(--display);font-size:18px}
+.attr .boost{position:absolute;top:7px;right:8px;width:7px;height:7px;border-radius:50%;background:var(--info)}
+.stat{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 6px;background:#fff;border:2px solid var(--accent);border-radius:12px;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(197,49,49,.28)}
+.stat .lbl{cursor:help;background:none;border:0;padding:0;font-size:13px}
+.stat .lbl:hover{color:var(--accent)}
+.stat .big{font-family:var(--display);font-size:38px;font-weight:500;line-height:1.05}
+.stat .foot{font-family:var(--display);font-weight:700;font-size:13px;text-transform:uppercase}
+.stat .rollbtn{margin-top:2px}
+.hpbox{display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:center;padding:10px 14px;background:#fff;border:2px solid var(--accent);border-radius:12px;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(197,49,49,.28)}
+.hpctl{display:grid;gap:4px}
+.hpctl input{width:100%;text-align:center;padding:4px;background:#fff;border:1px solid var(--line);border-radius:3px}
+.hpctl .btn{padding:3px 6px;font-size:11px}
+.hpctl .h{color:var(--good);border-color:var(--good)}
+.hpctl .h:hover{background:var(--good);color:#fff}
+.hpctl .d{color:var(--bad);border-color:var(--bad)}
+.hpctl .d:hover{background:var(--bad);color:#fff}
+.hpnums{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;text-align:center;gap:4px}
+.hpnums .lbl{color:var(--muted);font-size:13px}
+.hpnums .big{font-family:var(--display);font-size:42px;font-weight:500;line-height:1}
+.hpnums .sl{font-size:34px;color:var(--faint);font-weight:300;line-height:1}
+.hpnums input{width:64px;text-align:center;font-family:var(--display);font-size:34px;border:1px solid var(--line);border-radius:4px;padding:0}
+.hpfoot{text-align:center;font-family:var(--display);font-weight:700;font-size:15px;text-transform:uppercase;margin-top:4px;background:none;border:0;width:100%;cursor:help}
+.hpfoot:hover{color:var(--accent)}
+.hpbar{height:5px;background:var(--line-soft);border-radius:3px;overflow:hidden;margin-top:6px}
+.hpbar i{display:block;height:100%;background:var(--good);transition:width .3s}
+.pipline{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.pipline i{width:10px;height:10px;border:1px solid var(--faint);border-radius:2px}
+.pipline i.f{background:var(--warn);border-color:var(--warn)}
+.pipline i.p{background:var(--bad);border-color:var(--bad)}
+.pipline i.e{background:var(--info);border-color:var(--info)}
+
+/* combat strip */
+.cstrip{display:grid;grid-template-columns:110px minmax(0,1fr) minmax(0,1fr) minmax(0,1.2fr);gap:12px;margin-bottom:14px;align-items:stretch}
+.ac{display:grid;place-items:center;background:none;border:0;cursor:help;padding:0;position:relative}
+.ac svg{width:110px;height:auto}
+.ac .ovr-badge{position:absolute;top:2px;right:0}
+.ibox{background:#fff;border:2px solid var(--accent);border-radius:10px;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(197,49,49,.28);padding:10px 14px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.ibox .lbl{background:none;border:0;padding:0;text-align:left;cursor:help;font-size:14px}
+.ibox .lbl:hover{color:var(--accent)}
+.ibox .big{font-family:var(--display);font-size:28px;font-weight:500;line-height:1}
+.ibox .big small{font-size:16px;color:var(--muted)}
+.ibox .row{display:flex;align-items:center;gap:6px;justify-content:space-between}
+.ibox p{margin:0;color:var(--muted);font-size:13px}
+
+/* body grid */
+.body{display:grid;grid-template-columns:260px 300px minmax(0,1fr);gap:14px;align-items:start}
+.stack{display:grid;gap:14px}
+.saves{display:grid;grid-template-columns:1fr;gap:8px}
+.save{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 4px 4px 14px;background:#fff;border:1px solid var(--line);border-radius:999px}
+.save .lbl{cursor:help;font-size:14px;background:none;border:0;padding:0}
+.save .lbl:hover{color:var(--accent)}
+.rollbtn{min-width:46px;padding:3px 8px;border:1px solid var(--line);background:#fff;border-radius:4px;font-family:var(--display);font-size:18px;font-weight:500;font-variant-numeric:tabular-nums;text-align:center;color:var(--text)}
+.rollbtn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.save .rollbtn{border-radius:999px}
+.rollbtn.tgt::before{content:"≥ ";color:var(--faint);font-size:13px}
+.skills{list-style:none;margin:0;padding:0}
+.skhead{display:grid;grid-template-columns:30px 36px 1fr 52px;gap:6px;padding:0 2px 4px;font-family:var(--display);font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase}
+.skills li{display:grid;grid-template-columns:30px 36px 1fr 52px;align-items:center;gap:6px;padding:3px 2px;border-bottom:1px solid var(--line-soft)}
+.skills li:last-child{border-bottom:0}
+.prof{display:flex;align-items:center;gap:3px}
+.prof .dot{width:10px;height:10px;border-radius:50%;border:1px solid var(--faint);background:#fff}
+.prof .dot.f{background:#222;border-color:#222}
+.prof small{font-family:var(--display);font-weight:700;font-size:11px;color:var(--muted)}
+.sname{background:none;border:0;padding:0;text-align:left;cursor:help;font-family:var(--display);font-size:16px}
+.sname:hover{color:var(--accent)}
+.sattr{font-size:13px;color:var(--faint);font-family:var(--display);font-weight:700}
+.skedit{display:flex;align-items:center;gap:2px;grid-column:1 / 3}
+.skedit .iconbtn{width:20px;height:20px;font-size:12px}
+.untr{color:var(--muted)}
+.ropts{display:grid;gap:8px}
+.ropts .grp{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.ropts select{background:#fff;border:1px solid var(--line);border-radius:3px;padding:3px 6px}
+.toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--accent)}
+
+.enc .row{display:flex;justify-content:space-between;align-items:center;margin:4px 0;font-family:var(--display);font-size:15px}
+.meter{height:6px;background:var(--line-soft);border-radius:3px;overflow:hidden;margin-bottom:8px}
+.meter i{display:block;height:100%;background:var(--info)}
+.meter i.over{background:var(--bad)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;padding:6px 14px 0;overflow-x:auto}
+.tab{padding:10px 8px;background:none;border:0;border-bottom:3px solid transparent;font-family:var(--display);font-weight:700;letter-spacing:.02em;text-transform:uppercase;font-size:17px;color:var(--muted);white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--text);border-bottom-color:var(--accent)}
+.tabbody{padding:12px 16px 16px}
+.sect{margin-bottom:18px}
+.sect>.lbl{display:block;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--line-soft);color:var(--accent);font-size:15px}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--display);font-weight:700;font-size:13px;text-transform:uppercase;color:var(--text);text-align:left;padding:6px;border-bottom:1px solid var(--line-soft)}
+td{padding:8px 6px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.iname{background:none;border:0;padding:0;text-align:left;font-family:var(--display);font-size:17px;font-style:italic;cursor:pointer}
+.iname:hover{color:var(--accent)}
+.isub{display:block;font-size:12px;color:var(--muted);font-style:normal;font-family:var(--body)}
+.tag{display:inline-block;font-family:var(--display);font-weight:700;font-style:normal;font-size:11px;letter-spacing:.03em;text-transform:uppercase;padding:1px 6px;border-radius:3px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:2px}
+.tag.hb{color:#fff;background:var(--accent);border-color:var(--accent)}
+.tag.gm{color:var(--warn);border-color:rgba(183,121,31,.6)}
+.sheethead .tag.gm{color:#f3c26b}
+.tag.on{color:var(--good);border-color:rgba(46,138,79,.5)}
+.feature{padding:10px 12px;background:var(--panel-2);border:1px solid var(--line-soft);border-left:3px solid var(--accent);border-radius:3px;margin-bottom:8px}
+.feature h4{margin:0 0 4px;font-family:var(--display);font-size:17px;font-weight:700}
+.feature p{margin:0;color:var(--muted);white-space:pre-wrap}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:4px;background:#fff}
+
+/* forms */
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field .lbl{font-size:11px;color:var(--muted)}
+.inp,select.inp,textarea.inp{width:100%;background:#fff;border:1px solid var(--line);border-radius:3px;padding:5px 7px;min-width:0}
+textarea.inp{resize:vertical;min-height:70px}
+.inp.n{width:64px;text-align:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.modrow{display:grid;grid-template-columns:1fr 70px 26px;gap:6px;margin-bottom:6px}
+.hint{font-size:12px;color:var(--muted)}
+.ovr-badge{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;background:var(--warn);border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:2px}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(20,20,22,.4);z-index:40}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:#fff;border-left:3px solid var(--accent);z-index:41;display:flex;flex-direction:column;box-shadow:-20px 0 40px rgba(0,0,0,.25)}
+.drawer-h{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--dark);color:#fff}
+.drawer-h h2{font-size:24px;font-weight:700}
+.drawer-h .iconbtn{background:transparent;color:#fff;border-color:#555}
+.drawer-body{padding:16px;overflow-y:auto;flex:1}
+.drawer-body p{margin:0 0 10px;color:#333}
+.calc{margin:12px 0;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.calc div{display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--line-soft)}
+.calc div:last-child{border-bottom:0;background:var(--panel-2);font-weight:700}
+.calc span:last-child{font-variant-numeric:tabular-nums}
+
+/* log */
+.logbtn{position:fixed;right:18px;bottom:18px;z-index:30;display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--dark);color:#fff;border:1px solid #000;border-radius:999px;font-family:var(--display);font-weight:700;letter-spacing:.04em;text-transform:uppercase;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.logbtn:hover{background:var(--accent)}
+.logbtn .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.log{position:fixed;right:18px;bottom:70px;width:min(360px,calc(100% - 36px));max-height:min(560px,calc(100% - 140px));z-index:30;display:flex;flex-direction:column;background:#fff;border:2px solid var(--accent);border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.log .frame-h{background:var(--dark);color:#fff;border-radius:6px 6px 0 0;padding:8px 12px}
+.log .frame-h .iconbtn,.log .frame-h .btn{background:transparent;color:#fff;border-color:#555}
+.log-list{overflow-y:auto;padding:8px;display:flex;flex-direction:column;gap:6px;flex:1}
+.entry{padding:8px 10px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:4px}
+.entry .who{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.entry .who b{color:var(--text);font-weight:700}
+.entry .what{font-family:var(--display);font-weight:700;margin-top:2px}
+.line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px}
+.line .f{font-family:var(--mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.line .t{font-family:var(--display);font-size:24px;font-weight:700;min-width:38px;text-align:right}
+.verdict{font-family:var(--display);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;border-radius:3px}
+.verdict.ok{color:#fff;background:var(--good)}
+.verdict.no{color:#fff;background:var(--bad)}
+.verdict.crit{color:#fff;background:#7a3cc5}
+.die{display:inline-block;padding:0 4px;border-radius:2px;background:#fff;border:1px solid var(--line);color:var(--text);margin-right:2px}
+.die.drop{opacity:.4;text-decoration:line-through}
+.die.max{color:var(--good);border-color:var(--good)}
+.die.min{color:var(--bad);border-color:var(--bad)}
+.log-f{display:flex;gap:6px;padding:8px;border-top:1px solid var(--line-soft)}
+.log-f input{flex:1;background:#fff;border:1px solid var(--line);border-radius:3px;padding:5px 8px}
+
+/* toasts */
+#toasts{position:fixed;right:18px;bottom:70px;z-index:50;display:flex;flex-direction:column;gap:8px;pointer-events:none;width:min(320px,calc(100% - 36px))}
+.toast{pointer-events:auto;background:#fff;border:2px solid var(--accent);border-radius:8px;padding:10px 12px;box-shadow:0 12px 40px rgba(0,0,0,.3);animation:pop .22s ease-out}
+.toast.err{border-color:var(--bad);background:#fff5f5}
+.toast .what{font-family:var(--display);font-weight:700;text-transform:uppercase;font-size:14px;color:var(--accent)}
+.toast .line .t{font-size:32px}
+@keyframes pop{from{transform:translateY(12px) scale(.97);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.toast{animation:none}.hpbar i{transition:none}}
+
+/* party / compendium */
+.pagetitle{font-size:28px;font-weight:700;margin:18px 0 12px}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.pcard{padding:14px;background:#fff;border:2px solid var(--accent);border-radius:10px;box-shadow:inset 0 0 0 3px #fff,inset 0 0 0 4px rgba(197,49,49,.28);display:flex;flex-direction:column;gap:8px}
+.pcard .top{display:flex;gap:10px;align-items:center}
+.pcard .top .av{width:44px;height:44px;border-radius:4px;display:grid;place-items:center;background:var(--dark);color:#fff;border:2px solid var(--accent);font-family:var(--display);font-weight:700;font-size:18px}
+.pcard h3{font-size:20px;font-weight:700}
+.pstats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.pstats div{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:4px;padding:4px}
+.pstats b{display:block;font-family:var(--display);font-size:20px}
+.comp{display:grid;grid-template-columns:320px minmax(0,1fr);gap:14px;align-items:start}
+.clist{max-height:70vh;overflow-y:auto;padding:6px 0}
+.citem{display:block;width:100%;text-align:left;padding:9px 14px;background:none;border:0;border-bottom:1px solid var(--line-soft)}
+.citem:hover{background:var(--panel-2)}
+.citem.on{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.citem b{font-family:var(--display);font-size:16px}
+.welcome{max-width:640px;margin:40px auto;padding:28px;text-align:center}
+.welcome h1{font-size:34px;font-weight:700;margin-bottom:8px}
+.welcome p{color:var(--muted)}
+
+/* wizard */
+.wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
+.wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
+.wstep{display:flex;align-items:center;gap:8px;text-align:left;padding:8px 10px;border:0;background:none;border-radius:6px;font-family:var(--display);font-weight:700;font-size:15px;color:var(--muted)}
+.wstep:hover{background:var(--panel-2);color:var(--text)}
+.wstep.on{background:var(--accent);color:#fff}
+.wstep.skip{opacity:.45}
+.wnum{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:11px;background:var(--raised);color:var(--muted);flex:none}
+.wstep.on .wnum{background:#fff;color:var(--accent)}
+.wh{font-size:28px;font-weight:700;margin-bottom:4px}
+.wlead{color:var(--muted);margin:0 0 14px;max-width:70ch}
+.wnav{display:flex;justify-content:space-between;align-items:center;padding:10px 20px 16px;border-top:1px solid var(--line-soft)}
+.wnav .btn[disabled]{opacity:.4;cursor:default}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:12px;flex-wrap:wrap}
+.seg button{padding:8px 14px;border:0;background:#fff;font-family:var(--display);font-weight:700;font-size:14px;color:var(--muted);border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:#fff}
+.wtable td{vertical-align:middle}
+.big2{font-family:var(--display);font-size:22px;font-weight:700}
+.rollpair{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.clsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px}
+.bgcard{display:flex;flex-direction:column;gap:3px;text-align:left;padding:10px 12px;background:#fff;border:1px solid var(--line);border-radius:8px}
+.bgcard:hover{border-color:var(--accent)}
+.bgcard.on{border:2px solid var(--accent);background:var(--accent-soft);padding:9px 11px}
+.bgn{font-family:var(--display);font-weight:700;font-size:17px}
+.trow{display:flex;gap:10px;padding:2px 0;border-bottom:1px solid var(--line-soft)}
+.trow span:first-child{width:18px;color:var(--faint);font-family:var(--display);font-weight:700}
+.rollrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:6px}
+.grants{display:grid;gap:6px}
+.grant{display:grid;grid-template-columns:170px 120px minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 10px;background:#fff;border:1px solid var(--line-soft);border-left:3px solid var(--good);border-radius:4px}
+.grant.need{border-left-color:var(--warn);background:#fffaf0}
+.gsrc{font-size:12px;color:var(--muted)}
+.gspec{font-family:var(--display);font-weight:700}
+.gres{font-family:var(--display);font-weight:700;color:var(--good)}
+.gfix{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.wnote{margin-top:14px;padding:10px 12px;background:var(--panel-2);border:1px solid var(--line-soft);border-radius:6px;font-size:13px;color:var(--muted)}
+.wnote b{color:var(--text)}
+.wissues{margin-top:14px;padding:10px 12px;background:#fff7ed;border:1px solid #f3c88b;border-left:4px solid var(--warn);border-radius:6px;font-size:13px}
+.wok{margin-top:6px;padding:10px 12px;background:#eef8f1;border:1px solid #b6e0c4;border-left:4px solid var(--good);border-radius:6px}
+.linkbtn{background:none;border:0;padding:0;color:var(--accent);font-weight:700;text-decoration:underline}
+@media (max-width:820px){.wiz{grid-template-columns:1fr}.wsteps{position:static;flex-direction:row;overflow-x:auto}.wstep{white-space:nowrap}.grant{grid-template-columns:1fr}}
+
+@media (max-width:1240px){
+  .toprow{grid-template-columns:repeat(4,minmax(0,1fr));row-gap:24px}
+  .toprow .hpbox{grid-column:span 2}
+  .body{grid-template-columns:250px minmax(0,1fr)}
+  .body .col-actions{grid-column:1 / -1}
+}
+@media (max-width:820px){
+  .toprow{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .toprow .hpbox{grid-column:1 / -1}
+  .body{grid-template-columns:1fr}
+  .cstrip{grid-template-columns:100px 1fr}
+  .cstrip .ibox{grid-column:auto}
+  .sheethead-in{grid-template-columns:auto 1fr}
+  .bactions{grid-column:1 / -1;justify-content:flex-start}
+  .comp{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+}
+@media (max-width:420px){
+  main{padding:0 16px 120px}
+  .sheethead{margin:0 -16px 16px}
+  .grid3,.grid2{grid-template-columns:1fr}
+  .cname{font-size:28px}
+  .portrait{width:64px;height:64px;font-size:28px}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toasts" aria-live="polite"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+"use strict";
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBCwqDDciaIylGNJEpxVg9WdEay5HS7Og0",
+  authDomain: "sorkischaractersheet.firebaseapp.com",
+  projectId: "sorkischaractersheet",
+  storageBucket: "sorkischaractersheet.firebasestorage.app",
+  messagingSenderId: "307190057554",
+  appId: "1:307190057554:web:cab58b0697691bfedaad8b"
+};
+/* ================= RULES DATA ================= */
+const ATTRS = [
+  ["str","Strength"],["dex","Dexterity"],["con","Constitution"],
+  ["int","Intelligence"],["wis","Wisdom"],["cha","Charisma"]
+];
+const SKILLS = [
+  ["administer","Administer","INT","Running organizations, handling bureaucracy, keeping records straight, and knowing how institutions actually work."],
+  ["connect","Connect","CHA","Finding the right person, calling in favors, and knowing who to ask for what in a new place."],
+  ["exert","Exert","STR","Climbing, swimming, running, lifting, throwing, and any feat of raw physical effort."],
+  ["fix","Fix","INT","Repairing, jury-rigging, and building technology, from blasters to starship drives."],
+  ["heal","Heal","INT","First aid, surgery, diagnosis, and medical treatment, including treating system strain carefully."],
+  ["know","Know","INT","Academic knowledge: sciences, history, alien cultures, and other scholarly subjects."],
+  ["lead","Lead","CHA","Inspiring, commanding, and keeping others steady when things go bad."],
+  ["notice","Notice","WIS","Spotting hidden things, reading a room, catching an ambush before it springs."],
+  ["perform","Perform","CHA","Music, acting, oratory, and other arts meant to move an audience."],
+  ["pilot","Pilot","DEX","Driving and flying vehicles, including starships, and handling them under pressure."],
+  ["program","Program","INT","Computers, code, hacking, and working with expert systems and data."],
+  ["punch","Punch","STR","Unarmed fighting. Also used as the combat skill for unarmed attacks."],
+  ["shoot","Shoot","DEX","Firing guns, lasers, bows, and other ranged weapons. Combat skill for ranged attacks."],
+  ["sneak","Sneak","DEX","Moving silently, hiding, slipping past security, and getting places you shouldn't be."],
+  ["stab","Stab","STR","Fighting with knives, blades, clubs, and other melee weapons. Combat skill for melee attacks."],
+  ["survive","Survive","WIS","Living off hostile land, tracking, navigating wilderness, and enduring harsh worlds."],
+  ["talk","Talk","CHA","Persuading, lying, negotiating, and convincing people to see things your way."],
+  ["trade","Trade","CHA","Buying, selling, appraising goods, and finding black markets."],
+  ["work","Work","INT","A profession or trade not covered by another skill. Note what job it represents."]
+];
+const PSY = [
+  ["biopsionics","Biopsionics","Healing, body control, and shaping living flesh."],
+  ["metapsionics","Metapsionics","Shaping and protecting other psychic powers."],
+  ["precognition","Precognition","Glimpsing what is about to happen."],
+  ["telekinesis","Telekinesis","Moving matter with the mind."],
+  ["telepathy","Telepathy","Reading and touching other minds."],
+  ["teleportation","Teleportation","Moving yourself and others across space instantly."]
+];
+const SKILL = Object.fromEntries(SKILLS.map(s=>[s[0],{key:s[0],name:s[1],attr:s[2],text:s[3]}]));
+const PSYK = Object.fromEntries(PSY.map(s=>[s[0],{key:s[0],name:s[1],text:s[2]}]));
+const XP_TABLE = [0,3,6,12,18,27,39,54,72,93]; // XP needed to reach level index+1
+const CLASSES = ["Warrior","Expert","Psychic","Adventurer"];
+const PARTIALS = ["Warrior","Expert","Psychic"];
+const ITEM_TYPES = [["weapon","Weapon"],["armor","Armor"],["shield","Shield"],["cyber","Cyberware"],["gear","Gear"]];
+const LOCATIONS = [["readied","Readied"],["stowed","Stowed"],["stored","Stored (not carried)"]];
+const TARGETS = [
+  ...ATTRS.map(a=>[a[0],a[1]+" score"]),
+  ["ac","Armor Class"],["attack","Attack rolls"],["damage","Damage rolls"],["hpMax","Max hit points"],
+  ["initiative","Initiative"],["skillChecks","All skill checks"],
+  ["save:all","All saving throws"],["save:physical","Physical save"],["save:evasion","Evasion save"],["save:mental","Mental save"],["save:luck","Luck save"],
+  ["strainMax","Max system strain"],["effortMax","Max Effort"],["readied","Readied item limit"],["stowed","Stowed item limit"],
+  ...SKILLS.map(s=>["skill:"+s[0],s[1]+" skill level"]),
+  ...PSY.map(s=>["skill:"+s[0],s[1]+" skill level"])
+];
+const TARGET_NAME = Object.fromEntries(TARGETS);
+
+const CLASS_TEXT = {
+  Warrior:{t:"Warrior",d:"Your attack bonus equals your level, and you gain extra hit points as you level.\nVeteran's Luck: once per scene, turn one of your missed attacks into a hit, or turn an enemy's hit on you into a miss."},
+  Expert:{t:"Expert",d:"Masterful Expertise: once per scene, reroll a non-combat skill check and keep the better result.\nYou also gain an extra skill point to spend each time you level."},
+  Psychic:{t:"Psychic",d:"You learn psychic disciplines as skills and power your techniques with Effort.\nMax Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers."},
+  Adventurer:{t:"Adventurer",d:"Pick two partial classes. Each gives a reduced version of the full class's edge."}
+};
+const PARTIAL_TEXT = {
+  Warrior:"Partial Warrior: +1 attack bonus at 1st level and another +1 at 5th.",
+  Expert:"Partial Expert: a reduced version of the Expert's skill edge (see your rulebook).",
+  Psychic:"Partial Psychic: one psychic discipline, with Effort calculated as for a Psychic."
+};
+
+const RULES = {
+  attr:{t:"Attributes",p:["Each attribute runs from 3 to 18. What matters at the table is the modifier: a 3 gives −2, 4–7 gives −1, 8–13 gives +0, 14–17 gives +1, and 18 gives +2.","Modifiers add to skill checks and to attack and damage rolls with weapons that use that attribute. They also improve your saving throws."]},
+  str:{t:"Strength",p:["Melee attacks and damage with STR weapons, Exert checks, the Physical save, and how much gear you can carry."]},
+  dex:{t:"Dexterity",p:["Ranged and finesse attacks, Armor Class, initiative, Pilot and Sneak checks, and the Evasion save."]},
+  con:{t:"Constitution",p:["Hit points per level, the Physical save, and your maximum system strain (equal to your CON score)."]},
+  int:{t:"Intelligence",p:["Technical and academic skills like Fix, Program, Heal, and Know, and the Evasion save."]},
+  wis:{t:"Wisdom",p:["Notice and Survive checks, the Mental save, and psychic Effort."]},
+  cha:{t:"Charisma",p:["Talk, Lead, Connect, Trade, and Perform checks, and the Mental save."]},
+  skillcheck:{t:"Skill Checks",p:["Roll 2d6, add your skill level and the attribute modifier that best fits what you're doing, and try to meet or beat the difficulty the GM sets.","A rough scale: 6 is a modest challenge, 8 needs real competence, 10 is hard even for a pro, 12 is a feat for experts, and 14+ borders on impossible.","An untrained skill counts as level −1. The GM can call for a different attribute than the usual one; use the attribute picker in Roll Options for that."]},
+  skilllevels:{t:"Skill Levels",p:["−1 untrained, 0 basic competence, 1 a real professional, 2 an expert, 3 among the best on a world, 4 among the best in the sector."]},
+  keep3:{t:"3d6, keep best 2",p:["Some foci let you roll 3d6 and keep the two highest dice on checks with a particular skill. Turn this on before rolling when it applies."]},
+  attack:{t:"Attack Rolls",p:["Roll 1d20 + attack bonus + your combat skill (Shoot, Stab, or Punch) + the weapon's attribute modifier. If the total meets or beats the target's Armor Class, you hit.","A natural 20 always hits and a natural 1 always misses.","Attacking with a combat skill you're untrained in costs −2 instead of the usual −1.","Damage is the weapon's dice + the same attribute modifier."]},
+  shock:{t:"Shock",p:["Many melee weapons list Shock, like 2/AC 15. If your attack misses a target whose AC is at or below that number, they still take the Shock damage plus your attribute modifier.","Targets with higher AC, and many heavily armored foes, ignore it."]},
+  bab:{t:"Attack Bonus",p:["A Warrior's attack bonus equals their level. Everyone else uses half their level, rounded down.","A Partial Warrior adds +1 at 1st level and another +1 at 5th."]},
+  saves:{t:"Saving Throws",p:["Roll 1d20 and meet or beat the target number to resist an effect.","Each save starts at 16 minus your level, then subtracts the better of two attribute modifiers.","Physical (STR or CON): poison, disease, exhaustion. Evasion (DEX or INT): dodging blasts and fast reactions. Mental (WIS or CHA): psychic attacks and mind control. Luck uses no attribute and covers pure chance.","Bonuses to a save lower its target number."]},
+  ac:{t:"Armor Class",p:["Attackers must meet or beat your AC to hit you. Start with your worn armor's AC (10 with none) and add your DEX modifier.","Only one suit of armor counts; the sheet uses the best equipped one."]},
+  hp:{t:"Hit Points",p:["Hit points measure how much punishment you can take before going down.","Each level you roll 1d6 and add your CON modifier (minimum 1 per die). Some classes add extra hit points per level.","At 0 HP a character is mortally wounded and dies without fast medical help."]},
+  strain:{t:"System Strain",p:["System strain tracks how hard your body has been pushed by cyberware, drugs, and medical treatment. Your maximum is your CON score.","Installed cyberware adds permanent strain. Stims and healing add temporary strain, which drops by 1 after each night of good rest.","You can't accept strain past your maximum."]},
+  effort:{t:"Effort",p:["Psychics fuel techniques with Effort. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Effort can be committed for a scene, for a day, or for as long as a power stays active. It comes back when that period ends."]},
+  init:{t:"Initiative",p:["At the start of combat, roll 1d8 + DEX modifier. Higher results act first."]},
+  enc:{t:"Encumbrance",p:["Readied items are in hand or instantly usable. You can have Readied items up to half your STR score, rounded down.","Stowed items are packed away and take a moment to dig out. You can have Stowed items up to your STR score.","Going over either limit slows you down. Stored items are left on the ship or at home and don't count."]},
+  xp:{t:"Experience & Levels",p:["XP to reach each level: 2nd 3, 3rd 6, 4th 12, 5th 18, 6th 27, 7th 39, 8th 54, 9th 72, 10th 93."]},
+  foci:{t:"Foci",p:["Foci are special talents that set your character apart. Most have two levels; the second builds on the first.","You start with one (sometimes more) and pick up new ones at certain levels."]},
+  mods:{t:"Item & Effect Bonuses",p:["Equipped items and active effects apply their bonuses automatically everywhere they matter.","On a weapon, Attack and Damage bonuses apply only to that weapon. On anything else, they apply to all your attacks.","Save bonuses lower the save's target number. Attribute bonuses raise the score, which can change the modifier."]},
+  overrides:{t:"GM Overrides",p:["Type a number to replace the sheet's calculated value. Leave a box blank to go back to the automatic result.","Overridden values show a GM tag on the sheet so players know where the number came from."]}
+};
+
+/* ================= UTIL ================= */
+const $ = s=>document.querySelector(s);
+const esc = v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sgn = n=>{n=Number(n)||0;return n>=0?"+"+n:"−"+Math.abs(n)};
+const clone = o=>JSON.parse(JSON.stringify(o??null));
+const rid = ()=>Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-4);
+const num = (v,d=0)=>{const n=Number(v);return Number.isFinite(n)?n:d};
+const fid = (doc,path)=>"f_"+(doc+"|"+path).replace(/[^a-zA-Z0-9]/g,"_");
+function attrMod(s){s=num(s,10);if(s<=3)return -2;if(s<=7)return -1;if(s<=13)return 0;if(s<=17)return 1;return 2}
+function rand(sides){const a=new Uint32Array(1);crypto.getRandomValues(a);return 1+(a[0]%sides)}
+function parseDice(str){
+  const out={groups:[],flat:0};const s=String(str||"").replace(/\s+/g,"").toLowerCase();
+  const re=/([+-]?)(\d*)d(\d+)|([+-]?)(\d+)/g;let m;
+  while((m=re.exec(s))){
+    if(m[3]){const n=Math.min(num(m[2]||1,1),50),sd=Math.min(num(m[3],6),1000);out.groups.push({n,s:sd,neg:m[1]==="-"})}
+    else if(m[5]){out.flat+=(m[4]==="-"?-1:1)*num(m[5])}
+  }
+  return out;
+}
+function rollGroups(p){
+  const dice=[];let sum=0;
+  p.groups.forEach(g=>{for(let i=0;i<g.n;i++){const v=rand(g.s);dice.push({v,s:g.s});sum+=g.neg?-v:v}});
+  return {dice,sum};
+}
+function initials(n){return (String(n||"?").trim().split(/\s+/).map(w=>w[0]).join("").slice(0,2)||"?").toUpperCase()}
+function getPath(obj,path){return path.split(".").reduce((o,k)=>o==null?undefined:o[k],obj)}
+function setPathV(obj,path,v){const ks=path.split(".");let o=obj;for(let i=0;i<ks.length-1;i++){if(o[ks[i]]==null)o[ks[i]]=/^\d+$/.test(ks[i+1])?[]:{};o=o[ks[i]]}o[ks[ks.length-1]]=v}
+function ago(ts){const s=Math.max(0,(Date.now()-ts)/1000);if(s<60)return "just now";if(s<3600)return Math.floor(s/60)+"m ago";if(s<86400)return Math.floor(s/3600)+"h ago";return Math.floor(s/86400)+"d ago"}
+
+/* ================= STATE ================= */
+const S = {
+  db:null,user:null,me:null,isGM:false,canWrite:null,offline:false,loading:true,slow:false,
+  docs:{},exists:{},rolls:[],names:{},denied:{},
+  view:"sheet",current:null,edit:false,tab:"actions",drawer:null,logOpen:false,confirm:null,compSel:null,
+  opts:{sit:0,diff:0,keep3:false,attr:"auto"}
+};
+try{const v=localStorage.getItem("swn.current");if(v)S.current=v}catch(e){}
+
+function newCharacter(name){
+  return {
+    name:name||"New Character",class:"Warrior",partials:["Warrior","Expert"],level:1,xp:0,
+    background:"",homeworld:"",species:"Human",goal:"",
+    attrs:{str:10,dex:10,con:10,int:10,wis:10,cha:10},
+    skills:Object.fromEntries(SKILLS.map(s=>[s[0],-1])),
+    psy:Object.fromEntries(PSY.map(s=>[s[0],-1])),
+    hp:{cur:6,max:6},strain:{temp:0},effort:{scene:0,day:0},credits:0,
+    inventory:[],foci:[{id:rid(),name:"",level:1,text:""}],features:"",notes:"",
+    effects:[],overrides:{},locked:false,npc:false,owners:[],player:"",createdAt:Date.now()
+  };
+}
+function exampleCharacter(){
+  const c=newCharacter("Vex Marlowe");
+  Object.assign(c,{class:"Warrior",level:2,xp:4,background:"Soldier",homeworld:"Tycho's Reach",goal:"Pay off the ship's debt",credits:340,
+    attrs:{str:14,dex:16,con:12,int:9,wis:11,cha:8},hp:{cur:13,max:15},strain:{temp:1}});
+  Object.assign(c.skills,{shoot:1,stab:0,exert:0,notice:0,pilot:0,survive:0});
+  c.foci=[{id:rid(),name:"Gunslinger",level:1,text:"Example focus. Write what it does in your own notes."}];
+  c.inventory=[
+    {id:rid(),type:"weapon",name:"Laser Pistol",qty:1,location:"readied",equipped:true,enc:1,dmg:"1d6",attr:"DEX",skill:"shoot",range:"100/300",mag:10,ammo:7,shock:"",mods:[],description:"Example weapon. Check stats against your rulebook."},
+    {id:rid(),type:"weapon",name:"Combat Knife",qty:1,location:"readied",equipped:true,enc:1,dmg:"1d4",attr:"STR/DEX",skill:"stab",range:"",mag:0,ammo:0,shock:"1/15",mods:[],description:"Example weapon."},
+    {id:rid(),type:"armor",name:"Armored Undersuit",qty:1,location:"readied",equipped:true,enc:0,ac:13,mods:[],description:"Example armor."},
+    {id:rid(),type:"gear",name:"Medkit",qty:1,location:"stowed",equipped:false,enc:1,mods:[],description:""}
+  ];
+  c.notes="This is an example sheet. In the live page your party's real sheets appear here.";
+  return c;
+}
+
+/* ================= DOCS / PERMISSIONS ================= */
+const sheetPaths = ()=>Object.keys(S.docs).filter(p=>/^(sheets|local)\//.test(p)).sort((a,b)=>num(S.docs[a].createdAt)-num(S.docs[b].createdAt));
+const hbFociPaths = ()=>Object.keys(S.docs).filter(p=>p.startsWith("foci/")).sort((a,b)=>String(S.docs[a].name).localeCompare(String(S.docs[b].name)));
+const hbPaths = ()=>Object.keys(S.docs).filter(p=>p.startsWith("homebrew/")).sort((a,b)=>String(S.docs[a].name).localeCompare(String(S.docs[b].name)));
+const isMine = p=>!!(S.me&&S.docs[p]&&(S.docs[p].owners||[]).includes(S.me));
+const myPaths = ()=>sheetPaths().filter(isMine);
+const myPath = ()=>myPaths()[0]||null;
+function canEdit(path){
+  if(!path||!S.docs[path]||S.denied[path])return false;
+  if(S.offline)return true;
+  if(S.isGM)return true;
+  const d=S.docs[path];
+  if(path.startsWith("homebrew/")||path.startsWith("foci/"))return false;
+  if(d.locked)return false;
+  return isMine(path);
+}
+
+/* ================= SAVE QUEUE ================= */
+const Q = {}; // path -> {dirty:Set, timer, inflight, inflightKeys:Set}
+function q(path){return Q[path]||(Q[path]={dirty:new Set,timer:null,inflight:false,inflightKeys:new Set})}
+function markDirty(path,key){
+  if(S.offline||path.startsWith("local/"))return;
+  const e=q(path);e.dirty.add(key);clearTimeout(e.timer);e.timer=setTimeout(()=>flush(path),550);
+}
+async function flush(path){
+  const e=q(path);if(e.inflight){e.timer=setTimeout(()=>flush(path),300);return}
+  if(!e.dirty.size||!S.db)return;
+  const keys=[...e.dirty];e.dirty.clear();e.inflight=true;e.inflightKeys=new Set(keys);
+  const d=S.docs[path];
+  try{
+    if(!d){await S.db.doc(path).delete()}
+    else if(S.exists[path]){const patch={};keys.forEach(k=>patch[k]=clone(d[k]===undefined?null:d[k]));patch.updatedAt=Date.now();await S.db.doc(path).update(patch)}
+    else{await S.db.doc(path).set({...clone(d),updatedAt:Date.now()});S.exists[path]=true}
+  }catch(err){
+    if(err&&err.code==="permission-denied"){S.denied[path]=true;toastMsg("Couldn't save that change. You don't have permission to edit this sheet. Ask your GM to check your share access.",true);render()}
+    else if(err&&err.code==="resource-exhausted"){toastMsg("The free database limit for today was hit. Try again later.",true)}
+    else{keys.forEach(k=>e.dirty.add(k));e.timer=setTimeout(()=>flush(path),1500+Math.random()*1000)}
+  }finally{e.inflight=false;e.inflightKeys=new Set}
+}
+function setField(path,field,v){
+  const d=S.docs[path];if(!d)return;setPathV(d,field,v);markDirty(path,field.split(".")[0]);
+}
+async function createDoc(path,data){
+  S.docs[path]=data;
+  if(S.offline||!S.db){return}
+  try{await S.db.doc(path).set(clone(data));S.exists[path]=true}
+  catch(err){toastMsg(err&&err.code==="permission-denied"?"You don't have permission to create that.":"Couldn't save. Try again in a moment.",true);delete S.docs[path];render()}
+}
+async function deleteDoc(path){
+  delete S.docs[path];delete S.exists[path];
+  if(S.offline||!S.db||path.startsWith("local/"))return;
+  try{await S.db.doc(path).delete()}catch(err){toastMsg("Couldn't delete that.",true)}
+}
+function mergeRemote(path,data){
+  const e=Q[path];const local=S.docs[path];
+  const merged=clone(data);
+  if(e&&local){[...e.dirty,...e.inflightKeys].forEach(k=>{merged[k]=clone(local[k])})}
+  S.docs[path]=merged;S.exists[path]=true;
+}
+
+/* ================= COMPUTE ================= */
+function resolveItem(entry){
+  if(entry&&entry.hb){
+    const hb=S.docs["homebrew/"+entry.hb];
+    if(hb){const r={...clone(hb),id:entry.id,hb:entry.hb,linked:true};["qty","location","equipped","ammo","notes"].forEach(k=>{if(entry[k]!==undefined)r[k]=entry[k]});return r}
+    return {...entry,name:(entry.name||"Removed item")+" (removed from compendium)",mods:[],missing:true};
+  }
+  return entry||{};
+}
+const isPsy = c=>c.class==="Psychic"||(c.class==="Adventurer"&&(c.partials||[]).includes("Psychic"));
+const hasOv = (c,k)=>c.overrides&&c.overrides[k]!==null&&c.overrides[k]!==undefined&&c.overrides[k]!==""&&Number.isFinite(Number(c.overrides[k]));
+function resolveFocus(e){
+  if(!e)return null;
+  const lvl=Math.max(1,Math.min(2,num(e.level,1)));
+  if(e.key&&e.key.startsWith("hb:")){
+    const f=S.docs["foci/"+e.key.slice(3)];
+    if(!f)return {...e,level:lvl,name:(e.name||"Focus")+" (removed)",d:"",l1:"",l2:"",mods:[],hb:true};
+    const mods=[...(f.mods1||[]),...(lvl>=2?(f.mods2||[]):[])];
+    return {...e,level:lvl,name:f.name||"Homebrew focus",d:f.d||"",l1:f.l1||"",l2:f.l2||"",type:f.type,mods,hb:true};
+  }
+  const def=FOCI[e.key];
+  if(!def)return {...e,level:lvl,name:e.name||"Custom focus",d:"",l1:"",l2:"",mods:[],custom:true};
+  return {...e,level:lvl,name:def.name+(e.skill&&e.key==="specialist"?" ("+specName(e.skill)+")":""),d:def.d,l1:def.l1,l2:def.l2,type:def.type,mods:[]};
+}
+const hasFocus=(R,k,l=1)=>R.foci.some(f=>f.key===k&&f.level>=l);
+function compute(c){
+  const items=(c.inventory||[]).map(resolveItem);
+  const mods=[];
+  const lvl=Math.max(1,Math.min(20,num(c.level,1)));
+  items.forEach(i=>{if(!i.equipped)return;(i.mods||[]).forEach(m=>{if(i.type==="weapon"&&(m.target==="attack"||m.target==="damage"))return;mods.push({target:m.target,value:num(m.value),src:i.name||"Item"})})});
+  (c.effects||[]).forEach(f=>{if(!f.active)return;(f.mods||[]).forEach(m=>mods.push({target:m.target,value:num(m.value),src:(f.name||"Effect")}))});
+  const foci=(c.foci||[]).map(resolveFocus).filter(f=>f&&(f.key||f.name||f.text));
+  foci.forEach(f=>{
+    (f.mods||[]).forEach(m=>mods.push({target:m.target,value:num(m.value),src:f.name}));
+    if(f.key==="die_hard")mods.push({target:"hpMax",value:2*lvl,src:"Die Hard (+2 per level)"});
+    if(f.key==="psychic_training")mods.push({target:"effortMax",value:1,src:"Psychic Training"});
+  });
+  const list=t=>mods.filter(m=>m.target===t&&m.value);
+  const sum=t=>list(t).reduce((a,m)=>a+m.value,0);
+  const br=t=>list(t).map(m=>({l:m.src,v:m.value}));
+  const R={items,mods,list,sum,br,foci,score:{},mod:{},skills:{},psy:{},b:{},ov:{}};
+  ATTRS.forEach(([k])=>{R.score[k]=num(c.attrs?.[k],10)+sum(k);R.mod[k]=attrMod(R.score[k])});
+  R.level=lvl;
+  SKILLS.forEach(([k])=>R.skills[k]=num(c.skills?.[k],-1)+sum("skill:"+k));
+  PSY.forEach(([k])=>R.psy[k]=num(c.psy?.[k],-1)+sum("skill:"+k));
+  const ovr=(key,auto,parts)=>{if(hasOv(c,key)){R.ov[key]=true;R.b[key]=[...parts,{l:"GM override",v:null,ov:Number(c.overrides[key])}];return Number(c.overrides[key])}R.b[key]=parts;return auto};
+  // attack bonus
+  const pw=c.class==="Adventurer"&&(c.partials||[]).includes("Warrior");
+  let bab, babParts;
+  if(c.class==="Warrior"){bab=lvl;babParts=[{l:"Warrior: equals level",v:lvl}]}
+  else{bab=Math.floor(lvl/2);babParts=[{l:"Half level, rounded down",v:bab}];if(pw){const x=lvl>=5?2:1;bab+=x;babParts.push({l:"Partial Warrior",v:x})}}
+  R.bab=ovr("bab",bab,babParts);
+  // saves (target numbers)
+  const save=(key,a,b)=>{
+    const best=a?(R.mod[a]>=R.mod[b]?a:b):null;
+    const parts=[{l:"Base",v:16},{l:"Level",v:-lvl}];
+    if(best)parts.push({l:"Better of "+a.toUpperCase()+"/"+b.toUpperCase()+" ("+best.toUpperCase()+")",v:-R.mod[best]});
+    br("save:"+key).forEach(p=>parts.push({l:p.l,v:-p.v}));br("save:all").forEach(p=>parts.push({l:p.l,v:-p.v}));
+    return ovr("save_"+key,parts.reduce((s,p)=>s+p.v,0),parts);
+  };
+  R.save={physical:save("physical","str","con"),evasion:save("evasion","dex","int"),mental:save("mental","wis","cha"),luck:save("luck",null,null)};
+  // AC: best of worn armor or Ironhide, then shield, DEX, bonuses
+  const armor=items.filter(i=>i.equipped&&i.type==="armor").sort((a,b)=>num(b.ac)-num(a.ac))[0];
+  let base=armor?{l:"Armor: "+(armor.name||"armor"),v:num(armor.ac,10)}:{l:"No armor",v:10};
+  if(hasFocus(R,"ironhide")){const ih=15+Math.ceil(lvl/2);if(ih>base.v)base={l:"Ironhide (15 + half level)",v:ih}}
+  const acParts=[base];
+  const shield=items.find(i=>i.equipped&&i.type==="shield");
+  if(shield){const sb=num(shield.ac,13);if(base.v>=sb)acParts.push({l:(shield.name||"Shield")+" (+1)",v:1});else acParts.push({l:(shield.name||"Shield")+" (raises base to "+sb+")",v:sb-base.v})}
+  acParts.push({l:"DEX modifier",v:R.mod.dex},...br("ac"));
+  R.ac=ovr("ac",acParts.reduce((s,p)=>s+p.v,0),acParts);
+  // HP
+  const hpParts=[{l:"Rolled max HP",v:num(c.hp?.max)},...br("hpMax")];
+  R.hpMax=ovr("hpMax",hpParts.reduce((s,p)=>s+p.v,0),hpParts);
+  // strain
+  const stParts=[{l:"CON score",v:R.score.con},...br("strainMax")];
+  R.strainMax=ovr("strainMax",stParts.reduce((s,p)=>s+p.v,0),stParts);
+  R.strainPerm=items.filter(i=>i.type==="cyber"&&i.equipped).reduce((s,i)=>s+num(i.strain)*Math.max(1,num(i.qty,1)),0);
+  R.strainTemp=num(c.strain?.temp);R.strainCur=R.strainPerm+R.strainTemp;
+  // effort
+  R.psychic=isPsy(c);
+  if(R.psychic){
+    const hi=Math.max(0,...Object.values(R.psy));
+    const parts=[{l:"Base",v:1},{l:"Highest psychic skill",v:hi},{l:"Better of WIS/CON",v:Math.max(R.mod.wis,R.mod.con)}];
+    if(R.psy.metapsionics>=1)parts.push({l:"Metapsionics core (level-1+)",v:R.psy.metapsionics>=3?2:1});
+    parts.push(...br("effortMax"));
+    R.effortMax=Math.max(1,ovr("effortMax",parts.reduce((s,p)=>s+p.v,0),parts));
+  }else if(hasFocus(R,"wild_psychic")){
+    const v=hasFocus(R,"wild_psychic",2)?2:1;R.effortMax=ovr("effortMax",v,[{l:"Wild Psychic Talent",v}]);
+  }else R.effortMax=0;
+  // init
+  const inParts=[{l:"DEX modifier",v:R.mod.dex},...br("initiative")];
+  R.init=ovr("init",inParts.reduce((s,p)=>s+p.v,0),inParts);
+  R.initTwice=hasFocus(R,"alert");
+  // encumbrance
+  const rParts=[{l:"Half STR score, rounded down",v:Math.floor(R.score.str/2)},...br("readied")];
+  const sParts=[{l:"STR score",v:R.score.str},...br("stowed")];
+  R.readiedLimit=ovr("readied",rParts.reduce((s,p)=>s+p.v,0),rParts);
+  R.stowedLimit=ovr("stowed",sParts.reduce((s,p)=>s+p.v,0),sParts);
+  const encOf=loc=>items.filter(i=>(i.location||"stowed")===loc).reduce((s,i)=>s+(i.encFixed?num(i.enc):num(i.enc)*Math.max(0,num(i.qty,1))),0);
+  R.readied=encOf("readied");R.stowed=encOf("stowed");
+  // xp
+  R.nextXp=XP_TABLE[lvl]??null;R.prevXp=XP_TABLE[lvl-1]??0;
+  return R;
+}
+function unarmedWeapon(R){
+  const p=R.skills.punch;
+  const w={id:"unarmed",type:"weapon",name:"Unarmed attack",dmg:"1d2",attr:"STR/DEX",skill:"punch",shock:"",mods:[],equipped:true,virtual:true};
+  if(hasFocus(R,"unarmed_combatant")){w.dmg=p<=0?"1d6":p===1?"1d8":p===2?"1d10":p===3?"1d12":"1d12+1";if(p>=1)w.shock=p+"/15";w.name="Unarmed attack (Unarmed Combatant)"}
+  return w;
+}
+function weaponStats(c,R,w){
+  const attrs=String(w.attr||"DEX").split("/").map(s=>s.trim().toLowerCase()).filter(a=>R.mod[a]!==undefined);
+  if(!attrs.length)attrs.push("dex");
+  let best=attrs[0];attrs.forEach(a=>{if(R.mod[a]>R.mod[best])best=a});
+  const am=R.mod[best];
+  const sk=w.skill||"shoot";const lv=R.skills[sk]??-1;const sb=lv<0?-2:lv;
+  const wAtk=(w.mods||[]).filter(m=>m.target==="attack").reduce((s,m)=>s+num(m.value),0);
+  const wDmg=(w.mods||[]).filter(m=>m.target==="damage").reduce((s,m)=>s+num(m.value),0);
+  const atkParts=[{l:"Attack bonus",v:R.bab},{l:(SKILL[sk]?.name||sk)+(lv<0?" (untrained)":" "+lv),v:sb},{l:best.toUpperCase()+" modifier",v:am}];
+  if(w.energy)atkParts.push({l:"Energy weapon (no recoil)",v:1});
+  if(wAtk)atkParts.push({l:"Weapon bonus",v:wAtk});
+  R.br("attack").forEach(p=>atkParts.push(p));
+  const dmgParts=[{l:best.toUpperCase()+" modifier",v:am}];
+  if(wDmg)dmgParts.push({l:"Weapon bonus",v:wDmg});
+  R.br("damage").forEach(p=>dmgParts.push(p));
+  const skillDmg=[];
+  if(sk==="punch"&&lv>0)skillDmg.push({l:"Punch skill",v:lv});
+  if(sk==="shoot"&&hasFocus(R,"gunslinger")&&lv>0)skillDmg.push({l:"Gunslinger (Shoot skill)",v:lv});
+  if(sk==="stab"&&hasFocus(R,"armsman")&&lv>0)skillDmg.push({l:"Armsman (Stab skill)",v:lv});
+  const dflat=[...dmgParts,...skillDmg].reduce((s,p)=>s+p.v,0);
+  const shockFlat=dmgParts.reduce((s,p)=>s+p.v,0)+(sk==="stab"&&hasFocus(R,"armsman")&&lv>0?lv:0);
+  let shock=null;const m=/(\d+)\s*\/\s*(?:ac\s*)?(\d+)/i.exec(String(w.shock||""));
+  const melee=sk==="stab"||sk==="punch";
+  if(m){
+    let sv=num(m[1]),sac=num(m[2]);const notes=[];
+    if(melee&&hasFocus(R,"shocking_assault",2)){sv+=2;notes.push("Shocking Assault +2")}
+    if(melee&&(hasFocus(R,"shocking_assault")||hasFocus(R,"close_combatant",2))){sac=99;notes.push("any AC")}
+    shock={dmg:Math.max(0,sv+shockFlat),ac:sac,notes};
+  }
+  const p=parseDice(String(w.dmg||"1d6"));const flatTotal=p.flat+dflat;
+  const dmgText=p.groups.map(g=>(g.neg?"-":"")+g.n+"d"+g.s).join("+").replace("+-","-")+(flatTotal?(flatTotal>0?"+":"−")+Math.abs(flatTotal):"");
+  let missDmg=null;
+  if(sk==="shoot"&&hasFocus(R,"gunslinger",2))missDmg="1d4";
+  if(sk==="stab"&&hasFocus(R,"armsman",2))missDmg="1d4";
+  if(sk==="punch"&&hasFocus(R,"unarmed_combatant",2))missDmg="1d6";
+  return {atkParts:atkParts,dmgParts:[...dmgParts,...skillDmg],dflat,dmgText:dmgText||String(flatTotal),shock,best,sk,lv,missDmg,atk:atkParts.reduce((s,p)=>s+p.v,0)};
+}
+
+/* ================= ROLLING ================= */
+function currentChar(){const p=S.current;return p&&S.docs[p]?{path:p,c:S.docs[p]}:null}
+function sitPart(){return S.opts.sit?[{l:"Situational",v:num(S.opts.sit)}]:[]}
+function skillDiceCount(R,key){
+  let n=S.opts.keep3?3:2;const why=[];
+  R.foci.forEach(f=>{if(f.key==="specialist"&&f.skill===key){const k=f.level>=2?4:3;if(k>n){n=k;why.push("Specialist")}}});
+  if(key==="heal"&&hasFocus(R,"healer")&&n<3){n=3;why.push("Healer")}
+  return {n,why};
+}
+function doSkill(key){
+  const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
+  const sk=SKILL[key];const lv=R.skills[key];
+  const attr=(S.opts.attr==="auto"?sk.attr:S.opts.attr).toLowerCase();
+  const {n,why}=skillDiceCount(R,key);const dice=[];for(let i=0;i<n;i++)dice.push({v:rand(6),s:6});
+  const order=dice.map((d,i)=>i).sort((a,b)=>dice[a].v-dice[b].v);order.slice(0,n-2).forEach(i=>dice[i].drop=true);
+  const parts=[{l:sk.name+(lv<0?" (untrained)":""),v:lv},{l:attr.toUpperCase(),v:R.mod[attr]},...R.br("skillChecks"),...sitPart()];
+  const total=dice.filter(d=>!d.drop).reduce((s,d)=>s+d.v,0)+parts.reduce((s,p)=>s+p.v,0);
+  const diff=num(S.opts.diff);
+  const note=[n>2?n+"d6 keep best 2"+(why.length?" ("+why.join(", ")+")":""):"",diff?"vs difficulty "+diff:""].filter(Boolean).join(" · ");
+  emitRoll(c,sk.name+" check",[{name:"Check",dice,parts,total,verdict:diff?(total>=diff?["ok","Success"]:["no","Failure"]):null,note}]);
+}
+function doSave(key){
+  const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
+  const t=R.save[key];const d={v:rand(20),s:20};const parts=sitPart();
+  const total=d.v+parts.reduce((s,p)=>s+p.v,0);
+  emitRoll(c,key[0].toUpperCase()+key.slice(1)+" save",[{name:"Save",dice:[d],parts,total,verdict:total>=t?["ok","Saved"]:["no","Failed"],note:"needs "+t+"+"}]);
+}
+function doInit(){
+  const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
+  const dice=[{v:rand(8),s:8}];
+  if(R.initTwice){dice.push({v:rand(8),s:8});if(dice[0].v<dice[1].v)dice[0].drop=true;else dice[1].drop=true}
+  const kept=dice.find(d=>!d.drop).v;
+  const parts=R.ov.init?[{l:"GM override",v:R.init},...sitPart()]:[...R.b.init.filter(p=>!p.ov),...sitPart()];
+  emitRoll(c,"Initiative",[{name:"Initiative",dice,parts,total:kept+parts.reduce((s,p)=>s+p.v,0),note:R.initTwice?"Alert: rolled twice, kept the best":""}]);
+}
+function weaponAt(R,i){return i==="unarmed"?unarmedWeapon(R):R.items[num(i,-1)]}
+function doAttack(i,dmgOnly){
+  const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
+  const w=weaponAt(R,i);if(!w)return;const W=weaponStats(c,R,w);
+  const burst=S.opts.burst&&w.burst;
+  const lines=[];
+  if(!dmgOnly){
+    const d={v:rand(20),s:20};const crit=d.v===20,fumble=d.v===1;
+    const parts=[...W.atkParts,...(burst?[{l:"Burst fire",v:2}]:[]),...sitPart()];
+    const total=d.v+parts.reduce((s,p)=>s+p.v,0);
+    lines.push({name:"To hit",dice:[d],parts,total,verdict:crit?["crit","Natural 20"]:fumble?["no","Natural 1"]:null,note:"vs target AC"});
+  }
+  const p=parseDice(w.dmg||"1d6");const r=rollGroups(p);
+  const dparts=[...(p.flat?[{l:"Weapon",v:p.flat}]:[]),...W.dmgParts,...(burst?[{l:"Burst fire",v:2}]:[])];
+  let dmgTotal=Math.max(0,r.sum+dparts.reduce((s,x)=>s+x.v,0));
+  if(W.shock&&dmgTotal<W.shock.dmg)dmgTotal=W.shock.dmg;
+  lines.push({name:"Damage",dice:r.dice,parts:dparts,total:dmgTotal,note:"on a hit"});
+  if(W.shock&&!dmgOnly)lines.push({name:"Shock",dice:[],parts:[],total:W.shock.dmg,note:"on a miss vs AC "+(W.shock.ac>=99?"any":W.shock.ac+" or lower")});
+  if(W.missDmg&&!dmgOnly){const mp=parseDice(W.missDmg);const mr=rollGroups(mp);lines.push({name:"Miss damage",dice:mr.dice,parts:[],total:mr.sum,note:"unmodified, if you miss"})}
+  if(burst&&!dmgOnly&&!w.virtual&&canEdit(cur.path)&&num(i,-1)>=0&&num(c.inventory[num(i)]?.ammo)>0){setField(cur.path,"inventory."+num(i)+".ammo",Math.max(0,num(c.inventory[num(i)].ammo)-3))}
+  emitRoll(c,(w.name||"Weapon")+(dmgOnly?" damage":burst?" burst":" attack"),lines);
+}
+
+function doCustom(expr){
+  const p=parseDice(expr);if(!p.groups.length&&!p.flat){toastMsg("Type dice like 2d6+1 or 1d20.",true);return}
+  const r=rollGroups(p);const cur=currentChar();
+  emitRoll(cur?cur.c:null,expr,[{name:"Roll",dice:r.dice,parts:p.flat?[{l:"Flat",v:p.flat}]:[],total:r.sum+p.flat}]);
+}
+function emitRoll(c,label,lines){
+  const rec={ts:Date.now(),by:S.me||"",char:c?String(c.name||""):"",player:c?String(c.player||""):"",label,lines};
+  showToast(rec);
+  if(S.db&&!S.offline){
+    S.db.collection("rolls").add(clone(rec)).then(()=>pruneLog()).catch(err=>{toastMsg("Your roll didn't post to the shared game log. Check your connection.",true)});
+  }else{S.rolls.unshift({id:rid(),...rec});S.rolls=S.rolls.slice(0,60);render()}
+}
+let pruneCount=0;
+async function pruneLog(){
+  if(!S.isGM||++pruneCount%8!==0)return;
+  try{const snap=await S.db.collection("rolls").orderBy("ts","desc").limit(400).get();
+    const old=snap.docs.slice(150);for(const d of old.slice(0,40)){await S.db.doc("rolls/"+d.id).delete()}}catch(e){}
+}
+
+/* ================= TOASTS ================= */
+function diceHtml(dice){return dice.map(d=>`<span class="die ${d.drop?"drop":""} ${d.v===d.s&&d.s>2?"max":""} ${d.v===1?"min":""}">${d.v}</span>`).join("")}
+function lineHtml(l){
+  const f=(l.dice.length?diceHtml(l.dice):"")+l.parts.map(p=>p.ov!=null||!p.v?"":` ${p.v<0?"−":"+"} ${Math.abs(p.v)}`).join("");
+  const tip=l.parts.map(p=>p.l+" "+sgn(p.v)).join(", ");
+  return `<div class="line"><div><div class="lbl">${esc(l.name)}${l.note?` · <span style="text-transform:none;letter-spacing:0;font-weight:500">${esc(l.note)}</span>`:""}</div><div class="f" title="${esc(tip)}">${f||"&nbsp;"}</div>${l.verdict?`<span class="verdict ${l.verdict[0]}">${esc(l.verdict[1])}</span>`:""}</div><div class="t num">${num(l.total)}</div></div>`;
+}
+function showToast(rec){
+  const el=document.createElement("div");el.className="toast";
+  el.innerHTML=`<div class="what">${esc(rec.char?rec.char+" · ":"")}${esc(rec.label)}</div>${(rec.lines||[]).map(lineHtml).join("")}`;
+  $("#toasts").appendChild(el);setTimeout(()=>el.remove(),6500);
+  while($("#toasts").children.length>3)$("#toasts").firstChild.remove();
+}
+function toastMsg(msg,err){
+  const el=document.createElement("div");el.className="toast"+(err?" err":"");el.innerHTML=`<div>${esc(msg)}</div>`;
+  $("#toasts").appendChild(el);setTimeout(()=>el.remove(),7000);
+}
+
+/* ================= RENDER HELPERS ================= */
+function inp(doc,path,{type="text",cls="inp",ph="",live=false,blank=false,dis=false,min,max,attrs=""}={}){
+  const v=getPath(S.docs[doc],path);
+  return `<input id="${fid(doc,path)}" class="${cls}" type="${type}" data-doc="${esc(doc)}" data-path="${esc(path)}" ${type==="number"?"data-num":""} ${blank?'data-blank="null"':""} ${live?"data-live":""} value="${esc(v??"")}" placeholder="${esc(ph)}" ${dis?"disabled":""} ${min!=null?`min="${min}"`:""} ${max!=null?`max="${max}"`:""} ${attrs}>`;
+}
+function sel(doc,path,opts,{cls="inp",dis=false}={}){
+  const v=getPath(S.docs[doc],path);
+  return `<select id="${fid(doc,path)}" class="${cls}" data-doc="${esc(doc)}" data-path="${esc(path)}" ${dis?"disabled":""}>${opts.map(o=>{const[val,l]=Array.isArray(o)?o:[o,o];return `<option value="${esc(val)}" ${String(v)===String(val)?"selected":""}>${esc(l)}</option>`}).join("")}</select>`;
+}
+function ta(doc,path,{ph="",rows=4,dis=false}={}){
+  const v=getPath(S.docs[doc],path);
+  return `<textarea id="${fid(doc,path)}" class="inp" rows="${rows}" data-doc="${esc(doc)}" data-path="${esc(path)}" data-live placeholder="${esc(ph)}" ${dis?"disabled":""}>${esc(v??"")}</textarea>`;
+}
+function chk(doc,path,label,{dis=false}={}){
+  const v=getPath(S.docs[doc],path);
+  return `<label class="toggle"><input id="${fid(doc,path)}" type="checkbox" data-doc="${esc(doc)}" data-path="${esc(path)}" ${v?"checked":""} ${dis?"disabled":""}>${esc(label)}</label>`;
+}
+const ovBadge=(R,k)=>R.ov[k]?`<span class="ovr-badge" title="Set by the GM">GM</span>`:"";
+function nameOf(id){return ""}
+
+/* ================= TOP BAR ================= */
+function renderTop(){
+  const sheets=sheetPaths();
+  const chips=sheets.map(p=>{const c=S.docs[p];const R=compute(c);const pct=R.hpMax>0?Math.max(0,Math.min(100,num(c.hp?.cur)/R.hpMax*100)):0;
+    return `<button class="chip ${S.view==="sheet"&&S.current===p?"on":""}" data-act="open" data-doc="${esc(p)}"><span class="av">${esc(initials(c.name))}</span>${esc(c.name||"Unnamed")}<span class="hpmini" title="HP"><i style="width:${pct}%;background:${pct<34?"var(--bad)":pct<67?"var(--warn)":"var(--good)"}"></i></span></button>`}).join("");
+  return `<div class="topbar">
+    <div class="brand"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#c53131" stroke-width="2"/><path d="M16 5 L19 13 L27 16 L19 19 L16 27 L13 19 L5 16 L13 13 Z" fill="#e7eaf0"/></svg>SWN Sheets</div>
+    <nav class="nav">${chips}</nav>
+    <button class="navbtn ${S.view==="party"?"on":""}" data-act="view" data-v="party">Party</button>
+    <button class="navbtn ${S.view==="compendium"?"on":""}" data-act="view" data-v="compendium">Compendium</button>
+    ${S.me||S.offline?`<button class="btn pri sm" data-act="wiz-open">+ New character</button>`:""}
+    ${S.isGM||S.offline?`<button class="btn sm" data-act="create-npc">+ NPC</button>`:""}
+    ${S.isGM||S.offline?`<span class="role gm">${S.offline?"Preview":"GM"}</span>`:`<button class="role" style="background:none;cursor:pointer" data-act="gm-login">${S.setupDone===false?"Set up GM":"GM login"}</button>`}
+  </div>`;
+}
+
+/* ================= SHEET ================= */
+function renderSheet(){
+  const cur=currentChar();
+  if(!cur){
+    if(S.loading)return `<div class="welcome frame"><h1>Loading the party…</h1><p>${S.slow?"The saved sheets can't be reached yet. Check your connection; this page will keep trying.":"Fetching sheets and the compendium."}</p></div>`;
+    return `<div class="welcome frame"><h1>Your party's sheets live here</h1>
+      <p>${S.me?"Make your character to get started. Your GM can see and adjust every sheet, and everyone's rolls show up in the shared game log.":"Connecting…"}</p>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">${S.me||S.offline?`<button class="btn pri" data-act="wiz-open">Create my character</button>`:""}${S.isGM?`<button class="btn" data-act="create-npc">New NPC</button>`:""}</div></div>`;
+  }
+  const {path,c}=cur;const R=compute(c);const E=S.edit&&canEdit(path);const can=canEdit(path);
+  const who=c.npc?"GM (NPC)":(c.player||((c.owners||[]).length?"a player":"nobody yet"));
+  const claimable=!S.offline&&S.me&&!c.npc&&!isMine(path)&&!S.isGM;
+  const cls=c.class==="Adventurer"?"Adventurer ("+(c.partials||[]).map(x=>"Partial "+x).join(", ")+")":c.class;
+  const xpPct=R.nextXp?Math.max(0,Math.min(100,(num(c.xp)-R.prevXp)/(R.nextXp-R.prevXp)*100)):100;
+  const hpPct=R.hpMax>0?Math.max(0,Math.min(100,num(c.hp?.cur)/R.hpMax*100)):0;
+  const hpCol=hpPct<34?"var(--bad)":hpPct<67?"var(--warn)":"var(--good)";
+  const L=(key,text,extra="")=>`<button class="lbl" data-act="rule" data-key="${key}" ${extra}>${text}</button>`;
+
+  const head=`<section class="sheethead"><div class="sheethead-in">
+    <div class="portrait">${esc(initials(c.name))}</div>
+    <div style="min-width:0">
+      <div class="cname">${E?inp(path,"name",{live:true,cls:""}):esc(c.name||"Unnamed")}</div>
+      ${E?`<div class="grid4" style="margin-top:8px">
+        <div class="field"><span class="lbl">Class</span>${sel(path,"class",CLASSES)}</div>
+        <div class="field"><span class="lbl">Level</span>${inp(path,"level",{type:"number",min:1,max:10})}</div>
+        <div class="field"><span class="lbl">Background</span>${inp(path,"background",{live:true})}</div>
+        <div class="field"><span class="lbl">Homeworld</span>${inp(path,"homeworld",{live:true})}</div>
+        ${c.class==="Adventurer"?`<div class="field"><span class="lbl">Partial 1</span>${sel(path,"partials.0",PARTIALS)}</div><div class="field"><span class="lbl">Partial 2</span>${sel(path,"partials.1",PARTIALS)}</div>`:""}
+        <div class="field"><span class="lbl">Player name</span>${inp(path,"player",{live:true,ph:"Your name"})}</div>
+        <div class="field"><span class="lbl">Species</span>${inp(path,"species",{live:true})}</div>
+        <div class="field"><span class="lbl">XP</span>${inp(path,"xp",{type:"number",min:0})}</div>
+        <div class="field"><span class="lbl">Credits</span>${inp(path,"credits",{type:"number"})}</div>
+      </div>`:`<div class="csub"><span>${esc(c.species||"")} ${esc(cls)} ${R.level}</span>${c.background?`<span>${esc(c.background)}</span>`:""}${c.homeworld?`<span>of ${esc(c.homeworld)}</span>`:""}<span>Played by <b>${esc(who)}</b></span>${c.locked?`<span class="tag gm">Locked by GM</span>`:""}</div>`}
+      <div class="xp"><span>LVL ${R.level}</span><div class="xpbar"><i style="width:${xpPct}%"></i></div><span>${R.nextXp?"LVL "+(R.level+1):"MAX"}</span></div>
+      <div class="xp" style="margin-top:2px;justify-content:center;max-width:440px"><button style="background:none;border:0;padding:0;color:#bbb;cursor:help;font:inherit" data-act="rule" data-key="xp">${num(c.xp)} / ${R.nextXp??"—"} XP</button><span style="margin-left:14px">${num(c.credits)} CREDITS</span></div>
+    </div>
+    <div class="bactions">
+      ${can?`<button class="btn dk ${S.edit?"on":""}" data-act="edit-toggle">${S.edit?"Done editing":"Edit sheet"}</button>`:claimable&&!c.locked?`<button class="btn dk" data-act="claim">This is my character</button>`:`<span class="hint">${c.locked?"Locked by your GM":"View only"}</span>`}
+      <button class="btn dk" data-act="view" data-v="party">Party</button>
+    </div>
+  </div></section>`;
+
+  const attrs=ATTRS.map(([k,n])=>{const boosted=R.sum(k)!==0;return `<div class="attr">
+      ${boosted?`<span class="boost" title="Modified by items or effects"></span>`:""}
+      <button class="lbl" style="background:none;border:0;padding:0;width:100%" data-act="rule" data-key="${k}">${n}</button>
+      <div class="mod num">${sgn(R.mod[k])}</div>
+      <div class="score num">${E?inp(path,"attrs."+k,{type:"number",cls:"",min:3,max:18}):R.score[k]}</div>
+    </div>`}).join("");
+  const babBox=`<div class="stat">${L("bab","Attack")}<div class="big num">${sgn(R.bab)}</div><div class="foot">Bonus${ovBadge(R,"bab")}</div></div>`;
+  const initBox=`<div class="stat">${L("init","Initiative")}<button class="rollbtn" data-act="roll-init" title="Roll 1d8 ${sgn(R.init)}" style="font-size:30px;padding:2px 12px">${sgn(R.init)}</button><div class="foot">${R.initTwice?"1d8 ×2, best":"1d8"}${ovBadge(R,"init")}</div></div>`;
+  const hpBox=`<div class="hpbox">
+    ${can?`<div class="hpctl"><button class="btn sm h" data-act="hp" data-sign="1">Heal</button><input id="hp-amt" type="number" min="0" aria-label="Amount"><button class="btn sm d" data-act="hp" data-sign="-1">Damage</button></div>`:`<div></div>`}
+    <div><div class="hpnums"><span class="lbl">Current</span><span></span><span class="lbl">Max${ovBadge(R,"hpMax")}</span>
+      <span class="big num">${num(c.hp?.cur)}</span><span class="sl">/</span><span class="big num">${E?inp(path,"hp.max",{type:"number",cls:"",min:0,attrs:'title="Rolled max HP"'}):R.hpMax}</span></div>
+      <div class="hpbar"><i style="width:${hpPct}%;background:${hpCol}"></i></div>
+      <button class="hpfoot" data-act="rule" data-key="hp">${num(c.hp?.cur)<=0?`<span style="color:var(--bad)">Mortally wounded</span>`:"Hit Points"}</button></div>
+  </div>`;
+
+  const acSvg=`<button class="ac" data-act="rule" data-key="ac" aria-label="Armor Class ${R.ac}"><svg viewBox="0 0 100 112"><path d="M50 4 L92 18 L88 62 Q82 92 50 108 Q18 92 12 62 L8 18 Z" fill="#fff" stroke="#c53131" stroke-width="3"/><path d="M50 11 L85 23 L81 61 Q76 86 50 100 Q24 86 19 61 L15 23 Z" fill="none" stroke="#c53131" stroke-opacity=".35" stroke-width="1"/><text x="50" y="36" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63">ARMOR</text><text x="50" y="72" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="36" fill="#1d1d1f">${R.ac}</text><text x="50" y="88" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63">CLASS</text></svg>${R.ov.ac?`<span class="ovr-badge">GM</span>`:""}</button>`;
+  const strainPips=Array.from({length:Math.max(R.strainMax,0)},(_,i)=>`<i class="${i<R.strainPerm?"p":i<R.strainCur?"f":""}"></i>`).join("");
+  const effUsed=num(c.effort?.scene)+num(c.effort?.day);
+  const effPips=Array.from({length:R.effortMax},(_,i)=>`<i class="${i<effUsed?"":"e"}"></i>`).join("");
+  const strainBox=`<div class="ibox"><div class="row">${L("strain","System Strain"+ovBadge(R,"strainMax"))}${can?`<span><button class="iconbtn" data-act="strain" data-d="-1" aria-label="Less strain">−</button> <button class="iconbtn" data-act="strain" data-d="1" aria-label="More strain">+</button></span>`:""}</div><span class="big num">${R.strainCur}<small> / ${R.strainMax}</small></span><div class="pipline" style="justify-content:flex-start" title="Red: permanent from cyberware. Amber: temporary.">${strainPips}</div></div>`;
+  const thirdBox=R.effortMax>0?`<div class="ibox"><div class="row">${L("effort","Effort"+ovBadge(R,"effortMax"))}<span class="big num">${Math.max(0,R.effortMax-effUsed)}<small> / ${R.effortMax}</small></span></div><div class="pipline" style="justify-content:flex-start">${effPips}</div>${can?`<div class="row" style="justify-content:flex-start;gap:4px"><span class="hint">Scene</span><button class="iconbtn" data-act="effort" data-k="scene" data-d="-1">−</button><button class="iconbtn" data-act="effort" data-k="scene" data-d="1">+</button><span class="hint">Day</span><button class="iconbtn" data-act="effort" data-k="day" data-d="-1">−</button><button class="iconbtn" data-act="effort" data-k="day" data-d="1">+</button></div>`:""}</div>`
+    :`<div class="ibox"><span class="lbl" style="cursor:default">${esc(CLASS_TEXT[c.class]?.t||c.class)}</span><p>${esc((CLASS_TEXT[c.class]?.d||"").split("\n").pop())}</p></div>`;
+  const eff=(c.effects||[]).filter(f=>f.active);
+  const condBox=`<div class="ibox">${L("mods","Effects & Conditions")}${eff.length?eff.map(f=>`<p><b style="color:var(--text)">${esc(f.name||"Effect")}</b> ${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")}</p>`).join(""):`<p>None active</p>`}</div>`;
+
+  const saves=`<div class="frame"><div class="frame-b" style="padding-top:14px"><div class="saves">
+    ${["physical","evasion","mental","luck"].map(k=>`<div class="save"><button class="lbl" data-act="rule" data-key="save_${k}">${k}${ovBadge(R,"save_"+k)}</button><button class="rollbtn tgt" data-act="roll-save" data-save="${k}" title="Roll 1d20, need ${R.save[k]} or more">${R.save[k]}</button></div>`).join("")}
+  </div><p class="hint" style="margin:8px 0 0;text-align:center">Roll 1d20, meet or beat the number</p></div><div class="frame-f">Saving Throws <button class="iconbtn" data-act="rule" data-key="saves" aria-label="Saving throw rules">?</button></div></div>`;
+
+  const ropts=`<div class="frame"><div class="frame-b ropts" style="padding-top:14px">
+    <div class="grp"><span class="hint">Situational mod</span><span style="display:flex;align-items:center;gap:4px"><button class="iconbtn" data-act="opt-sit" data-d="-1">−</button><span class="num" style="min-width:26px;text-align:center;font-family:var(--display);font-size:17px">${sgn(S.opts.sit)}</span><button class="iconbtn" data-act="opt-sit" data-d="1">+</button></span></div>
+    <div class="grp"><label class="hint" for="opt-diff">Difficulty</label><select id="opt-diff" data-opt="diff"><option value="0">None</option>${[6,7,8,9,10,11,12,13,14].map(n=>`<option value="${n}" ${S.opts.diff==n?"selected":""}>${n}${n===6?" modest":n===8?" competent":n===10?" hard":n===12?" expert":n===14?" near impossible":""}</option>`).join("")}</select></div>
+    <div class="grp"><label class="hint" for="opt-attr">Skill attribute</label><select id="opt-attr" data-opt="attr"><option value="auto">Usual</option>${ATTRS.map(a=>`<option value="${a[0].toUpperCase()}" ${S.opts.attr===a[0].toUpperCase()?"selected":""}>${a[0].toUpperCase()}</option>`).join("")}</select></div>
+    <label class="toggle"><input type="checkbox" id="opt-keep3" data-opt="keep3" ${S.opts.keep3?"checked":""}>3d6, keep best 2</label>
+  </div><div class="frame-f">Roll Options <button class="iconbtn" data-act="rule" data-key="skillcheck" aria-label="How checks work">?</button></div></div>`;
+
+  const enc=`<div class="frame enc"><div class="frame-b" style="padding-top:14px">
+    <div class="row"><span>Readied</span><span class="num">${R.readied} / ${R.readiedLimit}${ovBadge(R,"readied")}</span></div><div class="meter"><i class="${R.readied>R.readiedLimit?"over":""}" style="width:${Math.min(100,R.readiedLimit?R.readied/R.readiedLimit*100:100)}%"></i></div>
+    <div class="row"><span>Stowed</span><span class="num">${R.stowed} / ${R.stowedLimit}${ovBadge(R,"stowed")}</span></div><div class="meter"><i class="${R.stowed>R.stowedLimit?"over":""}" style="width:${Math.min(100,R.stowedLimit?R.stowed/R.stowedLimit*100:100)}%"></i></div>
+    ${R.readied>R.readiedLimit||R.stowed>R.stowedLimit?`<p class="hint" style="color:var(--bad);margin:0">Over your limit: you're slowed.</p>`:""}
+  </div><div class="frame-f">Encumbrance <button class="iconbtn" data-act="rule" data-key="enc" aria-label="Encumbrance rules">?</button></div></div>`;
+
+  const skillRow=(k,name,group,attrLbl)=>{
+    const lv=group==="psy"?R.psy[k]:R.skills[k];const base=num(c[group]?.[k],-1);
+    const a=(S.opts.attr==="auto"?attrLbl:S.opts.attr);
+    const tot=group==="psy"?null:lv+R.mod[(a||"int").toLowerCase()]+R.sum("skillChecks")+num(S.opts.sit);
+    const left=E?`<span class="skedit"><button class="iconbtn" data-act="skill" data-g="${group}" data-k="${k}" data-d="-1" aria-label="Lower ${name}">−</button><span class="num" style="min-width:18px;text-align:center">${base}</span><button class="iconbtn" data-act="skill" data-g="${group}" data-k="${k}" data-d="1" aria-label="Raise ${name}">+</button></span>`
+      :`<span class="prof" title="${lv<0?"Untrained":"Level "+lv}"><span class="dot ${lv>=0?"f":""}"></span>${lv>0?`<small>${lv}</small>`:""}</span><span class="sattr">${group==="psy"?"":esc(a)}</span>`;
+    return `<li>${left}
+      <button class="sname ${lv<0?"untr":""}" data-act="rule" data-key="skill_${k}">${esc(name)}${lv!==base?` <span class="tag hb" title="Changed by items">${sgn(lv-base)}</span>`:""}</button>
+      ${group==="psy"?`<span class="num" style="text-align:center;font-family:var(--display);font-size:17px">${lv<0?"—":lv}</span>`:`<button class="rollbtn" data-act="roll-skill" data-skill="${k}" title="Roll 2d6 ${sgn(tot)}">${sgn(tot)}</button>`}</li>`;
+  };
+  const skills=`<div class="frame"><div class="frame-b" style="padding-top:12px">
+    <div class="skhead"><span>${E?"Level":"Prof"}</span><span>${E?"":"Mod"}</span><span>Skill</span><span style="text-align:center">Bonus</span></div>
+    <ul class="skills">${SKILLS.map(s=>skillRow(s[0],s[1],"skills",s[2])).join("")}</ul>
+    ${R.psychic||E?`<div class="lbl" style="margin:14px 0 4px;color:var(--info)">Psychic disciplines</div><ul class="skills">${PSY.map(s=>skillRow(s[0],s[1],"psy","")).join("")}</ul>`:""}
+  </div><div class="frame-f">Skills <button class="iconbtn" data-act="rule" data-key="skilllevels" aria-label="Skill level rules">?</button></div></div>`;
+
+  const tabs=[["actions","Actions"],["inventory","Inventory"],["features","Foci & Features"],["notes","Notes"]];
+  if(S.isGM||S.offline)tabs.push(["gm","GM Tools"]);
+  if(!tabs.find(t=>t[0]===S.tab))S.tab="actions";
+  const tabBody={actions:()=>renderActions(path,c,R,can),inventory:()=>renderInventory(path,c,R,can),features:()=>renderFeatures(path,c,R,E),notes:()=>renderNotes(path,c,can),gm:()=>renderGM(path,c,R)}[S.tab]();
+  const panel=`<div class="frame"><div class="tabs" role="tablist">${tabs.map(t=>`<button class="tab ${S.tab===t[0]?"on":""}" role="tab" aria-selected="${S.tab===t[0]}" data-act="tab" data-tab="${t[0]}">${t[1]}</button>`).join("")}</div><div class="tabbody">${tabBody}</div></div>`;
+
+  return `${head}<section class="toprow">${attrs}${babBox}${initBox}${hpBox}</section>
+    <section class="body"><div class="stack">${saves}${ropts}${enc}</div><div class="stack">${skills}</div>
+    <div class="stack col-actions"><div class="cstrip">${acSvg}${strainBox}${thirdBox}${condBox}</div>${panel}</div></section>`;
+}
+
+function renderActions(path,c,R,can){
+  const weapons=R.items.map((w,i)=>({w,i})).filter(x=>x.w.type==="weapon");
+  weapons.push({w:unarmedWeapon(R),i:"unarmed"});
+  const rows=weapons.map(({w,i})=>{const W=weaponStats(c,R,w);const real=i!=="unarmed";return `<tr>
+    <td>${real?`<button class="iname" data-act="item" data-i="${i}">`:`<span class="iname" style="cursor:default">`}${esc(w.name||"Weapon")}${w.linked?`<span class="tag hb">Homebrew</span>`:""}${w.energy?`<span class="tag" title="Energy weapons get +1 to hit">Energy</span>`:""}${w.burst?`<span class="tag" title="Can fire in burst mode">Burst</span>`:""}${real&&!w.equipped?`<span class="tag">Not equipped</span>`:""}${real?`</button>`:`</span>`}<span class="isub">${esc(SKILL[W.sk]?.name||W.sk)} · ${esc(W.best.toUpperCase())}${w.range?" · "+esc(w.range)+" m":""}${W.missDmg?" · "+W.missDmg+" on a miss":""}</span></td>
+    <td><button class="rollbtn" data-act="attack" data-i="${i}" title="1d20 ${sgn(W.atk)}: rolls to-hit and damage">${sgn(W.atk+(S.opts.burst&&w.burst?2:0))}</button></td>
+    <td><button class="rollbtn" data-act="damage" data-i="${i}" title="Roll damage only">${esc(W.dmgText)}</button></td>
+    <td>${W.shock?`<button class="rollbtn" style="cursor:help" data-act="rule" data-key="shock">${W.shock.dmg}/${W.shock.ac>=99?"any AC":"AC "+W.shock.ac}</button>`:`<span class="hint">—</span>`}</td>
+    <td class="num">${real&&num(w.mag)>0?`${can?`<button class="iconbtn" data-act="ammo" data-i="${i}" data-d="-1" aria-label="Use ammo">−</button> `:""}${num(w.ammo)}/${num(w.mag)}${can?` <button class="btn sm ghost" data-act="reload" data-i="${i}">Reload</button>`:""}`:`<span class="hint">—</span>`}</td></tr>`}).join("");
+  const cls=CLASS_TEXT[c.class];
+  const anyBurst=weapons.some(x=>x.w.burst);
+  return `<div class="sect"><span class="lbl">Attacks <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="attack">how attacks work</button></span>
+    <div class="tbl-wrap"><table><thead><tr><th>Weapon</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Ammo</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${anyBurst?`<label class="toggle" style="margin-top:8px"><input type="checkbox" id="opt-burst" data-opt="burst" ${S.opts.burst?"checked":""}>Burst fire (+2 to hit and damage, uses 3 rounds)</label>`:""}
+    <p class="hint">Click Hit to roll to-hit and damage together. Natural 20 always hits; natural 1 always misses.</p></div>
+    <div class="sect"><span class="lbl">Class abilities</span>
+      <div class="feature"><h4>${esc(cls?.t||c.class)}</h4><p>${esc(cls?.d||"")}</p></div>
+      ${c.class==="Adventurer"?(c.partials||[]).map(p=>`<div class="feature"><h4>Partial ${esc(p)}</h4><p>${esc(PARTIAL_TEXT[p]||"")}</p></div>`).join(""):""}
+    </div>
+    <div class="sect"><span class="lbl">In combat</span><p class="hint" style="margin:0">Each round you get one Main Action, one Move Action, and as many Instant actions as the situation allows. Use the game log for anything else: type dice like 2d6+1.</p></div>`;
+}
+
+function renderInventory(path,c,R,can){
+  const inv=c.inventory||[];
+  const rows=inv.map((e,i)=>{const it=R.items[i];return `<tr>
+    <td style="width:30px"><input type="checkbox" aria-label="Equipped" id="${fid(path,"inventory."+i+".equipped")}" data-doc="${esc(path)}" data-path="inventory.${i}.equipped" ${e.equipped?"checked":""} ${can?"":"disabled"}></td>
+    <td><button class="iname" data-act="item" data-i="${i}">${esc(it.name||"Item")}${it.linked?`<span class="tag hb">Homebrew</span>`:""}${(it.mods||[]).length?`<span class="tag on">${(it.mods||[]).length} bonus${(it.mods||[]).length>1?"es":""}</span>`:""}</button><span class="isub">${esc((ITEM_TYPES.find(t=>t[0]===it.type)||[0,"Gear"])[1])}${it.type==="armor"?" · AC "+num(it.ac,10):""}${it.type==="cyber"?" · strain "+num(it.strain):""}</span></td>
+    <td style="width:70px">${can?inp(path,"inventory."+i+".qty",{type:"number",cls:"inp n",min:0}):num(e.qty,1)}</td>
+    <td style="width:150px">${can?sel(path,"inventory."+i+".location",LOCATIONS):esc((LOCATIONS.find(l=>l[0]===e.location)||["","Stowed"])[1])}</td>
+    <td class="num" style="width:50px">${num(it.enc)}</td>
+    <td style="width:40px">${can?`<button class="iconbtn" data-act="inv-remove" data-i="${i}" aria-label="Remove ${esc(it.name)}">${S.confirm==="inv"+i?"!":"×"}</button>`:""}</td></tr>`}).join("");
+  const hb=hbPaths();
+  return `${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="hb-pick" class="inp" style="max-width:260px"><option value="">Add from compendium…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)} (${esc(S.docs[p].type||"gear")})</option>`).join("")}</select>
+      <button class="btn" data-act="inv-add-hb">Add</button><button class="btn ghost" data-act="inv-add-custom">+ Custom item</button></div>`:""}
+    ${inv.length?`<div class="tbl-wrap"><table><thead><tr><th title="Equipped items apply their bonuses">Eq.</th><th>Item</th><th>Qty</th><th>Carried</th><th>Enc</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">Nothing carried yet.</div>`}
+    ${S.confirm&&S.confirm.startsWith("inv")?`<p class="hint" style="color:var(--bad)">Click the ! again to remove that item.</p>`:""}
+    <p class="hint">Check Eq. to equip: equipped armor sets your AC, and equipped items apply their bonuses. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>`;
+}
+
+function focusSelectOpts(){
+  const book=Object.entries(FOCI).map(([k,f])=>[k,f.name]);
+  const hb=hbFociPaths().map(p=>["hb:"+p.split("/")[1],(S.docs[p].name||"Homebrew focus")+" (homebrew)"]);
+  return [["","Custom (write it yourself)"],...book,...hb];
+}
+function renderFeatures(path,c,R,E){
+  const foci=(c.foci||[]).map((e,j)=>{
+    const f=resolveFocus(e);
+    if(E){
+      const def=e.key&&!e.key.startsWith("hb:")?FOCI[e.key]:null;
+      return `<div class="feature"><div class="grid3" style="grid-template-columns:1fr 100px 30px;margin-bottom:6px">${sel(path,"foci."+j+".key",focusSelectOpts())}${sel(path,"foci."+j+".level",[[1,"Level 1"],[2,"Level 2"]])}<button class="iconbtn" data-act="focus-remove" data-j="${j}" aria-label="Remove focus">×</button></div>
+        ${!e.key?inp(path,"foci."+j+".name",{live:true,ph:"Focus name"}):""}
+        ${e.key==="specialist"?`<div class="field" style="margin-top:6px"><span class="lbl">Specialist skill</span>${sel(path,"foci."+j+".skill",[["","Choose…"],...SKILLS.filter(s=>!["shoot","stab","punch"].includes(s[0])).map(s=>[s[0],s[1]])])}</div>`:""}
+        <div style="margin-top:6px">${ta(path,"foci."+j+".text",{ph:e.key?"Your notes (optional)":"What it does",rows:2})}</div></div>`;
+    }
+    if(!f.name&&!f.text)return "";
+    return `<div class="feature"><h4>${esc(f.name||"Focus")} <span class="tag">Level ${f.level}</span>${f.hb?`<span class="tag hb">Homebrew</span>`:""}</h4>${f.d?`<p>${esc(f.d)}</p>`:""}${f.l1?`<p style="margin-top:6px"><b>Level 1:</b> ${esc(f.l1)}</p>`:""}${f.level>=2&&f.l2?`<p style="margin-top:4px"><b>Level 2:</b> ${esc(f.l2)}</p>`:""}${e.text?`<p style="margin-top:6px"><i>${esc(e.text)}</i></p>`:""}</div>`;
+  }).join("");
+  const techs=(c.techniques||[]);
+  const known=PSY.filter(p=>R.psy[p[0]]>=1).map(p=>p[0]);
+  const techOpts=known.flatMap(d=>DISC[d].t1.map(t=>[d+"|"+t[0],PSYK[d].name+": "+t[0]]));
+  const techHtml=(R.psychic||techs.length)?`<div class="sect"><span class="lbl">Psychic disciplines & techniques <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="effort">effort</button></span>
+    ${PSY.filter(p=>R.psy[p[0]]>=0).map(p=>`<div class="feature"><h4>${esc(p[1])}-${R.psy[p[0]]}: ${esc(DISC[p[0]].core)}</h4><p>${esc(DISC[p[0]].l0)}</p></div>`).join("")}
+    ${techs.map((t,j)=>{const d=DISC[t.disc];const tt=d?d.t1.find(x=>x[0]===t.name):null;return `<div class="feature"><h4>${esc(t.name)} <span class="tag">${esc(PSYK[t.disc]?.name||"")}</span>${E?` <button class="iconbtn" data-act="tech-remove" data-j="${j}" aria-label="Remove technique">×</button>`:""}</h4><p>${esc(tt?tt[1]:"")}</p></div>`}).join("")}
+    ${E&&techOpts.length?`<div style="display:flex;gap:6px;align-items:center"><select id="tech-pick" class="inp" style="max-width:320px"><option value="">Add a level-1 technique…</option>${techOpts.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join("")}</select><button class="btn sm" data-act="tech-add">Add</button></div>`:""}</div>`:"";
+  const eff=(c.effects||[]).filter(f=>f.active);
+  return `<div class="sect"><span class="lbl">Foci <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="foci">what are foci?</button></span>${foci||`<div class="empty">No foci yet.${canEdit(path)?" Turn on Edit sheet to add them.":""}</div>`}${E?`<button class="btn sm" data-act="focus-add">+ Add focus</button>`:""}</div>
+    ${techHtml}
+    <div class="sect"><span class="lbl">Other features</span>${E?ta(path,"features",{ph:"Background perks, ship role, anything else…",rows:5}):c.features?`<div class="feature"><p>${esc(c.features)}</p></div>`:`<p class="hint">Nothing here yet.</p>`}</div>
+    <div class="sect"><span class="lbl">Active effects</span>${eff.length?eff.map(f=>`<div class="feature"><h4>${esc(f.name||"Effect")}</h4><p>${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")||"No bonuses"}</p></div>`).join(""):`<p class="hint">None. Your GM can add conditions and temporary bonuses.</p>`}</div>`;
+}
+function renderNotes(path,c,can){
+  return `<div class="sect"><span class="lbl">Goal</span>${can?inp(path,"goal",{live:true,ph:"What does your character want?"}):`<p>${esc(c.goal||"—")}</p>`}</div>
+    <div class="sect"><span class="lbl">Notes</span>${can?ta(path,"notes",{rows:12,ph:"Contacts, debts, ship details, session notes…"}):`<div class="feature"><p>${esc(c.notes||"—")}</p></div>`}</div>`;
+}
+function modsEditor(doc,base,dis){
+  const mods=getPath(S.docs[doc],base)||[];
+  return `${mods.map((m,j)=>`<div class="modrow">${sel(doc,base+"."+j+".target",TARGETS,{dis})}${inp(doc,base+"."+j+".value",{type:"number",cls:"inp",dis})}${dis?"":`<button class="iconbtn" data-act="mod-remove" data-doc="${esc(doc)}" data-base="${esc(base)}" data-j="${j}" aria-label="Remove bonus">×</button>`}</div>`).join("")||`<p class="hint">No bonuses.</p>`}
+    ${dis?"":`<button class="btn sm" data-act="mod-add" data-doc="${esc(doc)}" data-base="${esc(base)}">+ Add bonus</button>`}`;
+}
+function renderGM(path,c,R){
+  const ovs=[["ac","Armor Class",R.b.ac],["bab","Attack bonus",R.b.bab],["init","Initiative bonus",R.b.init],["hpMax","Max HP",R.b.hpMax],["save_physical","Physical save",R.b.save_physical],["save_evasion","Evasion save",R.b.save_evasion],["save_mental","Mental save",R.b.save_mental],["save_luck","Luck save",R.b.save_luck],["strainMax","Max strain",R.b.strainMax],["effortMax","Max Effort",R.b.effortMax||[]],["readied","Readied limit",R.b.readied],["stowed","Stowed limit",R.b.stowed]];
+  const autoOf=parts=>(parts||[]).filter(p=>!p.ov&&p.v!=null).reduce((s,p)=>s+p.v,0);
+  const hb=hbPaths();
+  return `<div class="sect"><span class="lbl">Control</span>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">${chk(path,"locked","Lock sheet (players can't edit)")}${chk(path,"npc","NPC (players can't claim it)")}</div>
+      <p class="hint" style="margin:8px 0 0">Claimed on ${(c.owners||[]).length} device${(c.owners||[]).length===1?"":"s"}. ${(c.owners||[]).length?`<button class="btn sm" data-act="release">Release claims</button>`:""}</p>
+    </div>
+    <div class="sect"><span class="lbl">Quick adjust</span><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input id="gm-xp" class="inp n" type="number" placeholder="XP" aria-label="XP to award"><button class="btn sm" data-act="gm-xp">Award XP</button>
+      <input id="gm-cr" class="inp n" type="number" placeholder="Cr" aria-label="Credits"><button class="btn sm" data-act="gm-cr">Give credits</button>
+      <select id="gm-item" class="inp" style="max-width:220px"><option value="">Grant item…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)}</option>`).join("")}</select><button class="btn sm" data-act="gm-grant">Grant</button>
+    </div></div>
+    <div class="sect"><span class="lbl">Effects & conditions <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="mods">how bonuses apply</button></span>
+      ${(c.effects||[]).map((f,j)=>`<div class="feature"><div class="grid3" style="grid-template-columns:1fr auto 30px;margin-bottom:8px;align-items:center">${inp(path,"effects."+j+".name",{live:true,ph:"Effect name"})}${chk(path,"effects."+j+".active","Active")}<button class="iconbtn" data-act="effect-remove" data-j="${j}" aria-label="Remove effect">×</button></div>${modsEditor(path,"effects."+j+".mods",false)}</div>`).join("")}
+      <button class="btn sm" data-act="effect-add">+ Add effect</button></div>
+    <div class="sect"><span class="lbl">Overrides <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="overrides">how overrides work</button></span>
+      <div class="grid4">${ovs.map(([k,l,parts])=>`<div class="field"><span class="lbl">${l}</span>${inp(path,"overrides."+k,{type:"number",blank:true,ph:"Auto: "+autoOf(parts)})}</div>`).join("")}</div></div>
+    <div class="sect"><span class="lbl">Sheet</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dup">Copy as GM sheet</button><button class="btn danger" data-act="del-sheet">${S.confirm==="del"?"Click again to delete":"Delete sheet"}</button></div></div>`;
+}
+
+/* ================= PARTY / COMPENDIUM ================= */
+function renderParty(){
+  const ps=sheetPaths();
+  if(!ps.length)return `<div class="empty">No sheets yet.</div>`;
+  return `<h2 class="pagetitle">Party</h2><div class="pgrid">${ps.map(p=>{const c=S.docs[p];const R=compute(c);const pct=R.hpMax>0?Math.max(0,Math.min(100,num(c.hp?.cur)/R.hpMax*100)):0;
+    const owner=c.npc?"NPC":(c.player||"");
+    return `<div class="pcard"><div class="top"><span class="av">${esc(initials(c.name))}</span><div style="min-width:0;flex:1"><h3>${esc(c.name||"Unnamed")}</h3><span class="hint">Lv ${R.level} ${esc(c.class)}${owner?" · "+esc(owner):""}</span></div><button class="btn sm" data-act="open" data-doc="${esc(p)}">Open</button></div>
+      <div><div class="row" style="display:flex;justify-content:space-between"><span class="lbl">HP</span><span class="num">${num(c.hp?.cur)} / ${R.hpMax}</span></div><div class="hpbar"><i style="width:${pct}%;background:${pct<34?"var(--bad)":pct<67?"var(--warn)":"var(--good)"}"></i></div></div>
+      <div class="pstats"><div><span class="lbl">AC</span><b class="num">${R.ac}</b></div><div><span class="lbl">Phys</span><b class="num">${R.save.physical}</b></div><div><span class="lbl">Evas</span><b class="num">${R.save.evasion}</b></div><div><span class="lbl">Ment</span><b class="num">${R.save.mental}</b></div></div>
+      <div class="hint">Strain ${R.strainCur}/${R.strainMax}${R.psychic?" · Effort "+Math.max(0,R.effortMax-num(c.effort?.scene)-num(c.effort?.day))+"/"+R.effortMax:""} · ${num(c.credits)} cr</div>
+      ${S.isGM||S.offline?`<div style="display:flex;gap:6px"><button class="btn sm d" style="color:var(--bad)" data-act="party-hp" data-doc="${esc(p)}" data-d="-1">−1 HP</button><button class="btn sm" style="color:var(--good)" data-act="party-hp" data-doc="${esc(p)}" data-d="1">+1 HP</button><button class="btn sm" data-act="party-hp" data-doc="${esc(p)}" data-d="full">Full HP</button></div>`:""}
+    </div>`}).join("")}</div>`;
+}
+function itemFields(doc,b,dis){
+  const d=getPath(S.docs[doc],b.replace(/\.$/,""))||S.docs[doc];const t=(b?getPath(S.docs[doc],b+"type"):S.docs[doc].type)||"gear";
+  const f=(k,l,o={})=>`<div class="field"><span class="lbl">${l}</span>${inp(doc,b+k,{dis,...o})}</div>`;
+  return `<div class="grid2">${f("name","Name",{live:true})}<div class="field"><span class="lbl">Type</span>${sel(doc,b+"type",ITEM_TYPES,{dis})}</div></div>
+    <div class="grid3" style="margin-top:8px">${f("enc","Encumbrance",{type:"number",min:0})}${f("cost","Cost (cr)",{type:"number",min:0})}${f("tl","Tech level",{type:"number",min:0})}</div>
+    ${t==="weapon"?`<div class="grid3" style="margin-top:8px">${f("dmg","Damage",{live:true,ph:"1d8"})}<div class="field"><span class="lbl">Attribute</span>${sel(doc,b+"attr",["DEX","STR","STR/DEX","INT","WIS","CON","CHA"],{dis})}</div><div class="field"><span class="lbl">Skill</span>${sel(doc,b+"skill",[["shoot","Shoot"],["stab","Stab"],["punch","Punch"],...SKILLS.filter(s=>!["shoot","stab","punch"].includes(s[0])).map(s=>[s[0],s[1]])],{dis})}</div>
+      ${f("shock","Shock",{live:true,ph:"2/15"})}${f("range","Range (m)",{live:true,ph:"100/300"})}${f("mag","Magazine",{type:"number",min:0})}</div>
+      <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap">${chk(doc,b+"energy","Energy weapon (+1 to hit)",{dis})}${chk(doc,b+"burst","Can burst fire",{dis})}</div>`:""}
+    ${t==="armor"||t==="shield"?`<div class="grid3" style="margin-top:8px">${f("ac",t==="shield"?"Shield base AC":"Armor AC",{type:"number",min:0})}</div>${t==="shield"?`<p class="hint">A shield sets your base AC to this number, or gives +1 if your armor is already that good.</p>`:""}`:""}
+    ${t==="cyber"?`<div class="grid3" style="margin-top:8px">${f("strain","System strain",{type:"number",min:0})}</div>`:""}
+    <div class="field" style="margin-top:8px"><span class="lbl">Description / rules text</span>${ta(doc,b+"description",{rows:4,dis})}</div>
+    <div class="field" style="margin-top:10px"><span class="lbl">Automatic bonuses ${t==="weapon"?"(attack/damage apply to this weapon only)":"(apply while equipped)"}</span>${modsEditor(doc,b+"mods",dis)}</div>`;
+}
+function itemSummary(it){
+  const bits=[];
+  if(it.type==="weapon"){bits.push("Damage "+(it.dmg||"—"));if(it.shock)bits.push("Shock "+it.shock);if(it.range)bits.push("Range "+it.range);if(num(it.mag))bits.push("Mag "+it.mag);bits.push((it.attr||"DEX")+" · "+(SKILL[it.skill]?.name||"Shoot"))}
+  if(it.type==="armor")bits.push("AC "+num(it.ac,10));if(it.type==="shield")bits.push("Shield AC "+num(it.ac,13)+"/+1");if(it.energy)bits.push("Energy +1 hit");
+  if(it.type==="cyber")bits.push("System strain "+num(it.strain));
+  if(num(it.enc))bits.push("Enc "+it.enc);if(num(it.cost))bits.push(it.cost+" cr");if(num(it.tl))bits.push("TL"+it.tl);
+  return bits.join(" · ");
+}
+function renderCompendium(){
+  const tab=S.compTab||"items";
+  const tabs=`<div class="seg" style="margin:0 0 12px">${[["items","Items"],["foci","Foci"]].map(([k,l])=>`<button class="${tab===k?"on":""}" data-act="comp-tab" data-v="${k}">${l}</button>`).join("")}</div>`;
+  if(tab==="foci")return renderCompFoci(tabs);
+  return renderCompItems(tabs);
+}
+function renderCompFoci(tabs){
+  const ps=hbFociPaths();const sel_=S.compFSel&&S.docs[S.compFSel]?S.compFSel:ps[0];const f=sel_?S.docs[sel_]:null;const gm=S.isGM||S.offline;
+  const book=Object.entries(FOCI);
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px;gap:8px;flex-wrap:wrap"><h2 class="pagetitle" style="margin:0">Compendium</h2>${gm?`<button class="btn pri" data-act="hbf-new">+ New focus</button>`:""}</div>${tabs}
+  <div class="comp"><div class="frame clist">
+    <div class="lbl" style="padding:8px 14px 2px;color:var(--accent)">Homebrew foci</div>
+    ${ps.length?ps.map(p=>{const d=S.docs[p];return `<button class="citem ${p===sel_?"on":""}" data-act="hbf-sel" data-doc="${esc(p)}"><b>${esc(d.name||"Unnamed")}</b><span class="tag">${esc(d.type||"noncombat")}</span><span class="isub">${esc(d.d||"")}</span></button>`}).join(""):`<p class="hint" style="padding:0 14px">${gm?"None yet. Make one with + New focus.":"Your GM hasn't made any yet."}</p>`}
+    <div class="lbl" style="padding:12px 14px 2px;color:var(--accent)">From the rulebook</div>
+    ${book.map(([k,d])=>`<button class="citem ${S.compFSel==="book:"+k?"on":""}" data-act="hbf-sel" data-doc="book:${k}"><b>${esc(d.name)}</b><span class="tag">${esc(d.type)}</span><span class="isub">${esc(d.d)}</span></button>`).join("")}
+  </div>
+  <div class="frame">${S.compFSel&&S.compFSel.startsWith("book:")?(()=>{const d=FOCI[S.compFSel.slice(5)];return `<div class="frame-b" style="padding-top:14px"><h3 style="font-size:24px">${esc(d.name)}</h3><p class="hint">${esc(d.type)}${d.skill?" · bonus skill: "+esc(specName(d.skill)):""}</p><p>${esc(d.d)}</p><p><b>Level 1:</b> ${esc(d.l1)}</p>${d.l2?`<p><b>Level 2:</b> ${esc(d.l2)}</p>`:""}</div>`})()
+    :f?`<div class="frame-h"><h3>${gm?"Edit focus":"Focus"}</h3>${gm?`<button class="btn sm danger" data-act="hbf-del" data-doc="${esc(sel_)}">${S.confirm==="hbf"+sel_?"Click again":"Delete"}</button>`:""}</div><div class="frame-b">${gm?focusFields(sel_):`<h3 style="font-size:22px">${esc(f.name)}</h3><p>${esc(f.d||"")}</p><p><b>Level 1:</b> ${esc(f.l1||"")}</p>${f.l2?`<p><b>Level 2:</b> ${esc(f.l2)}</p>`:""}`}</div>`:`<div class="empty" style="margin:12px">Select a focus.</div>`}</div></div>`;
+}
+function focusFields(doc){
+  const skillOptsAll=[["","No bonus skill"],["any_combat","Any combat skill"],["any_noncombat","Any non-combat skill"],["any_skill","Any skill"],["any_psychic","Any psychic skill"],...SKILLS.map(s=>[s[0],s[1]]),...PSY.map(s=>[s[0],s[1]])];
+  return `<div class="grid2"><div class="field"><span class="lbl">Name</span>${inp(doc,"name",{live:true})}</div><div class="field"><span class="lbl">Type (decides which bonus slots allow it)</span>${sel(doc,"type",[["noncombat","Non-combat"],["combat","Combat"],["psychic","Psychic"],["special","Special"]])}</div></div>
+   <div class="field" style="margin-top:8px"><span class="lbl">Bonus skill at level 1</span>${sel(doc,"skill",skillOptsAll)}</div>
+   <div class="field" style="margin-top:8px"><span class="lbl">Short description</span>${inp(doc,"d",{live:true})}</div>
+   <div class="field" style="margin-top:8px"><span class="lbl">Level 1 effect</span>${ta(doc,"l1",{rows:3})}</div>
+   <div class="field" style="margin-top:8px"><span class="lbl">Automatic bonuses at level 1</span>${modsEditor(doc,"mods1",false)}</div>
+   <div class="field" style="margin-top:12px"><span class="lbl">Level 2 effect (leave blank for a one-level focus)</span>${ta(doc,"l2",{rows:3})}</div>
+   <div class="field" style="margin-top:8px"><span class="lbl">Extra automatic bonuses at level 2</span>${modsEditor(doc,"mods2",false)}</div>
+   <p class="hint" style="margin-top:10px">This focus shows up in the character creation wizard and on sheets. Changes update every character who has it.</p>`;
+}
+function renderCompItems(tabs){
+  const ps=hbPaths();const sel_=S.compSel&&S.docs[S.compSel]?S.compSel:ps[0];
+  const it=sel_?S.docs[sel_]:null;const gm=S.isGM||S.offline;
+  const cur=currentChar();const mine=cur&&isMine(cur.path)?cur.path:myPath();
+  const target=gm?(cur?cur.path:null):mine;
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 0 12px;gap:8px;flex-wrap:wrap"><h2 class="pagetitle" style="margin:0">Compendium</h2>${gm?`<button class="btn pri" data-act="hb-new">+ New item</button>`:""}</div>${tabs}
+  <div class="comp"><div class="frame clist">${ps.length?ps.map(p=>{const d=S.docs[p];return `<button class="citem ${p===sel_?"on":""}" data-act="hb-sel" data-doc="${esc(p)}"><b>${esc(d.name||"Unnamed")}</b><span class="tag">${esc(d.type||"gear")}</span>${(d.mods||[]).length?`<span class="tag on">${d.mods.length} bonus</span>`:""}<span class="isub">${esc(itemSummary(d))}</span></button>`}).join(""):`<div class="empty" style="margin:10px">${gm?"No homebrew yet. Make your first item.":"Your GM hasn't added any items yet."}</div>`}</div>
+  <div class="frame">${it?`<div class="frame-h"><h3>${gm?"Edit item":"Item"}</h3><div style="display:flex;gap:6px">${target?`<button class="btn sm" data-act="hb-give" data-doc="${esc(sel_)}">Add to ${esc(S.docs[target].name||"sheet")}</button>`:""}${gm?`<button class="btn sm danger" data-act="hb-del" data-doc="${esc(sel_)}">${S.confirm==="hb"+sel_?"Click again":"Delete"}</button>`:""}</div></div>
+    <div class="frame-b">${gm?itemFields(sel_,"",false)+`<p class="hint" style="margin-top:10px">Changes here update every character who carries this item.</p>`:`<h3 style="font-size:22px">${esc(it.name)}</h3><p class="hint">${esc(itemSummary(it))}</p><p style="white-space:pre-wrap">${esc(it.description||"")}</p>${(it.mods||[]).length?`<div class="calc">${it.mods.map(m=>`<div><span>${esc(TARGET_NAME[m.target]||m.target)}</span><span>${sgn(m.value)}</span></div>`).join("")}</div>`:""}`}</div>`:`<div class="empty" style="margin:12px">Select an item.</div>`}</div></div>`;
+}
+
+/* ================= DRAWER ================= */
+function calcHtml(parts,total,neg){
+  if(!parts)return "";
+  const plain=typeof total==="number";
+  return `<div class="calc">${parts.map((p,i)=>`<div><span>${esc(p.l)}</span><span>${p.ov!=null?p.ov:(plain&&i===0?p.v:sgn(p.v))}</span></div>`).join("")}<div><span>Total</span><span>${total}</span></div></div>`;
+}
+function renderDrawer(){
+  const d=S.drawer;if(!d)return "";
+  const cur=currentChar();const R=cur?compute(cur.c):null;
+  let title="",body="";
+  if(d.kind==="rule"){
+    const k=d.key;
+    if(k.startsWith("skill_")){
+      const sk=k.slice(6);const s=SKILL[sk]||PSYK[sk];title=s?.name||sk;
+      body=`<p>${esc(s?.text||"")}</p>`;
+      if(R&&SKILL[sk]){const lv=R.skills[sk];const a=(S.opts.attr==="auto"?SKILL[sk].attr:S.opts.attr).toLowerCase();const parts=[{l:"Skill level"+(lv<0?" (untrained)":""),v:lv},{l:a.toUpperCase()+" modifier",v:R.mod[a]},...R.br("skillChecks"),...sitPart()];
+        body+=`<div class="lbl" style="margin-top:12px">Your bonus on 2d6</div>${calcHtml(parts,sgn(parts.reduce((s,p)=>s+p.v,0)))}`}
+      if(R&&PSYK[sk])body+=`<p class="hint">Your level: ${R.psy[sk]<0?"not learned":R.psy[sk]}</p>`;
+      body+=RULES.skillcheck.p.map(x=>`<p class="hint">${esc(x)}</p>`).join("");
+    }else if(k.startsWith("save_")){
+      const s=k.slice(5);title=s[0].toUpperCase()+s.slice(1)+" save";
+      body=RULES.saves.p.map(x=>`<p>${esc(x)}</p>`).join("");
+      if(R)body+=`<div class="lbl" style="margin-top:12px">Your target number</div>${calcHtml(R.b["save_"+s],R.save[s])}`;
+    }else if(k==="item"){
+    }else{
+      const r=RULES[k]||{t:k,p:[]};title=r.t;body=r.p.map(x=>`<p>${esc(x)}</p>`).join("");
+      if(R){
+        const map={ac:["ac",R.ac],bab:["bab",sgn(R.bab)],init:["init",sgn(R.init)],hp:["hpMax",R.hpMax],strain:["strainMax",R.strainMax],effort:["effortMax",R.effortMax]};
+        if(map[k]&&R.b[map[k][0]])body+=`<div class="lbl" style="margin-top:12px">How yours is calculated</div>${calcHtml(R.b[map[k][0]],map[k][1])}`;
+        if(k==="strain")body+=`<p class="hint">Right now: ${R.strainPerm} permanent from cyberware + ${R.strainTemp} temporary.</p>`;
+        if(k==="enc")body+=`<div class="lbl" style="margin-top:12px">Your limits</div>${calcHtml(R.b.readied,R.readiedLimit)}${calcHtml(R.b.stowed,R.stowedLimit)}`;
+        if(ATTRS.find(a=>a[0]===k)){const parts=[{l:"Base score",v:num(cur.c.attrs?.[k],10)},...R.br(k)];body+=`<div class="lbl" style="margin-top:12px">Your score</div>${calcHtml(parts,R.score[k]+" ("+sgn(R.mod[k])+")")}`+RULES.attr.p.map(x=>`<p class="hint">${esc(x)}</p>`).join("")}
+      }
+    }
+  }else if(d.kind==="gm"){
+    const setup=S.setupDone===false;title=setup?"Set up GM access":"GM login";
+    body=setup?`<p>No GM passcode exists yet. Pick one now. Anyone who enters it gets full GM control, so keep it to yourself.</p>`:`<p>Enter the GM passcode to unlock GM tools on this device.</p>`;
+    body+=`<form data-form="gm" style="display:grid;gap:8px"><input id="gm-pass" class="inp" type="password" autocomplete="off" placeholder="Passcode (letters, numbers, - or _, 6+ characters)" aria-label="GM passcode">${setup?`<input id="gm-pass2" class="inp" type="password" autocomplete="off" placeholder="Type it again" aria-label="Confirm passcode">`:""}<button class="btn pri" type="submit">${setup?"Create passcode and become GM":"Unlock GM tools"}</button></form>
+      <p class="hint" style="margin-top:10px">GM access is remembered on this browser. On a new device or browser, log in again with the same passcode.</p>`;
+  }else if(d.kind==="item"&&cur){
+    const i=d.i;const e=(cur.c.inventory||[])[i];if(!e){S.drawer=null;return ""}
+    const it=R.items[i];const can=canEdit(cur.path);title=it.name||"Item";
+    if(it.linked){
+      body=`<p class="hint">${esc(itemSummary(it))}</p><p style="white-space:pre-wrap">${esc(it.description||"")}</p>
+        ${(it.mods||[]).length?`<div class="lbl">Bonuses</div><div class="calc">${it.mods.map(m=>`<div><span>${esc(TARGET_NAME[m.target]||m.target)}</span><span>${sgn(m.value)}</span></div>`).join("")}</div>`:""}
+        <p class="hint">This is a homebrew item. Its stats come from the compendium${S.isGM?"; edit it there to update every copy":""}.</p>
+        ${can?`<div class="grid2">${num(it.mag)>0?`<div class="field"><span class="lbl">Ammo loaded</span>${inp(cur.path,"inventory."+i+".ammo",{type:"number",min:0})}</div>`:""}</div><div class="field" style="margin-top:8px"><span class="lbl">Your notes</span>${ta(cur.path,"inventory."+i+".notes",{rows:3})}</div>`:""}
+        ${S.isGM?`<button class="btn sm" style="margin-top:10px" data-act="hb-goto" data-doc="homebrew/${esc(it.hb)}">Edit in compendium</button>`:""}`;
+    }else{
+      body=can?itemFields(cur.path,"inventory."+i+".",false)+(it.type==="weapon"?`<div class="field" style="margin-top:8px;max-width:140px"><span class="lbl">Ammo loaded</span>${inp(cur.path,"inventory."+i+".ammo",{type:"number",min:0})}</div>`:"")
+        :`<p class="hint">${esc(itemSummary(it))}</p><p style="white-space:pre-wrap">${esc(it.description||"")}</p>${(it.mods||[]).length?`<div class="calc">${it.mods.map(m=>`<div><span>${esc(TARGET_NAME[m.target]||m.target)}</span><span>${sgn(m.value)}</span></div>`).join("")}</div>`:""}`;
+    }
+    if(it.type==="weapon"){const W=weaponStats(cur.c,R,it);body+=`<div class="lbl" style="margin-top:14px">To-hit with this weapon</div>${calcHtml(W.atkParts,sgn(W.atk))}<div class="lbl">Damage bonus</div>${calcHtml(W.dmgParts,sgn(W.dflat))}`}
+  }
+  return `<div class="scrim" data-act="drawer-close"></div><aside class="drawer" role="dialog" aria-label="${esc(title)}"><div class="drawer-h"><h2>${esc(title)}</h2><button class="iconbtn" data-act="drawer-close" aria-label="Close">×</button></div><div class="drawer-body">${body}</div></aside>`;
+}
+
+/* ================= LOG ================= */
+function renderLog(){
+  const btn=`<button class="logbtn" data-act="log-toggle"><span class="dot"></span>Game log</button>`;
+  if(!S.logOpen)return btn;
+  const list=S.rolls.slice(0,50).map(r=>`<div class="entry"><div class="who"><span><b>${esc(r.char||"Someone")}</b>${r.player?" · "+esc(r.player):""}</span><span>${ago(num(r.ts))}</span></div><div class="what">${esc(r.label)}</div>${(r.lines||[]).map(lineHtml).join("")}</div>`).join("");
+  return `<aside class="log" aria-label="Game log"><div class="frame-h"><h3>Game log</h3><span style="display:flex;gap:6px">${S.isGM&&S.rolls.length?`<button class="btn sm ghost" data-act="clear-log">${S.confirm==="log"?"Click again":"Clear"}</button>`:""}<button class="iconbtn" data-act="log-toggle" aria-label="Close log">×</button></span></div>
+    <div class="log-list">${list||`<div class="empty">No rolls yet. Click any number with a box around it on a sheet.</div>`}</div>
+    <form class="log-f" data-form="custom"><input id="custom-roll" placeholder="Roll dice, e.g. 2d6+1" aria-label="Custom roll" autocomplete="off"><button class="btn pri sm" type="submit">Roll</button></form></aside>${btn}`;
+}
+
+/* ================= MAIN RENDER ================= */
+function render(){
+  const a=document.activeElement;const fidA=a&&a.id;let ss=null,se=null;try{if(a&&a.selectionStart!=null){ss=a.selectionStart;se=a.selectionEnd}}catch(e){}
+  const db=document.querySelector(".drawer-body");const dScroll=db?db.scrollTop:0;
+  const ll=document.querySelector(".log-list");const lScroll=ll?ll.scrollTop:0;
+  if(S.view==="sheet"&&(!S.current||!S.docs[S.current])){const ps=sheetPaths();S.current=myPath()||ps[0]||null}
+  const notes=[];
+  if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
+  if(S.slow&&!S.offline)notes.push(`<div class="notice"><b>Can't reach the saved sheets yet.</b> What you see may be out of date. The page keeps trying on its own.</div>`);
+  if(S.view==="create"&&!S.wiz)S.wiz=loadWiz();
+  const main=S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="create"?renderWizard():renderSheet();
+  $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
+  if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
+  const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
+  const ll2=document.querySelector(".log-list");if(ll2)ll2.scrollTop=lScroll;
+  resolveNames();
+}
+function resolveNames(){}
+
+/* ================= EVENTS ================= */
+document.addEventListener("input",e=>{const el=e.target;if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
+document.addEventListener("change",e=>{
+  const el=e.target;
+  if(el.dataset&&el.dataset.w){wizInput(el,false);return}
+  if(el.id==="w_bgnum"){const v=num(el.value,0);if(v>=1&&v<=20){wset("bg",BG_ORDER[v-1]);render()}return}
+  if(el.dataset&&el.dataset.opt){const k=el.dataset.opt;S.opts[k]=el.type==="checkbox"?el.checked:(k==="diff"?num(el.value):el.value);render();return}
+  if(el.dataset&&el.dataset.path){applyInput(el);render()}
+});
+document.addEventListener("submit",e=>{if(e.target.dataset.form==="gm"){e.preventDefault();gmSubmit();return}if(e.target.dataset.form==="custom"){e.preventDefault();const v=$("#custom-roll").value.trim();if(v){doCustom(v);$("#custom-roll").value=""}}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.drawer){S.drawer=null;render()}});
+function applyInput(el){
+  const doc=el.dataset.doc,path=el.dataset.path;if(!canEdit(doc))return;
+  let v;
+  if(el.type==="checkbox")v=el.checked;
+  else if(el.dataset.num!==undefined){v=el.value===""?(el.dataset.blank==="null"?null:0):num(el.value)}
+  else if(el.tagName==="SELECT"&&/\.level$/.test(path))v=num(el.value,1);
+  else v=el.value;
+  setField(doc,path,v);
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-act]");if(!t)return;
+  const act=t.dataset.act;const cur=currentChar();
+  const keepConfirm=["inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  if(!keepConfirm)S.confirm=null;
+  if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
+  const edit=fn=>{if(!cur||!canEdit(cur.path))return;fn(cur.c,cur.path);render()};
+  switch(act){
+    case "view":S.view=t.dataset.v;S.drawer=null;render();break;
+    case "open":S.view="sheet";S.current=t.dataset.doc;S.drawer=null;S.edit=false;try{localStorage.setItem("swn.current",S.current)}catch(e){}render();window.scrollTo({top:0});break;
+    case "edit-toggle":S.edit=!S.edit;render();break;
+    case "tab":S.tab=t.dataset.tab;render();break;
+    case "rule":S.drawer={kind:"rule",key:t.dataset.key};render();break;
+    case "item":S.drawer={kind:"item",i:num(t.dataset.i)};render();break;
+    case "drawer-close":S.drawer=null;render();break;
+    case "log-toggle":S.logOpen=!S.logOpen;render();if(S.logOpen){const ll=$(".log-list");if(ll)ll.scrollTop=0}break;
+    case "roll-skill":doSkill(t.dataset.skill);break;
+    case "roll-save":doSave(t.dataset.save);break;
+    case "roll-init":doInit();break;
+    case "attack":doAttack(num(t.dataset.i),false);break;
+    case "damage":doAttack(num(t.dataset.i),true);break;
+    case "opt-sit":S.opts.sit=Math.max(-10,Math.min(10,num(S.opts.sit)+num(t.dataset.d)));render();break;
+    case "hp":edit((c,p)=>{const amt=Math.abs(num($("#hp-amt")?.value));if(!amt)return;const R=compute(c);const v=Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.sign)*amt));setField(p,"hp.cur",v)});break;
+    case "strain":edit((c,p)=>{const R=compute(c);setField(p,"strain.temp",Math.max(0,Math.min(Math.max(0,R.strainMax-R.strainPerm),num(c.strain?.temp)+num(t.dataset.d))))});break;
+    case "effort":edit((c,p)=>{const R=compute(c);const k=t.dataset.k;const other=num(c.effort?.[k==="scene"?"day":"scene"]);setField(p,"effort."+k,Math.max(0,Math.min(R.effortMax-other,num(c.effort?.[k])+num(t.dataset.d))))});break;
+    case "skill":edit((c,p)=>{const g=t.dataset.g,k=t.dataset.k;setField(p,g+"."+k,Math.max(-1,Math.min(4,num(c[g]?.[k],-1)+num(t.dataset.d))))});break;
+    case "ammo":edit((c,p)=>{const i=num(t.dataset.i);setField(p,"inventory."+i+".ammo",Math.max(0,num(c.inventory[i].ammo)+num(t.dataset.d)))});break;
+    case "reload":edit((c,p)=>{const i=num(t.dataset.i);const R=compute(c);setField(p,"inventory."+i+".ammo",num(R.items[i].mag))});break;
+    case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addHb(c,p,id)});break;
+    case "inv-add-custom":edit((c,p)=>{const inv=c.inventory||[];inv.push({id:rid(),type:"gear",name:"New item",qty:1,location:"stowed",equipped:false,enc:1,mods:[],description:""});setField(p,"inventory",inv);S.drawer={kind:"item",i:inv.length-1}});break;
+    case "inv-remove":edit((c,p)=>{const i=num(t.dataset.i);if(S.confirm!=="inv"+i){S.confirm="inv"+i;return}S.confirm=null;const inv=c.inventory||[];inv.splice(i,1);setField(p,"inventory",inv);S.drawer=null});break;
+    case "focus-add":edit((c,p)=>{const f=c.foci||[];f.push({id:rid(),key:"",name:"",level:1,skill:"",text:""});setField(p,"foci",f)});break;
+    case "focus-remove":edit((c,p)=>{const f=c.foci||[];f.splice(num(t.dataset.j),1);setField(p,"foci",f)});break;
+    case "effect-add":edit((c,p)=>{const f=c.effects||[];f.push({id:rid(),name:"New effect",active:true,mods:[{target:"save:all",value:1}]});setField(p,"effects",f)});break;
+    case "effect-remove":edit((c,p)=>{const f=c.effects||[];f.splice(num(t.dataset.j),1);setField(p,"effects",f)});break;
+    case "mod-add":{const doc=t.dataset.doc,b=t.dataset.base;if(!canEdit(doc))break;const arr=getPath(S.docs[doc],b)||[];arr.push({target:"skill:shoot",value:1});setField(doc,b,arr);render();break}
+    case "mod-remove":{const doc=t.dataset.doc,b=t.dataset.base;if(!canEdit(doc))break;const arr=getPath(S.docs[doc],b)||[];arr.splice(num(t.dataset.j),1);setField(doc,b,arr);render();break}
+    case "create-mine":{if(!S.me&&!S.offline)break;const p=S.offline?"local/"+rid():"sheets/"+rid();createDoc(p,{...newCharacter("New Character"),owners:S.offline?[]:[S.me]});if(S.offline)S.exists[p]=true;S.current=p;S.view="sheet";S.edit=true;S.tab="actions";render();break}
+    case "create-npc":{const p=S.offline?"local/"+rid():"sheets/"+rid();createDoc(p,{...newCharacter("New NPC"),npc:true});S.exists[p]=S.offline;S.current=p;S.view="sheet";S.edit=true;render();break}
+    case "dup":{if(!cur)break;const p=S.offline?"local/"+rid():"sheets/"+rid();const d=clone(cur.c);d.name=(d.name||"Copy")+" (copy)";d.createdAt=Date.now();d.npc=true;d.owners=[];d.locked=false;createDoc(p,d);S.current=p;render();break}
+    case "del-sheet":{if(!cur)break;if(S.confirm!=="del"){S.confirm="del";render();break}S.confirm=null;deleteDoc(cur.path);S.current=null;S.drawer=null;render();break}
+    case "gm-xp":edit((c,p)=>{const v=num($("#gm-xp")?.value);if(!v)return;setField(p,"xp",Math.max(0,num(c.xp)+v));toastMsg(sgn(v)+" XP to "+(c.name||"character"))});break;
+    case "gm-cr":edit((c,p)=>{const v=num($("#gm-cr")?.value);if(!v)return;setField(p,"credits",num(c.credits)+v)});break;
+    case "gm-grant":edit((c,p)=>{const id=$("#gm-item")?.value;if(id){addHb(c,p,id);toastMsg("Granted "+(S.docs["homebrew/"+id]?.name||"item"))}});break;
+    case "party-hp":{const p=t.dataset.doc;if(!canEdit(p))break;const c=S.docs[p];const R=compute(c);const v=t.dataset.d==="full"?R.hpMax:Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.d)));setField(p,"hp.cur",v);render();break}
+    case "hb-new":{const p=S.offline?"homebrew/local-"+rid():"homebrew/"+rid();createDoc(p,{name:"New item",type:"gear",enc:1,cost:0,tl:4,description:"",mods:[],dmg:"1d6",attr:"DEX",skill:"shoot",shock:"",range:"",mag:0,ac:13,strain:0,createdAt:Date.now()});if(S.offline)S.exists[p]=true;S.compSel=p;render();break}
+    case "hb-sel":S.compSel=t.dataset.doc;render();break;
+    case "hb-goto":S.compSel=t.dataset.doc;S.view="compendium";S.drawer=null;render();break;
+    case "hb-del":{const p=t.dataset.doc;if(S.confirm!=="hb"+p){S.confirm="hb"+p;render();break}S.confirm=null;deleteDoc(p);S.compSel=null;render();break}
+    case "hb-give":{const p=t.dataset.doc;const gm=S.isGM||S.offline;const target=gm?(cur?cur.path:null):(cur&&isMine(cur.path)?cur.path:myPath());if(!target||!canEdit(target))break;addHb(S.docs[target],target,p.split("/")[1]);toastMsg("Added "+(S.docs[p]?.name||"item")+" to "+(S.docs[target].name||"sheet"));render();break}
+    case "wiz-open":if(!S.wiz)S.wiz=loadWiz();S.view="create";S.drawer=null;render();window.scrollTo({top:0});break;
+    case "comp-tab":S.compTab=t.dataset.v;render();break;
+    case "hbf-sel":S.compFSel=t.dataset.doc;render();break;
+    case "hbf-new":{const p=S.offline?"foci/local-"+rid():"foci/"+rid();createDoc(p,{name:"New focus",type:"noncombat",skill:"",d:"",l1:"",l2:"",mods1:[],mods2:[],createdAt:Date.now()});if(S.offline)S.exists[p]=true;S.compFSel=p;render();break}
+    case "hbf-del":{const p=t.dataset.doc;if(S.confirm!=="hbf"+p){S.confirm="hbf"+p;render();break}S.confirm=null;deleteDoc(p);S.compFSel=null;render();break}
+    case "tech-add":edit((c,p)=>{const v=$("#tech-pick")?.value;if(!v)return;const [disc,name]=v.split("|");const ts=c.techniques||[];if(!ts.some(x=>x.name===name))ts.push({disc,name});setField(p,"techniques",ts)});break;
+    case "tech-remove":edit((c,p)=>{const ts=c.techniques||[];ts.splice(num(t.dataset.j),1);setField(p,"techniques",ts)});break;
+    case "claim":{if(!cur||!S.me)break;const owners=[...(cur.c.owners||[])];if(owners.includes(S.me))break;owners.push(S.me);
+      S.db.doc(cur.path).update({owners}).then(()=>{cur.c.owners=owners;S.edit=true;render()}).catch(err=>toastMsg(err&&err.code==="permission-denied"?"You can't claim that sheet. It may be locked or an NPC.":"Couldn't claim the sheet. Try again.",true));break}
+    case "release":{if(!cur||!S.isGM)break;setField(cur.path,"owners",[]);render();break}
+    case "gm-login":S.drawer={kind:"gm"};render();break;
+    case "gm-submit":gmSubmit();break;
+    case "clear-log":{if(S.confirm!=="log"){S.confirm="log";render();break}S.confirm=null;const ids=S.rolls.map(r=>r.id);S.rolls=[];render();(async()=>{for(const id of ids){try{await S.db.doc("rolls/"+id).delete()}catch(e){}}})();break}
+  }
+});
+function addHb(c,p,id){
+  const hb=S.docs["homebrew/"+id];if(!hb)return;
+  const inv=c.inventory||[];
+  inv.push({id:rid(),hb:id,name:hb.name,qty:1,location:hb.type==="armor"||hb.type==="weapon"||hb.type==="cyber"?"readied":"stowed",equipped:hb.type!=="gear",ammo:num(hb.mag)});
+  setField(p,"inventory",inv);
+}
+
+/*@@DATA@@*/
+/*@@WIZARD@@*/
+/* ================= BOOT ================= */
+async function gmSubmit(){
+  const k=($("#gm-pass")?.value||"").trim();
+  if(!/^[A-Za-z0-9_-]{6,64}$/.test(k)){toastMsg("Use at least 6 letters, numbers, dashes or underscores.",true);return}
+  if(!S.db||!S.me){toastMsg("Not connected yet. Try again in a moment.",true);return}
+  try{
+    if(S.setupDone===false){
+      if(($("#gm-pass2")?.value||"").trim()!==k){toastMsg("The two passcodes don't match.",true);return}
+      const b=S.db.batch();
+      b.set(S.db.doc("config/setup"),{done:true,at:Date.now()});
+      b.set(S.db.doc("gmKeys/"+k),{at:Date.now()});
+      b.set(S.db.doc("gms/"+S.me),{key:k,at:Date.now()});
+      await b.commit();S.setupDone=true;
+    }else{
+      await S.db.doc("gms/"+S.me).set({key:k,at:Date.now()});
+    }
+    S.isGM=true;S.drawer=null;toastMsg("GM tools unlocked on this device.");render();
+  }catch(err){toastMsg(err&&err.code==="permission-denied"?"That passcode didn't work.":"Couldn't reach the database. Try again.",true)}
+}
+function startPreview(){
+  S.offline=true;S.loading=false;S.isGM=true;
+  const ex=exampleCharacter();S.docs["local/example"]=ex;S.exists["local/example"]=true;S.current="local/example";
+  S.docs["homebrew/local-ex1"]={name:"Kestrel Mk II Pistol",type:"weapon",dmg:"1d8",attr:"DEX",skill:"shoot",range:"50/150",mag:8,enc:1,cost:350,tl:4,description:"Example homebrew sidearm with a smart-grip. +1 to hit.",mods:[{target:"attack",value:1}]};
+  S.docs["homebrew/local-ex2"]={name:"Neural Reflex Wiring",type:"cyber",strain:1,enc:0,cost:15000,tl:5,description:"Example homebrew cyberware.",mods:[{target:"initiative",value:2},{target:"save:evasion",value:1}]};
+  render();
+}
+render();
+(async function boot(){
+  if(!window.firebase){startPreview();return}
+  let db;
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.firestore();
+    const cred=await firebase.auth().signInAnonymously();
+    S.me=cred.user.uid;
+  }catch(e){console.error(e);startPreview();toastMsg("Couldn't connect to the party database, so this is a preview. Check that Anonymous sign-in is turned on in Firebase.",true);return}
+  S.db=db;
+  try{const g=await db.doc("gms/"+S.me).get();S.isGM=g.exists}catch(e){}
+  try{const st=await db.doc("config/setup").get();S.setupDone=st.exists}catch(e){S.setupDone=null}
+  render();
+  const slowTimer=setTimeout(()=>{S.slow=true;render()},10000);
+  let pending=4;const done=snap=>{if(snap&&snap.metadata&&!snap.metadata.fromCache){clearTimeout(slowTimer);S.slow=false}if(pending>0&&--pending===0)S.loading=false};
+  const onErr=err=>{clearTimeout(slowTimer);S.loading=false;console.error(err);toastMsg(err&&err.code==="permission-denied"?"The database refused access. Check that the security rules were published.":"Lost the live connection to the party data. Reload the page to reconnect.",true);render()};
+  const watch=(coll)=>db.collection(coll).onSnapshot(snap=>{
+    const seen=new Set();
+    snap.docs.forEach(d=>{const p=coll+"/"+d.id;seen.add(p);mergeRemote(p,d.data())});
+    Object.keys(S.docs).forEach(p=>{if(p.startsWith(coll+"/")&&!seen.has(p)&&S.exists[p]&&!(Q[p]&&Q[p].inflight)){delete S.docs[p];delete S.exists[p]}});
+    done(snap);render();
+  },onErr);
+  watch("sheets");watch("homebrew");watch("foci");
+  db.collection("rolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{
+    const before=new Set(S.rolls.map(r=>r.id));const first=!S.rollsInit;S.rollsInit=true;
+    S.rolls=snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!first){snap.docChanges().forEach(ch=>{if(ch.type==="added"&&!before.has(ch.doc.id)){const r=ch.doc.data();if(r&&r.by!==S.me&&Date.now()-num(r.ts)<15000)showToast(r)}})}
+    done(snap);render();
+  },onErr);
+})();
+setInterval(()=>{if(S.logOpen)render()},30000);
+</script>
+</body>
+</html>

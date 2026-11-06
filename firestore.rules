@@ -41,6 +41,12 @@ service cloud.firestore {
       allow write: if isGM();
     }
 
+    // Homebrew foci: everyone reads, only the GM writes.
+    match /foci/{id} {
+      allow read: if signedIn();
+      allow write: if isGM();
+    }
+
     // Character sheets.
     match /sheets/{id} {
       allow read: if signedIn();
