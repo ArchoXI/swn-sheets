@@ -965,6 +965,7 @@ function renderSheet(){
     <div class="bactions">
       ${can&&(num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)||S.isGM||S.offline)?`<button class="btn dk ${num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)?"lvlready":""}" data-act="lu-open" title="${num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)?"You have enough XP to level up":"GM: level up without enough XP"}">⬆ Level up</button>`:""}
       ${can&&S.edit&&c.portrait?`<button class="btn dk" data-act="portrait-remove">Remove picture</button>`:""}
+      ${can&&S.edit?`<button class="btn dk" data-act="del-open" style="color:#ff9b9b;border-color:#7a3a3a">Delete character</button>`:""}
       ${can?`<button class="btn dk ${S.edit?"on":""}" data-act="edit-toggle">${S.edit?"Done editing":"Edit sheet"}</button>`:claimable&&!c.locked?`<button class="btn dk" data-act="claim">This is my character</button>`:`<span class="hint">${c.locked?"Locked by your GM":"View only"}</span>`}
       <button class="btn dk" data-act="view" data-v="party">Party</button>
     </div>
@@ -1152,7 +1153,7 @@ function renderGM(path,c,R){
       <button class="btn sm" data-act="effect-add">+ Add effect</button></div>
     <div class="sect"><span class="lbl">Overrides <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="overrides">how overrides work</button></span>
       <div class="grid4">${ovs.map(([k,l,parts])=>`<div class="field"><span class="lbl">${l}</span>${inp(path,"overrides."+k,{type:"number",blank:true,ph:"Auto: "+autoOf(parts)})}</div>`).join("")}</div></div>
-    <div class="sect"><span class="lbl">Sheet</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dup">Copy as GM sheet</button><button class="btn danger" data-act="del-sheet">${S.confirm==="del"?"Click again to delete":"Delete sheet"}</button></div></div>`;
+    <div class="sect"><span class="lbl">Sheet</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dup">Copy as GM sheet</button><button class="btn danger" data-act="del-open">Delete character</button></div></div>`;
 }
 
 /* ================= PARTY / COMPENDIUM ================= */
@@ -1272,6 +1273,14 @@ function renderDrawer(){
         if(ATTRS.find(a=>a[0]===k)){const parts=[{l:"Base score",v:num(cur.c.attrs?.[k],10)},...R.br(k)];body+=`<div class="lbl" style="margin-top:12px">Your score</div>${calcHtml(parts,R.score[k]+" ("+sgn(R.mod[k])+")")}`+RULES.attr.p.map(x=>`<p class="hint">${esc(x)}</p>`).join("")}
       }
     }
+  }else if(d.kind==="delete"){
+    const c=S.docs[d.path];if(!c){S.drawer=null;return ""}
+    const fw=firstWord(c.name);const ok=String(S.delText||"").trim().toLowerCase()===fw.toLowerCase();
+    title="Delete character";
+    body=`<p>This permanently deletes <b>${esc(c.name||"this character")}</b> for everyone: stats, inventory, notes and picture. It can't be undone.</p>
+      <p>To confirm, type <b>${esc(fw)}</b> below.</p>
+      <input id="del-confirm" class="inp" autocomplete="off" placeholder="${esc(fw)}" value="${esc(S.delText||"")}">
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn danger" data-act="del-sheet" ${ok?"":"disabled"}>Delete ${esc(c.name||"character")}</button><button class="btn" data-act="drawer-close">Cancel</button></div>`;
   }else if(d.kind==="gm"){
     const setup=S.setupDone===false;title=setup?"Set up GM access":"GM login";
     body=setup?`<p>No GM passcode exists yet. Pick one now. Anyone who enters it gets full GM control, so keep it to yourself.</p>`:`<p>Enter the GM passcode to unlock GM tools on this device.</p>`;
@@ -1326,7 +1335,7 @@ function render(){
 function resolveNames(){}
 
 /* ================= EVENTS ================= */
-document.addEventListener("input",e=>{const el=e.target;if(el.id==="npc-q"){S.npcQ=el.value;render();return}if(el.dataset&&el.dataset.lu&&el.dataset.lulive!==undefined){luInput(el,true);return}if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
+document.addEventListener("input",e=>{const el=e.target;if(el.id==="del-confirm"){S.delText=el.value;render();return}if(el.id==="npc-q"){S.npcQ=el.value;render();return}if(el.dataset&&el.dataset.lu&&el.dataset.lulive!==undefined){luInput(el,true);return}if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
 document.addEventListener("change",e=>{
   const el=e.target;
   if(el.dataset&&el.dataset.lu){luInput(el,false);return}
@@ -1338,7 +1347,8 @@ document.addEventListener("change",e=>{
   if(el.dataset&&el.dataset.path){applyInput(el);render()}
 });
 document.addEventListener("submit",e=>{if(e.target.dataset.form==="gm"){e.preventDefault();gmSubmit();return}if(e.target.dataset.form==="custom"){e.preventDefault();const v=$("#custom-roll").value.trim();if(v){doCustom(v);$("#custom-roll").value=""}}});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"&&S.drawer){S.drawer=null;render()}});
+const firstWord=n=>String(n||"").trim().split(/\s+/)[0]||"delete";
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.id==="del-confirm"){const b=document.querySelector('[data-act="del-sheet"]:not([disabled])');if(b)b.click();return}if(e.key==="Escape"&&S.drawer){S.drawer=null;render()}});
 function applyInput(el){
   const doc=el.dataset.doc,path=el.dataset.path;if(!canEdit(doc))return;
   let v;
@@ -1395,7 +1405,10 @@ document.addEventListener("click",e=>{
     case "create-mine":{if(!S.me&&!S.offline)break;const p=S.offline?"local/"+rid():"sheets/"+rid();createDoc(p,{...newCharacter("New Character"),owners:S.offline?[]:[S.me]});if(S.offline)S.exists[p]=true;S.current=p;S.view="sheet";S.edit=true;S.tab="actions";render();break}
     case "create-npc":{const p=S.offline?"local/"+rid():"sheets/"+rid();createDoc(p,{...newCharacter("New NPC"),npc:true});S.exists[p]=S.offline;S.current=p;S.view="sheet";S.edit=true;render();break}
     case "dup":{if(!cur)break;const p=S.offline?"local/"+rid():"sheets/"+rid();const d=clone(cur.c);d.name=(d.name||"Copy")+" (copy)";d.createdAt=Date.now();d.npc=true;d.owners=[];d.locked=false;createDoc(p,d);S.current=p;render();break}
-    case "del-sheet":{if(!cur)break;if(S.confirm!=="del"){S.confirm="del";render();break}S.confirm=null;deleteDoc(cur.path);S.current=null;S.drawer=null;render();break}
+    case "del-open":{if(!cur||!canEdit(cur.path))break;S.delText="";S.drawer={kind:"delete",path:cur.path};render();setTimeout(()=>$("#del-confirm")?.focus(),30);break}
+    case "del-sheet":{const d=S.drawer;if(!d||d.kind!=="delete")break;const c=S.docs[d.path];if(!c||!canEdit(d.path))break;
+      if(String(S.delText||"").trim().toLowerCase()!==firstWord(c.name).toLowerCase())break;
+      const nm=c.name||"Character";deleteDoc(d.path);if(S.current===d.path)S.current=null;S.drawer=null;S.edit=false;S.delText="";toastMsg(nm+" was deleted.");render();break}
     case "gm-xp":edit((c,p)=>{const v=num($("#gm-xp")?.value);if(!v)return;setField(p,"xp",Math.max(0,num(c.xp)+v));toastMsg(sgn(v)+" XP to "+(c.name||"character"))});break;
     case "gm-cr":edit((c,p)=>{const v=num($("#gm-cr")?.value);if(!v)return;setField(p,"credits",num(c.credits)+v)});break;
     case "gm-grant":edit((c,p)=>{const id=$("#gm-item")?.value;if(id){addPicked(c,p,id);toastMsg("Granted item.")}});break;
