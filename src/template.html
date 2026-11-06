@@ -571,7 +571,7 @@ function exampleCharacter(){
 /* ================= DOCS / PERMISSIONS ================= */
 const sheetPaths = ()=>Object.keys(S.docs).filter(p=>/^(sheets|local)\//.test(p)).sort((a,b)=>num(S.docs[a].createdAt)-num(S.docs[b].createdAt));
 const hbFociPaths = ()=>Object.keys(S.docs).filter(p=>p.startsWith("foci/")).sort((a,b)=>String(S.docs[a].name).localeCompare(String(S.docs[b].name)));
-const hbPaths = ()=>Object.keys(S.docs).filter(p=>p.startsWith("homebrew/")).sort((a,b)=>String(S.docs[a].name).localeCompare(String(S.docs[b].name)));
+const hbPaths = ()=>Object.keys(S.docs).filter(p=>p.startsWith("homebrew/")&&!p.startsWith("homebrew/_")).sort((a,b)=>String(S.docs[a].name).localeCompare(String(S.docs[b].name)));
 const isMine = p=>!!(S.me&&S.docs[p]&&(S.docs[p].owners||[]).includes(S.me));
 const myPaths = ()=>sheetPaths().filter(isMine);
 const myPath = ()=>myPaths()[0]||null;
@@ -1087,7 +1087,7 @@ function renderFeatures(path,c,R,E){
       const def=e.key&&!e.key.startsWith("hb:")?FOCI[e.key]:null;
       return `<div class="feature"><div class="grid3" style="grid-template-columns:1fr 100px 30px;margin-bottom:6px">${sel(path,"foci."+j+".key",focusSelectOpts())}${sel(path,"foci."+j+".level",[[1,"Level 1"],[2,"Level 2"]])}<button class="iconbtn" data-act="focus-remove" data-j="${j}" aria-label="Remove focus">×</button></div>
         ${!e.key?inp(path,"foci."+j+".name",{live:true,ph:"Focus name"}):""}
-        ${e.key==="specialist"?`<div class="field" style="margin-top:6px"><span class="lbl">Specialist skill</span>${sel(path,"foci."+j+".skill",[["","Choose…"],...SKILLS.filter(s=>!["shoot","stab","punch"].includes(s[0])).map(s=>[s[0],s[1]])])}</div>`:""}
+        ${e.key==="specialist"?`<div class="field" style="margin-top:6px"><span class="lbl">Specialist skill</span>${sel(path,"foci."+j+".skill",[["","Choose…"],...SKILLS.filter(s=>HOUSE().specialistCombat||!["shoot","stab","punch"].includes(s[0])).map(s=>[s[0],s[1]])])}</div>`:""}
         <div style="margin-top:6px">${ta(path,"foci."+j+".text",{ph:e.key?"Your notes (optional)":"What it does",rows:2})}</div></div>`;
     }
     if(!f.name&&!f.text)return "";
@@ -1173,9 +1173,17 @@ function itemSummary(it){
 }
 function renderCompendium(){
   const tab=S.compTab||"items";
-  const tabs=`<div class="seg" style="margin:0 0 12px">${[["items","Items"],["foci","Foci"]].map(([k,l])=>`<button class="${tab===k?"on":""}" data-act="comp-tab" data-v="${k}">${l}</button>`).join("")}</div>`;
+  const tabs=`<div class="seg" style="margin:0 0 12px">${[["items","Items"],["foci","Foci"],["house","House Rules"]].map(([k,l])=>`<button class="${tab===k?"on":""}" data-act="comp-tab" data-v="${k}">${l}</button>`).join("")}</div>`;
   if(tab==="foci")return renderCompFoci(tabs);
+  if(tab==="house")return renderHouse(tabs);
   return renderCompItems(tabs);
+}
+function renderHouse(tabs){
+  const h=HOUSE();const gm=S.isGM||S.offline;
+  const rules=[["specialistCombat","Specialist can be taken for combat skills","Shoot, Stab and Punch become valid Specialist picks in the creation wizard, level-ups and sheet editing. Specialist's 3d6/4d6 dice apply to skill checks with that skill, not to d20 attack rolls."]];
+  return `<div style="margin:18px 0 12px"><h2 class="pagetitle" style="margin:0">Compendium</h2></div>${tabs}
+  <div class="frame"><div class="frame-b" style="padding-top:14px"><p class="hint">House rules apply to the whole campaign. ${gm?"Only you (the GM) can change them.":"Only the GM can change these."}</p>
+  ${rules.map(([k,t,d])=>`<div class="feature"><label class="toggle" style="font-family:var(--display);font-weight:700;font-size:16px"><input type="checkbox" data-act="house-toggle" data-k="${k}" ${h[k]?"checked":""} ${gm?"":"disabled"}>${esc(t)}</label><p style="margin-top:4px">${esc(d)}</p></div>`).join("")}</div></div>`;
 }
 function renderCompFoci(tabs){
   const ps=hbFociPaths();const sel_=S.compFSel&&S.docs[S.compFSel]?S.compFSel:ps[0];const f=sel_?S.docs[sel_]:null;const gm=S.isGM||S.offline;
@@ -1380,6 +1388,7 @@ document.addEventListener("click",e=>{
     case "lu-open":{if(!cur||!canEdit(cur.path))break;S.lu=newLU(cur.path);S.view="levelup";S.drawer=null;render();window.scrollTo({top:0});break}
     case "portrait-remove":edit((c,p)=>setField(p,"portrait",null));break;
     case "wiz-open":if(!S.wiz)S.wiz=loadWiz();S.view="create";S.drawer=null;render();window.scrollTo({top:0});break;
+    case "house-toggle":{if(!(S.isGM||S.offline))break;const k=t.dataset.k;const P="homebrew/_house";if(S.docs[P]){setField(P,k,!S.docs[P][k])}else{createDoc(P,{[k]:true});if(S.offline)S.exists[P]=true}render();break}
     case "comp-tab":S.compTab=t.dataset.v;render();break;
     case "hbf-sel":S.compFSel=t.dataset.doc;render();break;
     case "hbf-new":{const p=S.offline?"foci/local-"+rid():"foci/"+rid();createDoc(p,{name:"New focus",type:"noncombat",skill:"",d:"",l1:"",l2:"",mods1:[],mods2:[],createdAt:Date.now()});if(S.offline)S.exists[p]=true;S.compFSel=p;render();break}

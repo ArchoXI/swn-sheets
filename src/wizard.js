@@ -22,11 +22,14 @@ function focusSlots(w){
   return s;
 }
 function allFoci(){
-  const list=Object.entries(FOCI).map(([k,f])=>({key:k,...f,hb:false}));
+  const list=Object.entries(FOCI).map(([k,f])=>houseAdjust({key:k,...f,hb:false}));
   hbFociPaths().forEach(p=>{const f=S.docs[p];list.push({key:"hb:"+p.split("/")[1],name:f.name||"Unnamed focus",type:f.type||"noncombat",skill:f.skill||null,d:f.d||"",l1:f.l1||"",l2:f.l2||"",hb:true,repeat:false})});
   return list;
 }
-const focusDef=key=>key&&key.startsWith("hb:")?(()=>{const f=S.docs["foci/"+key.slice(3)];return f?{key,name:f.name,type:f.type,skill:f.skill||null,d:f.d,l1:f.l1,l2:f.l2,hb:true}:null})():(FOCI[key]?{key,...FOCI[key]}:null);
+const HOUSE=()=>S.docs["homebrew/_house"]||{};
+function houseAdjust(def){if(def&&def.key==="specialist"&&HOUSE().specialistCombat)return {...def,skill:"specialist_any",d:def.d+" House rule: combat skills (Shoot, Stab, Punch) are allowed too."};return def}
+const focusDef=key=>houseAdjust(_focusDef(key));
+const _focusDef=key=>key&&key.startsWith("hb:")?(()=>{const f=S.docs["foci/"+key.slice(3)];return f?{key,name:f.name,type:f.type,skill:f.skill||null,d:f.d,l1:f.l1,l2:f.l2,hb:true}:null})():(FOCI[key]?{key,...FOCI[key]}:null);
 function focusAllowed(w,slot,f){
   if(w.anyFocus)return true;
   const psy=isPsyClass(w);
@@ -132,7 +135,7 @@ function wizDerive(w){
     }
     if(f.key==="specialist"){const ch=wget("foci."+i+".skill");f.skill=ch||""}
     addSkill(def.name+" bonus skill",def.skill,"foci."+i+".skill","foci."+i+".alt","foci");
-    if(def.skill==="any_noncombat"||specOptions(def.skill))f.skill=wget("foci."+i+".skill")||f.skill;
+    if(specOptions(def.skill))f.skill=wget("foci."+i+".skill")||f.skill;
   });
   D.foci.forEach(f=>{if(f.needsTech&&!w.ptTech)issue("foci","Psychic Training raised "+PSYK[f.needsTech].name+" to level-1: pick a free level-1 technique.")});
   // hobby

@@ -44,10 +44,11 @@ const BG = {
 const BG_ORDER = Object.keys(BG); // d20 order matches the book's table
 
 const COMBAT_SKILLS = ["stab","shoot","punch"];
-const SPEC_LABEL = {any_combat:"Any Combat",any_skill:"Any Skill",any_noncombat:"Any non-combat skill",any_psychic:"Any psychic skill","stab|shoot":"Stab or Shoot","shoot|trade":"Shoot or Trade","punch|stab":"Punch or Stab","+1any":"+1 Any Stat","+2phys":"+2 Physical","+2ment":"+2 Mental"};
+const SPEC_LABEL = {specialist_any:"Any non-psychic skill (house rule)",any_combat:"Any Combat",any_skill:"Any Skill",any_noncombat:"Any non-combat skill",any_psychic:"Any psychic skill","stab|shoot":"Stab or Shoot","shoot|trade":"Shoot or Trade","punch|stab":"Punch or Stab","+1any":"+1 Any Stat","+2phys":"+2 Physical","+2ment":"+2 Mental"};
 function specOptions(spec){
   if(spec==="any_combat")return COMBAT_SKILLS;
   if(spec==="any_skill")return SKILLS.map(s=>s[0]);
+  if(spec==="specialist_any")return SKILLS.map(s=>s[0]);
   if(spec==="any_noncombat")return SKILLS.map(s=>s[0]).filter(k=>!COMBAT_SKILLS.includes(k));
   if(spec==="any_psychic")return PSY.map(s=>s[0]);
   if(spec&&spec.includes("|"))return spec.split("|");
