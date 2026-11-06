@@ -473,6 +473,26 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .rword{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:help;text-align:inherit}
 .rword.hint{color:var(--muted)}
 .rword:hover,.rword.hint:hover{color:var(--accent)}
+.shipmode{display:flex;gap:4px;margin:16px 0 0;border-bottom:2px solid var(--line-soft)}
+.shipmode button{background:none;border:0;border-bottom:3px solid transparent;margin-bottom:-2px;padding:10px 14px;font-family:var(--display);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);cursor:pointer;display:flex;gap:8px;align-items:center}
+.shipmode button.on{color:var(--accent);border-bottom-color:var(--accent)}
+.shipmode .hint{text-transform:none;letter-spacing:0;font-weight:400}
+.nsgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:12px;margin-bottom:40px}
+.nscard{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.nshead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nsname{font-family:var(--display);font-weight:700;font-size:20px}
+.nsstats{display:grid;grid-template-columns:minmax(130px,1.4fr) repeat(3,minmax(0,.6fr)) minmax(110px,1fr);gap:10px;align-items:center}
+.nsstats>div{display:flex;flex-direction:column;align-items:center;text-align:center}
+.nsstats b{font-family:var(--display);font-size:22px}
+.nsstats .lbl{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.nshp{align-items:stretch!important}.nshp .hpnums{font-family:var(--display);font-size:16px}.nshp .hpnums b{font-size:24px}
+.nshpctl{display:flex;gap:4px;margin-top:4px}.nshpctl .inp{width:54px;padding:3px 4px}.nshpctl .btn{padding:3px 6px}
+.nscp span{display:flex;align-items:center;gap:4px}
+.nscp .btn{margin-top:4px;padding:3px 6px;font-size:11px}
+.nsguns{width:100%;border-collapse:collapse}.nsguns td{padding:5px 4px;border-top:1px solid var(--line-soft)}
+.nsfoot{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.nsfoot .btn{display:inline-flex;gap:6px;align-items:center}
+@media (max-width:640px){.nsgrid{grid-template-columns:minmax(0,1fr)}.nsstats{grid-template-columns:repeat(4,minmax(0,1fr))}.nsstats .nshp{grid-column:1/-1}.nsstats .nscp{grid-column:span 1}}
 .ctrs{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0}
 .ctr{display:inline-flex;align-items:center;gap:6px}
 .ctr b{font-family:var(--display);font-size:17px;min-width:24px;text-align:center}
@@ -1739,6 +1759,7 @@ document.addEventListener("change",e=>{
   if(el.dataset&&el.dataset.shiprole){const sp=el.dataset.shiprole;if(!shipCanAny(sp))return;const s=S.docs[sp];setField(sp,"roles",{...(s.roles||{}),[el.dataset.dept]:el.value||""});render();return}
   if(el.dataset&&el.dataset.shiptrip){const sp=el.dataset.shiptrip;if(!shipCanAny(sp))return;const s=S.docs[sp];const k=el.dataset.k;const v=el.type==="checkbox"?el.checked:k==="hexes"?Math.max(1,num(el.value,1)):el.value;setField(sp,"trip",{...(s.trip||{}),[k]:v});render();return}
   if(el.dataset&&el.dataset.sw!==undefined&&S.sw){const k=el.dataset.sw;S.sw[k]=el.type==="checkbox"?el.checked:["drive","crew","crewSkill","npcCP","npcHit"].includes(k)?num(el.value):el.value;render();return}
+  if(el.dataset&&el.dataset.shiptgtship!==undefined){const p=el.value;if(p&&S.docs[p]){const C=shipCompute(S.docs[p]);S.shipTgt={ship:p,ac:C.ac,armor:C.armor,fighter:C.ci===0,hpo:(S.docs[p].defenses||[]).some(d=>d.name==="Hardened Polyceramic Overlay")}}else S.shipTgt={...(S.shipTgt||{}),ship:""};render();return}
   if(el.dataset&&el.dataset.shiptgt){S.shipTgt={...(S.shipTgt||{}),[el.dataset.shiptgt]:el.value===""?null:num(el.value)};render();return}
   if(el.dataset&&el.dataset.npccomp){if(!(S.isGM||S.offline))return;const np=el.dataset.npccomp;setField(np,"companionOf",el.value||"");setField(np,"companion",!!el.value);toastMsg(el.value?"Linked as a companion. It shows on that character's Inventory tab.":"Companion link removed.");render();return}
   if(el.id==="theme-pick"){applyTheme(el.value);try{localStorage.setItem("swn.theme",el.value)}catch(e){}render();return}
@@ -1773,7 +1794,7 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["ship-del","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  const keepConfirm=["ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
