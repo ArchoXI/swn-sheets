@@ -47,6 +47,17 @@ service cloud.firestore {
       allow write: if isGM();
     }
 
+    // NPCs: only the GM sees them, unless the GM marks one shared.
+    match /npcs/{id} {
+      allow read: if isGM() || (signedIn() && resource.data.shared == true);
+      allow write: if isGM();
+    }
+
+    // NPC dice rolls: GM only.
+    match /npcrolls/{id} {
+      allow read, write: if isGM();
+    }
+
     // Character sheets.
     match /sheets/{id} {
       allow read: if signedIn();
