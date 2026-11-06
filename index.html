@@ -351,6 +351,18 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .fxdie.landed span{animation:fxpop .35s ease-out}
 @keyframes fxpop{0%{transform:scale(1.7)}100%{transform:scale(1)}}
 :root[data-theme="galaxy"] .fxdie{background:linear-gradient(135deg,#b86cff,#5ee7ff);color:#0a0520;filter:drop-shadow(0 0 12px rgba(94,231,255,.8))}
+.fxdie{--dl:color-mix(in srgb,var(--accent) 55%,#fff);--dd:color-mix(in srgb,var(--accent) 60%,#000);background:radial-gradient(circle at 30% 24%,rgba(255,255,255,.5),rgba(255,255,255,0) 38%),linear-gradient(150deg,var(--dl) 0%,var(--accent) 48%,var(--dd) 100%)}
+.fxdie::before,.fxdie::after{content:"";position:absolute;inset:0;pointer-events:none}
+.fxdie span{position:relative;z-index:1;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.fxdie.d6{box-shadow:inset 0 -6px 0 rgba(0,0,0,.22),inset 0 5px 0 rgba(255,255,255,.28),inset -5px 0 0 rgba(0,0,0,.12);border-radius:16%}
+.fxdie.d20::before{background:rgba(255,255,255,.18);clip-path:polygon(50% 18%,82% 70%,18% 70%)}
+.fxdie.d20::after{background:linear-gradient(200deg,rgba(0,0,0,0) 55%,rgba(0,0,0,.25));clip-path:polygon(18% 70%,82% 70%,94% 75%,50% 100%,6% 75%)}
+.fxdie.d4::before{background:rgba(0,0,0,.2);clip-path:polygon(50% 4%,98% 92%,50% 70%)}
+.fxdie.d8::before{background:linear-gradient(90deg,rgba(255,255,255,.14) 50%,rgba(0,0,0,.2) 50%)}
+.fxdie.d10::before{background:rgba(0,0,0,.2);clip-path:polygon(50% 0,100% 42%,82% 100%,50% 72%)}
+.fxdie.d12::before{background:rgba(255,255,255,.16);clip-path:polygon(50% 22%,74% 40%,65% 72%,35% 72%,26% 40%)}
+.fxdie.landed{background:radial-gradient(circle at 30% 24%,rgba(255,255,255,.5),rgba(255,255,255,0) 38%),linear-gradient(150deg,var(--dl) 0%,var(--accent) 48%,var(--dd) 100%)}
+:root[data-theme="galaxy"] .fxdie,:root[data-theme="galaxy"] .fxdie.landed{background:radial-gradient(circle at 30% 24%,rgba(255,255,255,.55),rgba(255,255,255,0) 38%),linear-gradient(150deg,#d9a8ff 0%,#8f6bff 45%,#2fb8e0 100%);color:#fff}
 /* wizard */
 .wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
 .wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
