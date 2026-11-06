@@ -471,7 +471,8 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .cpcost{font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;letter-spacing:.03em}
 .cpcost.disc{background:#2f855a}
 .rword{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:help;text-align:inherit}
-.rword:hover{text-decoration:underline dotted;text-underline-offset:3px}
+.rword.hint{color:var(--muted)}
+.rword:hover,.rword.hint:hover{color:var(--accent)}
 .ctrs{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0}
 .ctr{display:inline-flex;align-items:center;gap:6px}
 .ctr b{font-family:var(--display);font-size:17px;min-width:24px;text-align:center}
@@ -1376,20 +1377,20 @@ function renderSheet(){
 
   const saves=`<div class="frame"><div class="frame-b" style="padding-top:14px"><div class="saves">
     ${["physical","evasion","mental"].map(k=>`<div class="save"><button class="lbl" data-act="rule" data-key="save_${k}">${k}${ovBadge(R,"save_"+k)}</button><button class="rollbtn tgt" data-act="roll-save" data-save="${k}" title="Roll 1d20, need ${R.save[k]} or more">${R.save[k]}</button></div>`).join("")}
-  </div><p class="hint" style="margin:8px 0 0;text-align:center">Roll 1d20, meet or beat the number</p></div><div class="frame-f">Saving Throws <button class="iconbtn" data-act="rule" data-key="saves" aria-label="Saving throw rules">?</button></div></div>`;
+  </div><p class="hint" style="margin:8px 0 0;text-align:center">Roll 1d20, meet or beat the number</p></div><div class="frame-f"><button class="rword" data-act="rule" data-key="saves">Saving Throws</button></div></div>`;
 
   const ropts=`<div class="frame"><div class="frame-b ropts" style="padding-top:14px">
     <div class="grp"><span class="hint">Situational mod</span><span style="display:flex;align-items:center;gap:4px"><button class="iconbtn" data-act="opt-sit" data-d="-1">−</button><span class="num" style="min-width:26px;text-align:center;font-family:var(--display);font-size:17px">${sgn(S.opts.sit)}</span><button class="iconbtn" data-act="opt-sit" data-d="1">+</button></span></div>
     <div class="grp"><label class="hint" for="opt-diff">Difficulty</label><select id="opt-diff" data-opt="diff"><option value="0">None</option>${[6,7,8,9,10,11,12,13,14].map(n=>`<option value="${n}" ${S.opts.diff==n?"selected":""}>${n}${n===6?" simple":n===8?" significant":n===10?" expert":n===12?" master":n===14?" near impossible":""}</option>`).join("")}</select></div>
     <div class="grp"><label class="hint" for="opt-attr">Skill attribute</label><select id="opt-attr" data-opt="attr"><option value="auto">Usual</option>${ATTRS.map(a=>`<option value="${a[0].toUpperCase()}" ${S.opts.attr===a[0].toUpperCase()?"selected":""}>${a[0].toUpperCase()}</option>`).join("")}</select></div>
     <label class="toggle"><input type="checkbox" id="opt-keep3" data-opt="keep3" ${S.opts.keep3?"checked":""}>3d6, keep best 2</label>
-  </div><div class="frame-f">Roll Options <button class="iconbtn" data-act="rule" data-key="skillcheck" aria-label="How checks work">?</button></div></div>`;
+  </div><div class="frame-f"><button class="rword" data-act="rule" data-key="skillcheck">Roll Options</button></div></div>`;
 
   const enc=`<div class="frame enc"><div class="frame-b" style="padding-top:14px">
     <div class="row"><span>Readied</span><span class="num">${R.readied} / ${R.readiedLimit}${ovBadge(R,"readied")}</span></div><div class="meter"><i class="${R.readied>R.readiedLimit?"over":""}" style="width:${Math.min(100,R.readiedLimit?R.readied/R.readiedLimit*100:100)}%"></i></div>
     <div class="row"><span>Stowed</span><span class="num">${R.stowed} / ${R.stowedLimit}${ovBadge(R,"stowed")}</span></div><div class="meter"><i class="${R.stowed>R.stowedLimit?"over":""}" style="width:${Math.min(100,R.stowedLimit?R.stowed/R.stowedLimit*100:100)}%"></i></div>
     <div class="encstage s${R.encStage}"><b>${R.encLabel}</b><span>${R.encStage<3?"Move "+R.move+" m per round":"Too much to carry. Drop or store something."}</span></div>
-  </div><div class="frame-f">Encumbrance <button class="iconbtn" data-act="rule" data-key="enc" aria-label="Encumbrance rules">?</button></div></div>`;
+  </div><div class="frame-f"><button class="rword" data-act="rule" data-key="enc">Encumbrance</button></div></div>`;
 
   const skillRow=(k,name,group,attrLbl)=>{
     const lv=group==="psy"?R.psy[k]:R.skills[k];const base=num(c[group]?.[k],-1);
@@ -1405,7 +1406,7 @@ function renderSheet(){
     <div class="skhead"><span>${E?"Level":"Prof"}</span><span>${E?"":"Mod"}</span><span>Skill</span><span style="text-align:center">Bonus</span></div>
     <ul class="skills">${SKILLS.map(s=>skillRow(s[0],s[1],"skills",s[2])).join("")}</ul>
     ${R.psychic||E?`<div class="lbl" style="margin:14px 0 4px;color:var(--info)">Psychic disciplines</div><ul class="skills">${PSY.map(s=>skillRow(s[0],s[1],"psy","")).join("")}</ul>`:""}
-  </div><div class="frame-f">Skills <button class="iconbtn" data-act="rule" data-key="skilllevels" aria-label="Skill level rules">?</button></div></div>`;
+  </div><div class="frame-f"><button class="rword" data-act="rule" data-key="skilllevels">Skills</button></div></div>`;
 
   const tabs=[["actions","Actions"],["inventory","Inventory"],["features","Features & Foci"],["notes","Notes"]];
   if(S.isGM||S.offline)tabs.push(["gm","GM Tools"]);
@@ -1434,10 +1435,10 @@ function renderActions(path,c,R,can){
     <td class="c-shock">${W.shock?`<span class="shockv" title="Damage dealt on a miss if the target's AC is low enough">${W.shock.dmg}/${W.shock.ac>=99?"any AC":"AC "+W.shock.ac}</span>`:`<span class="hint">—</span>`}${W.missDmg?` <button class="rollbtn" data-act="missdmg" data-i="${i}" title="Unmodified damage on a miss">miss ${W.missDmg}</button>`:""}</td>
     <td class="num c-ammo">${real&&num(w.mag)>0?`${can?`<button class="iconbtn" data-act="ammo" data-i="${i}" data-d="-1" aria-label="Use ammo">−</button> `:""}${num(w.ammo)}/${num(w.mag)}${can?` <button class="btn sm ghost" data-act="reload" data-i="${i}">Reload</button>`:""}`:`<span class="hint">—</span>`}</td></tr>`}).join("");
   const anyBurst=weapons.some(x=>x.w.burst);
-  return `<div class="sect"><span class="lbl">Attacks <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="attack">how attacks work</button></span>
+  return `<div class="sect"><span class="lbl">Attacks <button class="hint rword" style="text-transform:none;letter-spacing:0" data-act="rule" data-key="attack">how attacks work</button></span>
     <div class="tbl-wrap"><table class="atktbl"><thead><tr><th>Weapon</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Ammo</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${anyBurst?`<label class="toggle" style="margin-top:8px"><input type="checkbox" id="opt-burst" data-opt="burst" ${S.opts.burst?"checked":""}>Burst fire (+2 to hit and damage, uses 3 rounds)</label>`:""}
-    <p class="hint">Hit rolls the d20; Damage rolls damage. Shock is the damage a melee weapon still deals on a miss, if the target's AC is at or below the number. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="shock">More on Shock</button></p>
+    <p class="hint">Hit rolls the d20; Damage rolls damage. Shock is the damage a melee weapon still deals on a miss, if the target's AC is at or below the number. <button class="hint rword" data-act="rule" data-key="shock">More on Shock</button></p>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px">${can?`<button class="btn ${R.totalDefense?"on":""}" data-act="total-def">${R.totalDefense?"Total Defense ON (+2 AC)":"Take Total Defense"}</button>`:R.totalDefense?`<span class="tag on">Total Defense</span>`:""}<span class="hint">Instant: spends your Main Action. +2 AC and immune to melee Shock until your next turn. Turn it off when your turn comes.</span></div></div>
     <details class="sect actref" ${S.actRefOpen??!window.matchMedia("(max-width:640px)").matches?"open":""}><summary class="lbl" data-act="actref">Combat actions <span class="hint mshow" style="text-transform:none;letter-spacing:0">tap to show</span></summary>
       <div class="actgrid">
@@ -1479,7 +1480,7 @@ function renderInventory(path,c,R,can){
     ${cyber.length?sect("Cyberware","installed, always active, no encumbrance",cyber,""):""}
     ${stored.length?sect("Stored","left on the ship or at home, not carried",stored,""):""}
     ${S.confirm&&S.confirm.startsWith("inv")?`<p class="hint" style="color:var(--bad)">Click the ! again to remove that item.</p>`:""}
-    <p class="hint">Check the box to ready an item; uncheck it to stow it. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="enc">Encumbrance rules</button> · <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>${renderCompanions(path)}`;
+    <p class="hint">Check the box to ready an item; uncheck it to stow it. <button class="hint rword" data-act="rule" data-key="enc">Encumbrance rules</button> · <button class="hint rword" data-act="rule" data-key="mods">How bonuses apply</button></p>${renderCompanions(path)}`;
 }
 
 function focusSelectOpts(){
@@ -1503,13 +1504,13 @@ function renderFeatures(path,c,R,E){
   const techs=(c.techniques||[]);
   const known=PSY.filter(p=>R.psy[p[0]]>=1).map(p=>p[0]);
   const techOpts=known.flatMap(d=>DISC[d].t1.map(t=>[d+"|"+t[0],PSYK[d].name+": "+t[0]]));
-  const techHtml=(R.psychic||techs.length)?`<div class="sect"><span class="lbl">Psychic disciplines & techniques <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="effort">effort</button></span>
+  const techHtml=(R.psychic||techs.length)?`<div class="sect"><span class="lbl">Psychic disciplines & techniques <button class="hint rword" style="text-transform:none;letter-spacing:0" data-act="rule" data-key="effort">effort</button></span>
     ${PSY.filter(p=>R.psy[p[0]]>=0).map(p=>`<div class="feature"><h4>${esc(p[1])}-${R.psy[p[0]]}: ${esc(DISC[p[0]].core)}</h4><p>${esc(DISC[p[0]].l0)}</p></div>`).join("")}
     ${techs.map((t,j)=>{const d=DISC[t.disc];const tt=d?d.t1.find(x=>x[0]===t.name):null;return `<div class="feature"><h4>${esc(t.name)} <span class="tag">${esc(PSYK[t.disc]?.name||"")}</span>${E?` <button class="iconbtn" data-act="tech-remove" data-j="${j}" aria-label="Remove technique">×</button>`:""}</h4><p>${esc(tt?tt[1]:"")}</p></div>`}).join("")}
     ${E&&techOpts.length?`<div style="display:flex;gap:6px;align-items:center"><select id="tech-pick" class="inp" style="max-width:320px"><option value="">Add a level-1 technique…</option>${techOpts.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join("")}</select><button class="btn sm" data-act="tech-add">Add</button></div>`:""}</div>`:"";
   const eff=(c.effects||[]).filter(f=>f.active);
   const clsHtml=`<div class="sect"><span class="lbl">Class abilities: ${esc(className(c))}</span>${classAbilities(c).map(x=>`<div class="feature"><h4>${esc(x.t)}</h4><p>${esc(x.d)}</p></div>`).join("")||`<p class="hint">Pick a class to see its abilities.</p>`}</div>`;
-  return `${clsHtml}<div class="sect"><span class="lbl">Foci <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="foci">what are foci?</button></span>${foci||`<div class="empty">No foci yet.${canEdit(path)?" Turn on Edit sheet to add them.":""}</div>`}${E?`<button class="btn sm" data-act="focus-add">+ Add focus</button>`:""}</div>
+  return `${clsHtml}<div class="sect"><span class="lbl">Foci <button class="hint rword" style="text-transform:none;letter-spacing:0" data-act="rule" data-key="foci">what are foci?</button></span>${foci||`<div class="empty">No foci yet.${canEdit(path)?" Turn on Edit sheet to add them.":""}</div>`}${E?`<button class="btn sm" data-act="focus-add">+ Add focus</button>`:""}</div>
     ${techHtml}
     <div class="sect"><span class="lbl">Other features</span>${E?ta(path,"features",{ph:"Background perks, ship role, anything else…",rows:5}):c.features?`<div class="feature"><p>${esc(c.features)}</p></div>`:`<p class="hint">Nothing here yet.</p>`}</div>
     <div class="sect"><span class="lbl">Active effects</span>${eff.length?eff.map(f=>`<div class="feature"><h4>${esc(f.name||"Effect")}</h4><p>${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")||"No bonuses"}</p></div>`).join(""):`<p class="hint">None. Your GM can add conditions and temporary bonuses.</p>`}</div>`;
@@ -1536,10 +1537,10 @@ function renderGM(path,c,R){
       <input id="gm-cr" class="inp n" type="number" placeholder="Cr" aria-label="Credits"><button class="btn sm" data-act="gm-cr">Give credits</button>
       <select id="gm-item" class="inp" style="max-width:260px">${itemPickOpts("Grant item…")}</select><button class="btn sm" data-act="gm-grant">Grant</button>
     </div></div>
-    <div class="sect"><span class="lbl">Effects & conditions <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="mods">how bonuses apply</button></span>
+    <div class="sect"><span class="lbl">Effects & conditions <button class="hint rword" style="text-transform:none;letter-spacing:0" data-act="rule" data-key="mods">how bonuses apply</button></span>
       ${(c.effects||[]).map((f,j)=>`<div class="feature"><div class="grid3" style="grid-template-columns:1fr auto 30px;margin-bottom:8px;align-items:center">${inp(path,"effects."+j+".name",{live:true,ph:"Effect name"})}${chk(path,"effects."+j+".active","Active")}<button class="iconbtn" data-act="effect-remove" data-j="${j}" aria-label="Remove effect">×</button></div>${modsEditor(path,"effects."+j+".mods",false)}</div>`).join("")}
       <button class="btn sm" data-act="effect-add">+ Add effect</button></div>
-    <div class="sect"><span class="lbl">Overrides <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="overrides">how overrides work</button></span>
+    <div class="sect"><span class="lbl">Overrides <button class="hint rword" style="text-transform:none;letter-spacing:0" data-act="rule" data-key="overrides">how overrides work</button></span>
       <div class="grid4">${ovs.map(([k,l,parts])=>`<div class="field"><span class="lbl">${l}</span>${inp(path,"overrides."+k,{type:"number",blank:true,ph:"Auto: "+autoOf(parts)})}</div>`).join("")}</div></div>
     <div class="sect"><span class="lbl">Sheet</span><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="dup">Copy as GM sheet</button><button class="btn danger" data-act="del-open">Delete character</button></div></div>`;
 }
