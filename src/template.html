@@ -1551,7 +1551,7 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  const keepConfirm=["npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
