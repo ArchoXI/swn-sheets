@@ -1073,7 +1073,7 @@ function renderInventory(path,c,R,can){
   const ready=group((it,l)=>it.type!=="cyber"&&l==="readied"),stow=group((it,l)=>it.type!=="cyber"&&l==="stowed"),stored=group((it,l)=>it.type!=="cyber"&&l==="stored"),cyber=group(it=>it.type==="cyber");
   const hb=hbPaths();
   return `${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <select id="hb-pick" class="inp" style="max-width:260px"><option value="">Add from compendium…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)} (${esc(S.docs[p].type||"gear")})</option>`).join("")}</select>
+      <select id="hb-pick" class="inp" style="max-width:300px">${itemPickOpts("Add an item…")}</select>
       <button class="btn" data-act="inv-add-hb">Add</button><button class="btn ghost" data-act="inv-add-custom">+ Custom item</button></div>`:""}
     ${sect("Readied",`${R.readied} / ${R.readiedLimit} · worn, in hand, or instantly usable. These count for AC and bonuses.`,ready,"Nothing readied. Check an item below to ready it.",R.readied>R.readiedLimit?"over":"")}
     ${sect("Stowed",`${R.stowed} / ${R.stowedLimit} · packed away. Readying one takes a Main Action in combat.`,stow,"Nothing stowed.",R.stowed>R.stowedLimit?"over":"")}
@@ -1135,7 +1135,7 @@ function renderGM(path,c,R){
     <div class="sect"><span class="lbl">Quick adjust</span><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input id="gm-xp" class="inp n" type="number" placeholder="XP" aria-label="XP to award"><button class="btn sm" data-act="gm-xp">Award XP</button>
       <input id="gm-cr" class="inp n" type="number" placeholder="Cr" aria-label="Credits"><button class="btn sm" data-act="gm-cr">Give credits</button>
-      <select id="gm-item" class="inp" style="max-width:220px"><option value="">Grant item…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)}</option>`).join("")}</select><button class="btn sm" data-act="gm-grant">Grant</button>
+      <select id="gm-item" class="inp" style="max-width:260px">${itemPickOpts("Grant item…")}</select><button class="btn sm" data-act="gm-grant">Grant</button>
     </div></div>
     <div class="sect"><span class="lbl">Effects & conditions <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="mods">how bonuses apply</button></span>
       ${(c.effects||[]).map((f,j)=>`<div class="feature"><div class="grid3" style="grid-template-columns:1fr auto 30px;margin-bottom:8px;align-items:center">${inp(path,"effects."+j+".name",{live:true,ph:"Effect name"})}${chk(path,"effects."+j+".active","Active")}<button class="iconbtn" data-act="effect-remove" data-j="${j}" aria-label="Remove effect">×</button></div>${modsEditor(path,"effects."+j+".mods",false)}</div>`).join("")}
@@ -1370,7 +1370,7 @@ document.addEventListener("click",e=>{
     case "skill":edit((c,p)=>{const g=t.dataset.g,k=t.dataset.k;setField(p,g+"."+k,Math.max(-1,Math.min(4,num(c[g]?.[k],-1)+num(t.dataset.d))))});break;
     case "ammo":edit((c,p)=>{const i=num(t.dataset.i);setField(p,"inventory."+i+".ammo",Math.max(0,num(c.inventory[i].ammo)+num(t.dataset.d)))});break;
     case "reload":edit((c,p)=>{const i=num(t.dataset.i);const R=compute(c);setField(p,"inventory."+i+".ammo",num(R.items[i].mag))});break;
-    case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addHb(c,p,id)});break;
+    case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addPicked(c,p,id)});break;
     case "inv-add-custom":edit((c,p)=>{const inv=c.inventory||[];inv.push({id:rid(),type:"gear",name:"New item",qty:1,location:"readied",enc:1,mods:[],description:""});setField(p,"inventory",inv);S.drawer={kind:"item",i:inv.length-1}});break;
     case "ready-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="readied"?"stowed":"readied")});break;
     case "store-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="stored"?"stowed":"stored")});break;
@@ -1388,7 +1388,7 @@ document.addEventListener("click",e=>{
     case "del-sheet":{if(!cur)break;if(S.confirm!=="del"){S.confirm="del";render();break}S.confirm=null;deleteDoc(cur.path);S.current=null;S.drawer=null;render();break}
     case "gm-xp":edit((c,p)=>{const v=num($("#gm-xp")?.value);if(!v)return;setField(p,"xp",Math.max(0,num(c.xp)+v));toastMsg(sgn(v)+" XP to "+(c.name||"character"))});break;
     case "gm-cr":edit((c,p)=>{const v=num($("#gm-cr")?.value);if(!v)return;setField(p,"credits",num(c.credits)+v)});break;
-    case "gm-grant":edit((c,p)=>{const id=$("#gm-item")?.value;if(id){addHb(c,p,id);toastMsg("Granted "+(S.docs["homebrew/"+id]?.name||"item"))}});break;
+    case "gm-grant":edit((c,p)=>{const id=$("#gm-item")?.value;if(id){addPicked(c,p,id);toastMsg("Granted item.")}});break;
     case "party-hp":{const p=t.dataset.doc;if(!canEdit(p))break;const c=S.docs[p];const R=compute(c);const v=t.dataset.d==="full"?R.hpMax:Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.d)));setField(p,"hp.cur",v);render();break}
     case "hb-new":{const p=S.offline?"homebrew/local-"+rid():"homebrew/"+rid();createDoc(p,{name:"New item",type:"gear",enc:1,cost:0,tl:4,description:"",mods:[],dmg:"1d6",attr:"DEX",skill:"shoot",shock:"",range:"",mag:0,ac:13,strain:0,createdAt:Date.now()});if(S.offline)S.exists[p]=true;S.compSel=p;render();break}
     case "hb-sel":S.compSel=t.dataset.doc;render();break;
@@ -1413,6 +1413,26 @@ document.addEventListener("click",e=>{
     case "clear-log":{if(S.confirm!=="log"){S.confirm="log";render();break}S.confirm=null;const ids=S.rolls.map(r=>r.id);S.rolls=[];render();(async()=>{for(const id of ids){try{await S.db.doc("rolls/"+id).delete()}catch(e){}}})();break}
   }
 });
+function itemPickOpts(blank,weaponsOnly){
+  const hb=hbPaths().filter(p=>!weaponsOnly||S.docs[p].type==="weapon");
+  const groups={};bookItems().forEach(it=>{if(weaponsOnly&&it.type!=="weapon")return;(groups[it.group]=groups[it.group]||[]).push(it)});
+  return `<option value="">${esc(blank)}</option>${hb.length?`<optgroup label="Homebrew">${hb.map(p=>`<option value="hb:${esc(p.split("/")[1])}">${esc(S.docs[p].name)} (${esc(S.docs[p].type||"gear")})</option>`).join("")}</optgroup>`:""}${Object.entries(groups).map(([g,l])=>`<optgroup label="Rulebook: ${esc(g)}">${l.map(it=>`<option value="bk:${esc(it.bk)}">${esc(it.name)}${it.dmg?" ("+esc(it.dmg)+")":it.ac?" (AC "+it.ac+")":""}</option>`).join("")}</optgroup>`).join("")}`;
+}
+function pickedItem(v){
+  if(v.startsWith("hb:")){const d=S.docs["homebrew/"+v.slice(3)];return d?{...clone(d),hb:v.slice(3)}:null}
+  if(v.startsWith("bk:")){const it=bookItems().find(x=>x.bk===v.slice(3));return it?clone(it):null}
+  return S.docs["homebrew/"+v]?{...clone(S.docs["homebrew/"+v]),hb:v}:null;
+}
+function addPicked(c,p,v){
+  if(v.startsWith("hb:"))return addHb(c,p,v.slice(3));
+  if(!v.startsWith("bk:"))return addHb(c,p,v);
+  const it=pickedItem(v);if(!it)return;
+  const inv=c.inventory||[];
+  const e={id:rid(),type:it.type,name:it.name,qty:1,location:it.type==="gear"?"stowed":"readied",enc:num(it.enc),cost:num(it.cost),tl:num(it.tl),mods:[],description:it.description||""};
+  if(it.type==="weapon")Object.assign(e,{dmg:it.dmg,range:it.range||"",mag:num(it.mag),ammo:num(it.mag),attr:it.attr,skill:it.skill,shock:it.shock||"",energy:!!it.energy,burst:!!it.burst});
+  if(it.type==="armor"||it.type==="shield")e.ac=num(it.ac);
+  inv.push(e);setField(p,"inventory",inv);
+}
 function addHb(c,p,id){
   const hb=S.docs["homebrew/"+id];if(!hb)return;
   const inv=c.inventory||[];

@@ -14,7 +14,7 @@ function rollHD(hd){let t=0;for(let i=0;i<Math.max(1,num(hd,1));i++)t+=rand(8);r
 function npcFromTemplate(ti,name){
   const t=NPC_TEMPLATES[ti]||NPC_TEMPLATES[1];const hp=rollHD(t[1]);
   const weapon=t[11]==="unarmed"?{name:"Unarmed",dmg:"1d2"}:{name:"Weapon",dmg:"1d6"};
-  return {name:name||t[0],kind:t[0],hd:t[1],hp:{cur:hp,max:hp},ac:t[2],acNote:t[3],move:t[6],morale:t[7],skill:t[8],save:t[9],
+  return {name:name||t[0],kind:t[0],hd:t[1],hp:{cur:hp,max:hp},ac:t[2],acNote:t[3],atkBase:t[4],dmgBonus:t[5],move:t[6],morale:t[7],skill:t[8],save:t[9],
     attacks:[{id:rid(),name:weapon.name,atk:t[4],dmg:weapon.dmg+(t[5]?"+"+t[5]:""),times:t[10]||1}],notes:"",shared:false,createdAt:Date.now()};
 }
 function npcRoll(npc,label,lines){
@@ -38,6 +38,12 @@ function npcAct(act,t){
     case "npc-del":if(S.confirm!=="npc"+p){S.confirm="npc"+p;render();return true}S.confirm=null;deleteDoc(p);S.npcSel=null;render();return true;
     case "npc-hp":if(n){const amt=Math.abs(num($("#npc-hp-amt")?.value,0))||1;const v=t.dataset.d==="full"?num(n.hp?.max):Math.max(0,Math.min(num(n.hp?.max),num(n.hp?.cur)+num(t.dataset.d)*amt));setField(p,"hp.cur",v);render()}return true;
     case "npc-rerollhp":if(n){const hp=rollHD(n.hd);setField(p,"hp",{cur:hp,max:hp});render()}return true;
+    case "npc-wadd":if(n){const v=$("#npc-wpick")?.value;const w=v?pickedItem(v):null;if(!w||w.type!=="weapon"){toastMsg("Pick a weapon first.",true);return true}
+      const base=n.atkBase!=null&&n.atkBase!==""?num(n.atkBase):num((n.attacks||[])[0]?.atk,num(n.hd,1));const bonus=num(n.dmgBonus);
+      const pd=parseDice(w.dmg||"1d6");const flat=pd.flat+bonus;const dice=pd.groups.map(g=>g.n+"d"+g.s).join("+");
+      let shock="";const m=/(\d+)\s*\/\s*(\d+)/.exec(String(w.shock||""));if(m)shock=(num(m[1])+bonus)+"/"+m[2];
+      const a=n.attacks||[];a.push({id:rid(),name:w.name,atk:base+(w.energy?1:0),dmg:dice+(flat?(flat>0?"+":"")+flat:""),shock,range:w.range||"",times:1});
+      setField(p,"attacks",a);toastMsg("Added "+w.name+".");render()}return true;
     case "npc-atk-add":if(n){const a=n.attacks||[];a.push({id:rid(),name:"Attack",atk:num(n.hd,1),dmg:"1d6",times:1});setField(p,"attacks",a);render()}return true;
     case "npc-atk-del":if(n){const a=n.attacks||[];a.splice(num(t.dataset.j),1);setField(p,"attacks",a);render()}return true;
     case "npc-hit":if(n){const a=(n.attacks||[])[num(t.dataset.j)];if(!a)return true;const d={v:rand(20),s:20};const parts=[{l:"Attack bonus",v:num(a.atk)},...(t.dataset.snap?[{l:"Snap Attack",v:-4}]:[])];
@@ -61,6 +67,7 @@ function npcStatBlock(p){
     <td>${E?inp(p,"attacks."+j+".name",{live:true}):`<b>${esc(a.name)}</b>`}</td>
     <td style="width:90px">${E?inp(p,"attacks."+j+".atk",{type:"number",cls:"inp n"}):sgn(a.atk)}</td>
     <td style="width:120px">${E?inp(p,"attacks."+j+".dmg",{live:true,ph:"1d6+1"}):esc(a.dmg)}</td>
+    <td style="width:90px">${E?inp(p,"attacks."+j+".shock",{live:true,ph:"—",attrs:'title="Shock: damage/AC, e.g. 2/13"'}):esc(a.shock||"—")}</td>
     <td style="width:70px">${E?inp(p,"attacks."+j+".times",{type:"number",cls:"inp n",min:1,attrs:'title="Attacks per Main Action"'}):"×"+num(a.times,1)}</td>
     <td style="white-space:nowrap">${gm?`<button class="rollbtn" data-act="npc-hit" data-doc="${esc(p)}" data-j="${j}">Hit ${sgn(a.atk)}</button> <button class="rollbtn" data-act="npc-dmg" data-doc="${esc(p)}" data-j="${j}">Dmg</button> <button class="rollbtn snap" data-act="npc-hit" data-snap="1" data-doc="${esc(p)}" data-j="${j}">Snap</button> <button class="iconbtn" data-act="npc-atk-del" data-doc="${esc(p)}" data-j="${j}" aria-label="Remove attack">×</button>`:""}</td></tr>`).join("");
   return `<div class="frame-h"><h3>${gm?"NPC":"Shared NPC"}${n.kind?` <span class="tag">${esc(n.kind)}</span>`:""}${n.shared?` <span class="tag on">Visible to players</span>`:gm?` <span class="tag">Hidden</span>`:""}</h3>
@@ -69,9 +76,11 @@ function npcStatBlock(p){
     <div class="field" style="margin-bottom:10px">${E?inp(p,"name",{live:true,cls:"inp npcname"}):`<h3 style="font-size:26px">${esc(n.name)}</h3>`}</div>
     <div class="npchp"><div><span class="lbl">Hit points</span><div class="big num" style="font-family:var(--display);font-size:34px">${num(n.hp?.cur)} <small class="hint">/ ${num(n.hp?.max)}</small></div><div class="hpbar"><i style="width:${hpPct}%;background:${hpPct<34?"var(--bad)":hpPct<67?"var(--warn)":"var(--good)"}"></i></div></div>
       ${gm?`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn sm" style="color:var(--bad)" data-act="npc-hp" data-doc="${esc(p)}" data-d="-1">Damage</button><input id="npc-hp-amt" class="inp n" type="number" min="1" placeholder="1"><button class="btn sm" style="color:var(--good)" data-act="npc-hp" data-doc="${esc(p)}" data-d="1">Heal</button><button class="btn sm ghost" data-act="npc-hp" data-doc="${esc(p)}" data-d="full">Full</button><button class="btn sm ghost" data-act="npc-rerollhp" data-doc="${esc(p)}" title="Roll ${num(n.hd)}d8">Re-roll HP (${num(n.hd)}d8)</button></div>`:""}</div>
-    <div class="npcgrid">${f("hd","Hit dice",{min:1})}${f("ac","AC")}${f("move","Move (m)")}${f("morale","Morale")}${f("skill","Skill bonus")}${f("save","Save")}${E?`<div class="field"><span class="lbl">Max HP</span>${inp(p,"hp.max",{type:"number",cls:"inp",min:1})}</div><div class="field"><span class="lbl">AC note</span>${inp(p,"acNote",{live:true,ph:"combat, powered…"})}</div>`:""}</div>
+    <div class="npcgrid">${f("hd","Hit dice",{min:1})}${f("ac","AC")}${f("atkBase","Attack bonus",{ph:String(num(n.hd,1))})}${f("dmgBonus","Damage bonus",{ph:"0"})}${f("move","Move (m)")}${f("morale","Morale")}${f("skill","Skill bonus")}${f("save","Save")}${E?`<div class="field"><span class="lbl">Max HP</span>${inp(p,"hp.max",{type:"number",cls:"inp",min:1})}</div><div class="field"><span class="lbl">AC note</span>${inp(p,"acNote",{live:true,ph:"combat, powered…"})}</div>`:""}</div>
     ${gm?`<div class="npcrolls"><button class="btn" data-act="npc-init" data-doc="${esc(p)}">Initiative 1d8</button><button class="btn" data-act="npc-skill" data-doc="${esc(p)}">Skill check 2d6${sgn(num(n.skill))}</button><button class="btn ghost" data-act="npc-skill" data-untrained="1" data-doc="${esc(p)}" title="For checks unrelated to their role">Unrelated check 2d6</button><button class="btn" data-act="npc-save" data-doc="${esc(p)}">Save ${num(n.save)}+</button><button class="btn" data-act="npc-morale" data-doc="${esc(p)}">Morale (${num(n.morale)})</button></div><p class="hint">NPC rolls go to your GM log only. Use "Show to players" on a log entry to reveal one.</p>`:""}
-    <div class="sect" style="margin-top:12px"><span class="lbl">Attacks</span><div class="tbl-wrap"><table><thead><tr><th>Attack</th><th>Hit</th><th>Damage</th><th>Per action</th><th></th></tr></thead><tbody>${atks||`<tr><td colspan="5" class="hint">No attacks.</td></tr>`}</tbody></table></div>${gm?`<button class="btn sm" data-act="npc-atk-add" data-doc="${esc(p)}">+ Add attack</button>`:""}</div>
+    <div class="sect" style="margin-top:12px"><span class="lbl">Attacks</span><div class="tbl-wrap"><table><thead><tr><th>Attack</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Per action</th><th></th></tr></thead><tbody>${atks||`<tr><td colspan="6" class="hint">No attacks.</td></tr>`}</tbody></table></div>
+    ${gm?`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><select id="npc-wpick" class="inp" style="max-width:320px">${itemPickOpts("Add a weapon…",true)}</select><button class="btn sm pri" data-act="npc-wadd" data-doc="${esc(p)}">Add weapon</button><button class="btn sm" data-act="npc-atk-add" data-doc="${esc(p)}">+ Custom attack</button></div>
+    <p class="hint">Weapons use this NPC's attack bonus (+1 for energy weapons) and add its damage bonus to damage and Shock.</p>`:""}</div>
     <div class="sect"><span class="lbl">Notes</span>${E?ta(p,"notes",{rows:4,ph:"Personality, gear, special abilities, loot…"}):`<p style="white-space:pre-wrap">${esc(n.notes||"")}</p>`}</div>
     ${gm?`<p class="hint">Rules of thumb from the book: attack bonus usually equals hit dice; save is 15 minus half the hit dice; morale checks on 2d6 hold on a roll at or under Morale. NPC psychics get a third of their hit dice in Effort.</p>`:""}
   </div>`;

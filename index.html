@@ -1073,7 +1073,7 @@ function renderInventory(path,c,R,can){
   const ready=group((it,l)=>it.type!=="cyber"&&l==="readied"),stow=group((it,l)=>it.type!=="cyber"&&l==="stowed"),stored=group((it,l)=>it.type!=="cyber"&&l==="stored"),cyber=group(it=>it.type==="cyber");
   const hb=hbPaths();
   return `${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <select id="hb-pick" class="inp" style="max-width:260px"><option value="">Add from compendium…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)} (${esc(S.docs[p].type||"gear")})</option>`).join("")}</select>
+      <select id="hb-pick" class="inp" style="max-width:300px">${itemPickOpts("Add an item…")}</select>
       <button class="btn" data-act="inv-add-hb">Add</button><button class="btn ghost" data-act="inv-add-custom">+ Custom item</button></div>`:""}
     ${sect("Readied",`${R.readied} / ${R.readiedLimit} · worn, in hand, or instantly usable. These count for AC and bonuses.`,ready,"Nothing readied. Check an item below to ready it.",R.readied>R.readiedLimit?"over":"")}
     ${sect("Stowed",`${R.stowed} / ${R.stowedLimit} · packed away. Readying one takes a Main Action in combat.`,stow,"Nothing stowed.",R.stowed>R.stowedLimit?"over":"")}
@@ -1135,7 +1135,7 @@ function renderGM(path,c,R){
     <div class="sect"><span class="lbl">Quick adjust</span><div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <input id="gm-xp" class="inp n" type="number" placeholder="XP" aria-label="XP to award"><button class="btn sm" data-act="gm-xp">Award XP</button>
       <input id="gm-cr" class="inp n" type="number" placeholder="Cr" aria-label="Credits"><button class="btn sm" data-act="gm-cr">Give credits</button>
-      <select id="gm-item" class="inp" style="max-width:220px"><option value="">Grant item…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)}</option>`).join("")}</select><button class="btn sm" data-act="gm-grant">Grant</button>
+      <select id="gm-item" class="inp" style="max-width:260px">${itemPickOpts("Grant item…")}</select><button class="btn sm" data-act="gm-grant">Grant</button>
     </div></div>
     <div class="sect"><span class="lbl">Effects & conditions <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="mods">how bonuses apply</button></span>
       ${(c.effects||[]).map((f,j)=>`<div class="feature"><div class="grid3" style="grid-template-columns:1fr auto 30px;margin-bottom:8px;align-items:center">${inp(path,"effects."+j+".name",{live:true,ph:"Effect name"})}${chk(path,"effects."+j+".active","Active")}<button class="iconbtn" data-act="effect-remove" data-j="${j}" aria-label="Remove effect">×</button></div>${modsEditor(path,"effects."+j+".mods",false)}</div>`).join("")}
@@ -1370,7 +1370,7 @@ document.addEventListener("click",e=>{
     case "skill":edit((c,p)=>{const g=t.dataset.g,k=t.dataset.k;setField(p,g+"."+k,Math.max(-1,Math.min(4,num(c[g]?.[k],-1)+num(t.dataset.d))))});break;
     case "ammo":edit((c,p)=>{const i=num(t.dataset.i);setField(p,"inventory."+i+".ammo",Math.max(0,num(c.inventory[i].ammo)+num(t.dataset.d)))});break;
     case "reload":edit((c,p)=>{const i=num(t.dataset.i);const R=compute(c);setField(p,"inventory."+i+".ammo",num(R.items[i].mag))});break;
-    case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addHb(c,p,id)});break;
+    case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addPicked(c,p,id)});break;
     case "inv-add-custom":edit((c,p)=>{const inv=c.inventory||[];inv.push({id:rid(),type:"gear",name:"New item",qty:1,location:"readied",enc:1,mods:[],description:""});setField(p,"inventory",inv);S.drawer={kind:"item",i:inv.length-1}});break;
     case "ready-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="readied"?"stowed":"readied")});break;
     case "store-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="stored"?"stowed":"stored")});break;
@@ -1388,7 +1388,7 @@ document.addEventListener("click",e=>{
     case "del-sheet":{if(!cur)break;if(S.confirm!=="del"){S.confirm="del";render();break}S.confirm=null;deleteDoc(cur.path);S.current=null;S.drawer=null;render();break}
     case "gm-xp":edit((c,p)=>{const v=num($("#gm-xp")?.value);if(!v)return;setField(p,"xp",Math.max(0,num(c.xp)+v));toastMsg(sgn(v)+" XP to "+(c.name||"character"))});break;
     case "gm-cr":edit((c,p)=>{const v=num($("#gm-cr")?.value);if(!v)return;setField(p,"credits",num(c.credits)+v)});break;
-    case "gm-grant":edit((c,p)=>{const id=$("#gm-item")?.value;if(id){addHb(c,p,id);toastMsg("Granted "+(S.docs["homebrew/"+id]?.name||"item"))}});break;
+    case "gm-grant":edit((c,p)=>{const id=$("#gm-item")?.value;if(id){addPicked(c,p,id);toastMsg("Granted item.")}});break;
     case "party-hp":{const p=t.dataset.doc;if(!canEdit(p))break;const c=S.docs[p];const R=compute(c);const v=t.dataset.d==="full"?R.hpMax:Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.d)));setField(p,"hp.cur",v);render();break}
     case "hb-new":{const p=S.offline?"homebrew/local-"+rid():"homebrew/"+rid();createDoc(p,{name:"New item",type:"gear",enc:1,cost:0,tl:4,description:"",mods:[],dmg:"1d6",attr:"DEX",skill:"shoot",shock:"",range:"",mag:0,ac:13,strain:0,createdAt:Date.now()});if(S.offline)S.exists[p]=true;S.compSel=p;render();break}
     case "hb-sel":S.compSel=t.dataset.doc;render();break;
@@ -1413,6 +1413,26 @@ document.addEventListener("click",e=>{
     case "clear-log":{if(S.confirm!=="log"){S.confirm="log";render();break}S.confirm=null;const ids=S.rolls.map(r=>r.id);S.rolls=[];render();(async()=>{for(const id of ids){try{await S.db.doc("rolls/"+id).delete()}catch(e){}}})();break}
   }
 });
+function itemPickOpts(blank,weaponsOnly){
+  const hb=hbPaths().filter(p=>!weaponsOnly||S.docs[p].type==="weapon");
+  const groups={};bookItems().forEach(it=>{if(weaponsOnly&&it.type!=="weapon")return;(groups[it.group]=groups[it.group]||[]).push(it)});
+  return `<option value="">${esc(blank)}</option>${hb.length?`<optgroup label="Homebrew">${hb.map(p=>`<option value="hb:${esc(p.split("/")[1])}">${esc(S.docs[p].name)} (${esc(S.docs[p].type||"gear")})</option>`).join("")}</optgroup>`:""}${Object.entries(groups).map(([g,l])=>`<optgroup label="Rulebook: ${esc(g)}">${l.map(it=>`<option value="bk:${esc(it.bk)}">${esc(it.name)}${it.dmg?" ("+esc(it.dmg)+")":it.ac?" (AC "+it.ac+")":""}</option>`).join("")}</optgroup>`).join("")}`;
+}
+function pickedItem(v){
+  if(v.startsWith("hb:")){const d=S.docs["homebrew/"+v.slice(3)];return d?{...clone(d),hb:v.slice(3)}:null}
+  if(v.startsWith("bk:")){const it=bookItems().find(x=>x.bk===v.slice(3));return it?clone(it):null}
+  return S.docs["homebrew/"+v]?{...clone(S.docs["homebrew/"+v]),hb:v}:null;
+}
+function addPicked(c,p,v){
+  if(v.startsWith("hb:"))return addHb(c,p,v.slice(3));
+  if(!v.startsWith("bk:"))return addHb(c,p,v);
+  const it=pickedItem(v);if(!it)return;
+  const inv=c.inventory||[];
+  const e={id:rid(),type:it.type,name:it.name,qty:1,location:it.type==="gear"?"stowed":"readied",enc:num(it.enc),cost:num(it.cost),tl:num(it.tl),mods:[],description:it.description||""};
+  if(it.type==="weapon")Object.assign(e,{dmg:it.dmg,range:it.range||"",mag:num(it.mag),ammo:num(it.mag),attr:it.attr,skill:it.skill,shock:it.shock||"",energy:!!it.energy,burst:!!it.burst});
+  if(it.type==="armor"||it.type==="shield")e.ac=num(it.ac);
+  inv.push(e);setField(p,"inventory",inv);
+}
 function addHb(c,p,id){
   const hb=S.docs["homebrew/"+id];if(!hb)return;
   const inv=c.inventory||[];
@@ -1633,6 +1653,35 @@ const TECHS = {
     ["Effortless Apportation",3,"Personal Apportation no longer needs Effort."],["Stutterjump",3,"For extra Effort, teleport again as an On Turn action even if you already did this round."],["Rift Reduplication",3,"Micro-teleport away from attacks for a base AC of 20 while Effort stays committed."],
     ["Deep Intrusion",4,"Blind-teleport into a building, vehicle, or nearby spaceship you can see."],["Offensive Apportation",4,"Teleport an unwilling target you touch (Punch hit if they resist)."]]
 };
+
+/* Rulebook weapons and armor. Ranged: [name,dmg,range,cost,mag,enc,tl,flags]; e=energy, b=burst */
+const BOOK_RANGED=[["Primitive Bow","1d6","50/75",15,1,2,1,""],["Advanced Bow","1d6","100/150",50,1,2,3,""],["Conversion Bow","1d8","150/300",500,1,2,4,""],
+  ["Grenade","2d6","10/30",25,0,1,3,""],["Crude Pistol","1d6","5/15",20,1,1,2,""],["Musket","1d12","25/50",30,1,2,2,""],["Revolver","1d8","30/100",50,6,1,2,""],
+  ["Rifle","1d10+2","200/400",75,6,2,2,""],["Shotgun","3d4","10/30",50,2,2,2,""],["Semi-Auto Pistol","1d6+1","30/100",75,12,1,3,""],["Submachine Gun","1d8","30/100",200,20,1,3,"b"],
+  ["Combat Rifle","1d12","100/300",300,30,2,3,"b"],["Combat Shotgun","3d4","10/30",300,12,2,3,"b"],["Sniper Rifle","2d8","1000/2000",400,1,2,3,""],["Void Carbine","2d6","100/300",400,10,2,4,""],
+  ["Mag Pistol","2d6+2","100/300",400,6,1,4,""],["Mag Rifle","2d8+2","300/600",500,10,2,4,""],["Spike Thrower","3d8","20/40",600,15,2,4,"b"],
+  ["Laser Pistol","1d6","100/300",200,10,1,4,"e"],["Laser Rifle","1d10","300/500",300,20,2,4,"eb"],["Thermal Pistol","2d6","25/50",300,5,1,4,"e"],["Plasma Projector","2d8","50/100",400,6,2,4,"e"],
+  ["Shear Rifle","2d8","100/300",600,10,2,5,"eb"],["Thunder Gun","2d10","100/300",1000,6,2,5,"e"],["Distortion Cannon","2d12","100/300",1250,6,2,5,"e"]];
+/* Melee: [name,dmg,shock,attr,cost,enc,tl] */
+const BOOK_MELEE=[["Small Primitive Weapon (knife, club)","1d4","1/15","STR/DEX",0,1,0],["Medium Primitive Weapon (sword, axe, spear)","1d6+1","2/13","STR/DEX",20,1,0],["Large Primitive Weapon (greatsword, halberd)","1d8+1","2/15","STR",30,2,0],
+  ["Small Advanced Weapon (monoblade knife)","1d6","1/15","STR/DEX",40,1,4],["Medium Advanced Weapon (monoblade sword)","1d8+1","2/13","STR/DEX",60,1,4],["Large Advanced Weapon (power hammer)","1d10+1","2/15","STR",80,2,4],
+  ["Stun Baton","1d8","1/15","STR/DEX",50,1,4],["Suit Ripper","1d6","","STR/DEX",75,1,4]];
+/* Heavy: [name,dmg,range,cost,mag,enc,tl] (Shoot skill, need a mount unless noted) */
+const BOOK_HEAVY=[["Heavy Machine Gun","3d6","500/2000",5000,10,3,3],["Rocket Launcher","3d10","2000/4000",4000,1,2,3],["Demo Charge","3d10","20/40",250,0,1,3],["Railgun","3d8","4000/8000",8000,20,0,4],
+  ["Anti-Vehicle Laser","3d10","2000/4000",10000,15,0,4],["Hydra Array","3d6","4000/8000",20000,10,0,4],["Wheatcutter Belt","2d12","10/20",10000,5,0,4],["Vortex Cannon","5d12","1000/2000",75000,5,0,5]];
+/* Armor: [name,ac,cost,enc,tl,type] */
+const BOOK_ARMOR=[["Primitive Shield",13,10,2,0,"shield"],["Leather Jack / Hides",13,10,1,0,"armor"],["Cuirass / Brigandine",15,50,1,1,"armor"],["Full Plate",17,100,2,1,"armor"],
+  ["Warpaint",12,300,0,4,"armor"],["Armored Undersuit",13,600,0,4,"armor"],["Secure Clothing",13,300,1,4,"armor"],["Armored Vacc Suit",13,400,2,4,"armor"],["Deflector Array",18,30000,0,5,"armor"],
+  ["Force Pavis",15,10000,1,5,"shield"],["Security Armor",14,700,1,4,"armor"],["Woven Body Armor",15,400,2,3,"armor"],["Combat Field Uniform",16,1000,1,4,"armor"],["Icarus Harness",16,8000,1,4,"armor"],
+  ["Vestimentum",18,15000,0,5,"armor"],["Assault Suit",18,10000,2,4,"armor"],["Storm Armor",19,20000,2,5,"armor"],["Field Emitter Panoply",20,40000,1,5,"armor"]];
+function bookItems(){
+  const L=[];
+  BOOK_RANGED.forEach(([n,d,r,c,m,e,t,f])=>L.push({bk:"r:"+n,group:"Ranged weapons",type:"weapon",name:n,dmg:d,range:r,cost:c,mag:m,enc:e,tl:t,attr:"DEX",skill:"shoot",shock:"",energy:f.includes("e"),burst:f.includes("b")}));
+  BOOK_MELEE.forEach(([n,d,s,a,c,e,t])=>L.push({bk:"m:"+n,group:"Melee weapons",type:"weapon",name:n,dmg:d,shock:s,attr:a,cost:c,enc:e,tl:t,skill:"stab",range:"",mag:0}));
+  BOOK_HEAVY.forEach(([n,d,r,c,m,e,t])=>L.push({bk:"h:"+n,group:"Heavy weapons",type:"weapon",name:n,dmg:d,range:r,cost:c,mag:m,enc:e,tl:t,attr:"DEX",skill:"shoot",shock:"",heavy:true,description:"Heavy weapon: usually needs a mount or vehicle to fire."}));
+  BOOK_ARMOR.forEach(([n,a,c,e,t,ty])=>L.push({bk:"a:"+n,group:"Armor & shields",type:ty,name:n,ac:a,cost:c,enc:e,tl:t,description:ty==="shield"?"Base AC "+a+", or +1 if your armor is already that good. Needs a free hand.":""}));
+  return L;
+}
 
 /* ================= CHARACTER CREATION WIZARD ================= */
 const ARRAY_VALUES=[14,12,11,10,9,7];
@@ -2352,7 +2401,7 @@ function rollHD(hd){let t=0;for(let i=0;i<Math.max(1,num(hd,1));i++)t+=rand(8);r
 function npcFromTemplate(ti,name){
   const t=NPC_TEMPLATES[ti]||NPC_TEMPLATES[1];const hp=rollHD(t[1]);
   const weapon=t[11]==="unarmed"?{name:"Unarmed",dmg:"1d2"}:{name:"Weapon",dmg:"1d6"};
-  return {name:name||t[0],kind:t[0],hd:t[1],hp:{cur:hp,max:hp},ac:t[2],acNote:t[3],move:t[6],morale:t[7],skill:t[8],save:t[9],
+  return {name:name||t[0],kind:t[0],hd:t[1],hp:{cur:hp,max:hp},ac:t[2],acNote:t[3],atkBase:t[4],dmgBonus:t[5],move:t[6],morale:t[7],skill:t[8],save:t[9],
     attacks:[{id:rid(),name:weapon.name,atk:t[4],dmg:weapon.dmg+(t[5]?"+"+t[5]:""),times:t[10]||1}],notes:"",shared:false,createdAt:Date.now()};
 }
 function npcRoll(npc,label,lines){
@@ -2376,6 +2425,12 @@ function npcAct(act,t){
     case "npc-del":if(S.confirm!=="npc"+p){S.confirm="npc"+p;render();return true}S.confirm=null;deleteDoc(p);S.npcSel=null;render();return true;
     case "npc-hp":if(n){const amt=Math.abs(num($("#npc-hp-amt")?.value,0))||1;const v=t.dataset.d==="full"?num(n.hp?.max):Math.max(0,Math.min(num(n.hp?.max),num(n.hp?.cur)+num(t.dataset.d)*amt));setField(p,"hp.cur",v);render()}return true;
     case "npc-rerollhp":if(n){const hp=rollHD(n.hd);setField(p,"hp",{cur:hp,max:hp});render()}return true;
+    case "npc-wadd":if(n){const v=$("#npc-wpick")?.value;const w=v?pickedItem(v):null;if(!w||w.type!=="weapon"){toastMsg("Pick a weapon first.",true);return true}
+      const base=n.atkBase!=null&&n.atkBase!==""?num(n.atkBase):num((n.attacks||[])[0]?.atk,num(n.hd,1));const bonus=num(n.dmgBonus);
+      const pd=parseDice(w.dmg||"1d6");const flat=pd.flat+bonus;const dice=pd.groups.map(g=>g.n+"d"+g.s).join("+");
+      let shock="";const m=/(\d+)\s*\/\s*(\d+)/.exec(String(w.shock||""));if(m)shock=(num(m[1])+bonus)+"/"+m[2];
+      const a=n.attacks||[];a.push({id:rid(),name:w.name,atk:base+(w.energy?1:0),dmg:dice+(flat?(flat>0?"+":"")+flat:""),shock,range:w.range||"",times:1});
+      setField(p,"attacks",a);toastMsg("Added "+w.name+".");render()}return true;
     case "npc-atk-add":if(n){const a=n.attacks||[];a.push({id:rid(),name:"Attack",atk:num(n.hd,1),dmg:"1d6",times:1});setField(p,"attacks",a);render()}return true;
     case "npc-atk-del":if(n){const a=n.attacks||[];a.splice(num(t.dataset.j),1);setField(p,"attacks",a);render()}return true;
     case "npc-hit":if(n){const a=(n.attacks||[])[num(t.dataset.j)];if(!a)return true;const d={v:rand(20),s:20};const parts=[{l:"Attack bonus",v:num(a.atk)},...(t.dataset.snap?[{l:"Snap Attack",v:-4}]:[])];
@@ -2399,6 +2454,7 @@ function npcStatBlock(p){
     <td>${E?inp(p,"attacks."+j+".name",{live:true}):`<b>${esc(a.name)}</b>`}</td>
     <td style="width:90px">${E?inp(p,"attacks."+j+".atk",{type:"number",cls:"inp n"}):sgn(a.atk)}</td>
     <td style="width:120px">${E?inp(p,"attacks."+j+".dmg",{live:true,ph:"1d6+1"}):esc(a.dmg)}</td>
+    <td style="width:90px">${E?inp(p,"attacks."+j+".shock",{live:true,ph:"—",attrs:'title="Shock: damage/AC, e.g. 2/13"'}):esc(a.shock||"—")}</td>
     <td style="width:70px">${E?inp(p,"attacks."+j+".times",{type:"number",cls:"inp n",min:1,attrs:'title="Attacks per Main Action"'}):"×"+num(a.times,1)}</td>
     <td style="white-space:nowrap">${gm?`<button class="rollbtn" data-act="npc-hit" data-doc="${esc(p)}" data-j="${j}">Hit ${sgn(a.atk)}</button> <button class="rollbtn" data-act="npc-dmg" data-doc="${esc(p)}" data-j="${j}">Dmg</button> <button class="rollbtn snap" data-act="npc-hit" data-snap="1" data-doc="${esc(p)}" data-j="${j}">Snap</button> <button class="iconbtn" data-act="npc-atk-del" data-doc="${esc(p)}" data-j="${j}" aria-label="Remove attack">×</button>`:""}</td></tr>`).join("");
   return `<div class="frame-h"><h3>${gm?"NPC":"Shared NPC"}${n.kind?` <span class="tag">${esc(n.kind)}</span>`:""}${n.shared?` <span class="tag on">Visible to players</span>`:gm?` <span class="tag">Hidden</span>`:""}</h3>
@@ -2407,9 +2463,11 @@ function npcStatBlock(p){
     <div class="field" style="margin-bottom:10px">${E?inp(p,"name",{live:true,cls:"inp npcname"}):`<h3 style="font-size:26px">${esc(n.name)}</h3>`}</div>
     <div class="npchp"><div><span class="lbl">Hit points</span><div class="big num" style="font-family:var(--display);font-size:34px">${num(n.hp?.cur)} <small class="hint">/ ${num(n.hp?.max)}</small></div><div class="hpbar"><i style="width:${hpPct}%;background:${hpPct<34?"var(--bad)":hpPct<67?"var(--warn)":"var(--good)"}"></i></div></div>
       ${gm?`<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button class="btn sm" style="color:var(--bad)" data-act="npc-hp" data-doc="${esc(p)}" data-d="-1">Damage</button><input id="npc-hp-amt" class="inp n" type="number" min="1" placeholder="1"><button class="btn sm" style="color:var(--good)" data-act="npc-hp" data-doc="${esc(p)}" data-d="1">Heal</button><button class="btn sm ghost" data-act="npc-hp" data-doc="${esc(p)}" data-d="full">Full</button><button class="btn sm ghost" data-act="npc-rerollhp" data-doc="${esc(p)}" title="Roll ${num(n.hd)}d8">Re-roll HP (${num(n.hd)}d8)</button></div>`:""}</div>
-    <div class="npcgrid">${f("hd","Hit dice",{min:1})}${f("ac","AC")}${f("move","Move (m)")}${f("morale","Morale")}${f("skill","Skill bonus")}${f("save","Save")}${E?`<div class="field"><span class="lbl">Max HP</span>${inp(p,"hp.max",{type:"number",cls:"inp",min:1})}</div><div class="field"><span class="lbl">AC note</span>${inp(p,"acNote",{live:true,ph:"combat, powered…"})}</div>`:""}</div>
+    <div class="npcgrid">${f("hd","Hit dice",{min:1})}${f("ac","AC")}${f("atkBase","Attack bonus",{ph:String(num(n.hd,1))})}${f("dmgBonus","Damage bonus",{ph:"0"})}${f("move","Move (m)")}${f("morale","Morale")}${f("skill","Skill bonus")}${f("save","Save")}${E?`<div class="field"><span class="lbl">Max HP</span>${inp(p,"hp.max",{type:"number",cls:"inp",min:1})}</div><div class="field"><span class="lbl">AC note</span>${inp(p,"acNote",{live:true,ph:"combat, powered…"})}</div>`:""}</div>
     ${gm?`<div class="npcrolls"><button class="btn" data-act="npc-init" data-doc="${esc(p)}">Initiative 1d8</button><button class="btn" data-act="npc-skill" data-doc="${esc(p)}">Skill check 2d6${sgn(num(n.skill))}</button><button class="btn ghost" data-act="npc-skill" data-untrained="1" data-doc="${esc(p)}" title="For checks unrelated to their role">Unrelated check 2d6</button><button class="btn" data-act="npc-save" data-doc="${esc(p)}">Save ${num(n.save)}+</button><button class="btn" data-act="npc-morale" data-doc="${esc(p)}">Morale (${num(n.morale)})</button></div><p class="hint">NPC rolls go to your GM log only. Use "Show to players" on a log entry to reveal one.</p>`:""}
-    <div class="sect" style="margin-top:12px"><span class="lbl">Attacks</span><div class="tbl-wrap"><table><thead><tr><th>Attack</th><th>Hit</th><th>Damage</th><th>Per action</th><th></th></tr></thead><tbody>${atks||`<tr><td colspan="5" class="hint">No attacks.</td></tr>`}</tbody></table></div>${gm?`<button class="btn sm" data-act="npc-atk-add" data-doc="${esc(p)}">+ Add attack</button>`:""}</div>
+    <div class="sect" style="margin-top:12px"><span class="lbl">Attacks</span><div class="tbl-wrap"><table><thead><tr><th>Attack</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Per action</th><th></th></tr></thead><tbody>${atks||`<tr><td colspan="6" class="hint">No attacks.</td></tr>`}</tbody></table></div>
+    ${gm?`<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px"><select id="npc-wpick" class="inp" style="max-width:320px">${itemPickOpts("Add a weapon…",true)}</select><button class="btn sm pri" data-act="npc-wadd" data-doc="${esc(p)}">Add weapon</button><button class="btn sm" data-act="npc-atk-add" data-doc="${esc(p)}">+ Custom attack</button></div>
+    <p class="hint">Weapons use this NPC's attack bonus (+1 for energy weapons) and add its damage bonus to damage and Shock.</p>`:""}</div>
     <div class="sect"><span class="lbl">Notes</span>${E?ta(p,"notes",{rows:4,ph:"Personality, gear, special abilities, loot…"}):`<p style="white-space:pre-wrap">${esc(n.notes||"")}</p>`}</div>
     ${gm?`<p class="hint">Rules of thumb from the book: attack bonus usually equals hit dice; save is 15 minus half the hit dice; morale checks on 2d6 hold on a roll at or under Morale. NPC psychics get a third of their hit dice in Effort.</p>`:""}
   </div>`;

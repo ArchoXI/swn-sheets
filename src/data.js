@@ -211,3 +211,32 @@ const TECHS = {
     ["Effortless Apportation",3,"Personal Apportation no longer needs Effort."],["Stutterjump",3,"For extra Effort, teleport again as an On Turn action even if you already did this round."],["Rift Reduplication",3,"Micro-teleport away from attacks for a base AC of 20 while Effort stays committed."],
     ["Deep Intrusion",4,"Blind-teleport into a building, vehicle, or nearby spaceship you can see."],["Offensive Apportation",4,"Teleport an unwilling target you touch (Punch hit if they resist)."]]
 };
+
+/* Rulebook weapons and armor. Ranged: [name,dmg,range,cost,mag,enc,tl,flags]; e=energy, b=burst */
+const BOOK_RANGED=[["Primitive Bow","1d6","50/75",15,1,2,1,""],["Advanced Bow","1d6","100/150",50,1,2,3,""],["Conversion Bow","1d8","150/300",500,1,2,4,""],
+  ["Grenade","2d6","10/30",25,0,1,3,""],["Crude Pistol","1d6","5/15",20,1,1,2,""],["Musket","1d12","25/50",30,1,2,2,""],["Revolver","1d8","30/100",50,6,1,2,""],
+  ["Rifle","1d10+2","200/400",75,6,2,2,""],["Shotgun","3d4","10/30",50,2,2,2,""],["Semi-Auto Pistol","1d6+1","30/100",75,12,1,3,""],["Submachine Gun","1d8","30/100",200,20,1,3,"b"],
+  ["Combat Rifle","1d12","100/300",300,30,2,3,"b"],["Combat Shotgun","3d4","10/30",300,12,2,3,"b"],["Sniper Rifle","2d8","1000/2000",400,1,2,3,""],["Void Carbine","2d6","100/300",400,10,2,4,""],
+  ["Mag Pistol","2d6+2","100/300",400,6,1,4,""],["Mag Rifle","2d8+2","300/600",500,10,2,4,""],["Spike Thrower","3d8","20/40",600,15,2,4,"b"],
+  ["Laser Pistol","1d6","100/300",200,10,1,4,"e"],["Laser Rifle","1d10","300/500",300,20,2,4,"eb"],["Thermal Pistol","2d6","25/50",300,5,1,4,"e"],["Plasma Projector","2d8","50/100",400,6,2,4,"e"],
+  ["Shear Rifle","2d8","100/300",600,10,2,5,"eb"],["Thunder Gun","2d10","100/300",1000,6,2,5,"e"],["Distortion Cannon","2d12","100/300",1250,6,2,5,"e"]];
+/* Melee: [name,dmg,shock,attr,cost,enc,tl] */
+const BOOK_MELEE=[["Small Primitive Weapon (knife, club)","1d4","1/15","STR/DEX",0,1,0],["Medium Primitive Weapon (sword, axe, spear)","1d6+1","2/13","STR/DEX",20,1,0],["Large Primitive Weapon (greatsword, halberd)","1d8+1","2/15","STR",30,2,0],
+  ["Small Advanced Weapon (monoblade knife)","1d6","1/15","STR/DEX",40,1,4],["Medium Advanced Weapon (monoblade sword)","1d8+1","2/13","STR/DEX",60,1,4],["Large Advanced Weapon (power hammer)","1d10+1","2/15","STR",80,2,4],
+  ["Stun Baton","1d8","1/15","STR/DEX",50,1,4],["Suit Ripper","1d6","","STR/DEX",75,1,4]];
+/* Heavy: [name,dmg,range,cost,mag,enc,tl] (Shoot skill, need a mount unless noted) */
+const BOOK_HEAVY=[["Heavy Machine Gun","3d6","500/2000",5000,10,3,3],["Rocket Launcher","3d10","2000/4000",4000,1,2,3],["Demo Charge","3d10","20/40",250,0,1,3],["Railgun","3d8","4000/8000",8000,20,0,4],
+  ["Anti-Vehicle Laser","3d10","2000/4000",10000,15,0,4],["Hydra Array","3d6","4000/8000",20000,10,0,4],["Wheatcutter Belt","2d12","10/20",10000,5,0,4],["Vortex Cannon","5d12","1000/2000",75000,5,0,5]];
+/* Armor: [name,ac,cost,enc,tl,type] */
+const BOOK_ARMOR=[["Primitive Shield",13,10,2,0,"shield"],["Leather Jack / Hides",13,10,1,0,"armor"],["Cuirass / Brigandine",15,50,1,1,"armor"],["Full Plate",17,100,2,1,"armor"],
+  ["Warpaint",12,300,0,4,"armor"],["Armored Undersuit",13,600,0,4,"armor"],["Secure Clothing",13,300,1,4,"armor"],["Armored Vacc Suit",13,400,2,4,"armor"],["Deflector Array",18,30000,0,5,"armor"],
+  ["Force Pavis",15,10000,1,5,"shield"],["Security Armor",14,700,1,4,"armor"],["Woven Body Armor",15,400,2,3,"armor"],["Combat Field Uniform",16,1000,1,4,"armor"],["Icarus Harness",16,8000,1,4,"armor"],
+  ["Vestimentum",18,15000,0,5,"armor"],["Assault Suit",18,10000,2,4,"armor"],["Storm Armor",19,20000,2,5,"armor"],["Field Emitter Panoply",20,40000,1,5,"armor"]];
+function bookItems(){
+  const L=[];
+  BOOK_RANGED.forEach(([n,d,r,c,m,e,t,f])=>L.push({bk:"r:"+n,group:"Ranged weapons",type:"weapon",name:n,dmg:d,range:r,cost:c,mag:m,enc:e,tl:t,attr:"DEX",skill:"shoot",shock:"",energy:f.includes("e"),burst:f.includes("b")}));
+  BOOK_MELEE.forEach(([n,d,s,a,c,e,t])=>L.push({bk:"m:"+n,group:"Melee weapons",type:"weapon",name:n,dmg:d,shock:s,attr:a,cost:c,enc:e,tl:t,skill:"stab",range:"",mag:0}));
+  BOOK_HEAVY.forEach(([n,d,r,c,m,e,t])=>L.push({bk:"h:"+n,group:"Heavy weapons",type:"weapon",name:n,dmg:d,range:r,cost:c,mag:m,enc:e,tl:t,attr:"DEX",skill:"shoot",shock:"",heavy:true,description:"Heavy weapon: usually needs a mount or vehicle to fire."}));
+  BOOK_ARMOR.forEach(([n,a,c,e,t,ty])=>L.push({bk:"a:"+n,group:"Armor & shields",type:ty,name:n,ac:a,cost:c,enc:e,tl:t,description:ty==="shield"?"Base AC "+a+", or +1 if your armor is already that good. Needs a free hand.":""}));
+  return L;
+}
