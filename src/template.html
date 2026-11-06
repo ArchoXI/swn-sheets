@@ -283,6 +283,19 @@ textarea.inp{resize:vertical;min-height:70px}
 .welcome h1{font-size:34px;font-weight:700;margin-bottom:8px}
 .welcome p{color:var(--muted)}
 
+.invsec{margin-bottom:14px;border:1px solid var(--line-soft);border-radius:8px;padding:8px 12px;background:#fff}
+.invsec.over{border-color:var(--bad)}
+.invsec.over .invh .hint{color:var(--bad)}
+.invh{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding-bottom:4px;border-bottom:1px solid var(--line-soft)}
+.invh .lbl{font-size:16px;color:var(--accent)}
+.rdy{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.shockv{font-family:var(--display);font-size:17px}
+.rollbtn.snap{font-size:13px;color:var(--muted)}
+.actgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.actbox{border:1px solid var(--line-soft);border-radius:8px;padding:10px 12px;background:var(--panel-2)}
+.actbox h4{margin:0 0 2px;font-family:var(--display);font-size:17px}
+.actbox ul{margin:6px 0 0;padding-left:18px}
+.actbox li{margin:3px 0;font-size:13px}
 /* wizard */
 .wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
 .wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
@@ -656,6 +669,8 @@ function compute(c){
   const shield=items.find(i=>isActive(i)&&i.type==="shield");
   if(shield){const sb=num(shield.ac,13);if(base.v>=sb)acParts.push({l:(shield.name||"Shield")+" (+1)",v:1});else acParts.push({l:(shield.name||"Shield")+" (raises base to "+sb+")",v:sb-base.v})}
   acParts.push({l:"DEX modifier",v:R.mod.dex},...br("ac"));
+  if(c.totalDefense)acParts.push({l:"Total Defense (until your next turn)",v:2});
+  R.totalDefense=!!c.totalDefense;
   R.ac=ovr("ac",acParts.reduce((s,p)=>s+p.v,0),acParts);
   // HP
   const hpParts=[{l:"Rolled max HP",v:num(c.hp?.max)},...br("hpMax")];
@@ -775,11 +790,11 @@ function doAttack(i,mode){
   const cur=currentChar();if(!cur)return;const {c}=cur;const R=compute(c);
   const w=weaponAt(R,i);if(!w)return;const W=weaponStats(c,R,w);
   const burst=S.opts.burst&&w.burst;const nm=w.name||"Weapon";
-  if(mode==="hit"){
+  if(mode==="hit"||mode==="snap"){
     const d={v:rand(20),s:20};const crit=d.v===20,fumble=d.v===1;
-    const parts=[...W.atkParts,...(burst?[{l:"Burst fire",v:2}]:[]),...sitPart()];
+    const parts=[...W.atkParts,...(burst?[{l:"Burst fire",v:2}]:[]),...(mode==="snap"?[{l:"Snap Attack",v:-4}]:[]),...sitPart()];
     const total=d.v+parts.reduce((s,p)=>s+p.v,0);
-    emitRoll(c,nm+(burst?" burst":"")+" to hit",[{name:"To hit",dice:[d],parts,total,verdict:crit?["crit","Natural 20"]:fumble?["no","Natural 1"]:null,note:"vs target AC"}]);
+    emitRoll(c,nm+(burst?" burst":"")+(mode==="snap"?" snap attack":" to hit"),[{name:"To hit",dice:[d],parts,total,verdict:crit?["crit","Natural 20"]:fumble?["no","Natural 1"]:null,note:"vs target AC"}]);
     if(burst&&!w.virtual&&canEdit(cur.path)&&num(i,-1)>=0&&num(c.inventory[num(i)]?.ammo)>0){setField(cur.path,"inventory."+num(i)+".ammo",Math.max(0,num(c.inventory[num(i)].ammo)-3));render()}
     return;
   }
@@ -923,7 +938,7 @@ function renderSheet(){
       <button class="hpfoot" data-act="rule" data-key="hp">${num(c.hp?.cur)<=0?`<span style="color:var(--bad)">Mortally wounded</span>`:"Hit Points"}</button></div>
   </div>`;
 
-  const acSvg=`<button class="ac" data-act="rule" data-key="ac" aria-label="Armor Class ${R.ac}"><svg viewBox="0 0 100 112"><path d="M50 4 L92 18 L88 62 Q82 92 50 108 Q18 92 12 62 L8 18 Z" fill="#fff" stroke="#c53131" stroke-width="3"/><path d="M50 11 L85 23 L81 61 Q76 86 50 100 Q24 86 19 61 L15 23 Z" fill="none" stroke="#c53131" stroke-opacity=".35" stroke-width="1"/><text x="50" y="36" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63">ARMOR</text><text x="50" y="72" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="36" fill="#1d1d1f">${R.ac}</text><text x="50" y="88" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63">CLASS</text></svg>${R.ov.ac?`<span class="ovr-badge">GM</span>`:""}</button>`;
+  const acSvg=`<button class="ac" data-act="rule" data-key="ac" aria-label="Armor Class ${R.ac}"><svg viewBox="0 0 100 112"><path d="M50 4 L92 18 L88 62 Q82 92 50 108 Q18 92 12 62 L8 18 Z" fill="#fff" stroke="#c53131" stroke-width="3"/><path d="M50 11 L85 23 L81 61 Q76 86 50 100 Q24 86 19 61 L15 23 Z" fill="none" stroke="#c53131" stroke-opacity=".35" stroke-width="1"/><text x="50" y="36" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63">ARMOR</text><text x="50" y="72" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="36" fill="#1d1d1f">${R.ac}</text><text x="50" y="88" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63">CLASS</text></svg>${R.ov.ac?`<span class="ovr-badge">GM</span>`:""}${R.totalDefense?`<span class="ovr-badge" style="background:var(--good);top:auto;bottom:4px;right:auto;left:0;position:absolute" title="Total Defense">+2 Total Defense</span>`:""}</button>`;
   const strainPips=Array.from({length:Math.max(R.strainMax,0)},(_,i)=>`<i class="${i<R.strainPerm?"p":i<R.strainCur?"f":""}"></i>`).join("");
   const effUsed=num(c.effort?.scene)+num(c.effort?.day);
   const effPips=Array.from({length:R.effortMax},(_,i)=>`<i class="${i<effUsed?"":"e"}"></i>`).join("");
@@ -966,7 +981,7 @@ function renderSheet(){
     ${R.psychic||E?`<div class="lbl" style="margin:14px 0 4px;color:var(--info)">Psychic disciplines</div><ul class="skills">${PSY.map(s=>skillRow(s[0],s[1],"psy","")).join("")}</ul>`:""}
   </div><div class="frame-f">Skills <button class="iconbtn" data-act="rule" data-key="skilllevels" aria-label="Skill level rules">?</button></div></div>`;
 
-  const tabs=[["actions","Actions"],["inventory","Inventory"],["features","Foci & Features"],["notes","Notes"]];
+  const tabs=[["actions","Actions"],["inventory","Inventory"],["features","Features & Foci"],["notes","Notes"]];
   if(S.isGM||S.offline)tabs.push(["gm","GM Tools"]);
   if(!tabs.find(t=>t[0]===S.tab))S.tab="actions";
   const tabBody={actions:()=>renderActions(path,c,R,can),inventory:()=>renderInventory(path,c,R,can),features:()=>renderFeatures(path,c,R,E),notes:()=>renderNotes(path,c,can),gm:()=>renderGM(path,c,R)}[S.tab]();
@@ -982,38 +997,52 @@ function renderActions(path,c,R,can){
   weapons.push({w:unarmedWeapon(R),i:"unarmed"});
   const rows=weapons.map(({w,i})=>{const W=weaponStats(c,R,w);const real=i!=="unarmed";return `<tr>
     <td>${real?`<button class="iname" data-act="item" data-i="${i}">`:`<span class="iname" style="cursor:default">`}${esc(w.name||"Weapon")}${w.linked?`<span class="tag hb">Homebrew</span>`:""}${w.energy?`<span class="tag" title="Energy weapons get +1 to hit">Energy</span>`:""}${w.burst?`<span class="tag" title="Can fire in burst mode">Burst</span>`:""}${real&&!isActive(w)?`<span class="tag" title="Stowed weapons take a Main Action to ready">Stowed</span>`:""}${real?`</button>`:`</span>`}<span class="isub">${esc(SKILL[W.sk]?.name||W.sk)} · ${esc(W.best.toUpperCase())}${w.range?" · "+esc(w.range)+" m":""}${W.missDmg?" · "+W.missDmg+" on a miss":""}</span></td>
-    <td><button class="rollbtn" data-act="attack" data-i="${i}" title="Roll 1d20 ${sgn(W.atk)} to hit">${sgn(W.atk+(S.opts.burst&&w.burst?2:0))}</button></td>
+    <td style="white-space:nowrap"><button class="rollbtn" data-act="attack" data-i="${i}" title="Roll 1d20 ${sgn(W.atk)} to hit">${sgn(W.atk+(S.opts.burst&&w.burst?2:0))}</button> <button class="rollbtn snap" data-act="snap" data-i="${i}" title="Snap Attack: Instant, spends your next Main Action, −4 to hit">Snap ${sgn(W.atk-4+(S.opts.burst&&w.burst?2:0))}</button></td>
     <td><button class="rollbtn" data-act="damage" data-i="${i}" title="Roll damage only">${esc(W.dmgText)}</button></td>
-    <td>${W.shock?`<button class="rollbtn" data-act="shock" data-i="${i}" title="Post Shock damage to the log (on a miss)">${W.shock.dmg}/${W.shock.ac>=99?"any AC":"AC "+W.shock.ac}</button>`:`<span class="hint">—</span>`}${W.missDmg?` <button class="rollbtn" data-act="missdmg" data-i="${i}" title="Unmodified damage on a miss">miss ${W.missDmg}</button>`:""}</td>
+    <td>${W.shock?`<span class="shockv" title="Damage dealt on a miss if the target's AC is low enough">${W.shock.dmg}/${W.shock.ac>=99?"any AC":"AC "+W.shock.ac}</span>`:`<span class="hint">—</span>`}${W.missDmg?` <button class="rollbtn" data-act="missdmg" data-i="${i}" title="Unmodified damage on a miss">miss ${W.missDmg}</button>`:""}</td>
     <td class="num">${real&&num(w.mag)>0?`${can?`<button class="iconbtn" data-act="ammo" data-i="${i}" data-d="-1" aria-label="Use ammo">−</button> `:""}${num(w.ammo)}/${num(w.mag)}${can?` <button class="btn sm ghost" data-act="reload" data-i="${i}">Reload</button>`:""}`:`<span class="hint">—</span>`}</td></tr>`}).join("");
   const cls=CLASS_TEXT[c.class];
   const anyBurst=weapons.some(x=>x.w.burst);
   return `<div class="sect"><span class="lbl">Attacks <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="attack">how attacks work</button></span>
     <div class="tbl-wrap"><table><thead><tr><th>Weapon</th><th>Hit</th><th>Damage</th><th>Shock</th><th>Ammo</th></tr></thead><tbody>${rows}</tbody></table></div>
     ${anyBurst?`<label class="toggle" style="margin-top:8px"><input type="checkbox" id="opt-burst" data-opt="burst" ${S.opts.burst?"checked":""}>Burst fire (+2 to hit and damage, uses 3 rounds)</label>`:""}
-    <p class="hint">Hit rolls the d20, Damage rolls damage, Shock posts the Shock damage for a miss. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="shock">What's Shock?</button> Natural 20 always hits; natural 1 always misses.</p></div>
-    <div class="sect"><span class="lbl">Class abilities</span>
-      <div class="feature"><h4>${esc(cls?.t||c.class)}</h4><p>${esc(cls?.d||"")}</p></div>
-      ${c.class==="Adventurer"?(c.partials||[]).map(p=>`<div class="feature"><h4>Partial ${esc(p)}</h4><p>${esc(PARTIAL_TEXT[p]||"")}</p></div>`).join(""):""}
-    </div>
-    <div class="sect"><span class="lbl">In combat</span><p class="hint" style="margin:0">Each round you get one Main Action, one Move Action, and as many Instant actions as the situation allows. Use the game log for anything else: type dice like 2d6+1.</p></div>`;
+    <p class="hint">Hit rolls the d20; Damage rolls damage. Shock is the damage a melee weapon still deals on a miss, if the target's AC is at or below the number. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="shock">More on Shock</button></p>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px">${can?`<button class="btn ${R.totalDefense?"on":""}" data-act="total-def">${R.totalDefense?"Total Defense ON (+2 AC)":"Take Total Defense"}</button>`:R.totalDefense?`<span class="tag on">Total Defense</span>`:""}<span class="hint">Instant: spends your Main Action. +2 AC and immune to melee Shock until your next turn. Turn it off when your turn comes.</span></div></div>
+    <div class="sect"><span class="lbl">Combat actions</span>
+      <div class="actgrid">
+        <div class="actbox"><h4>Main Action <span class="tag">one per turn</span></h4><p class="hint">Most of your six-second round. You can trade it for a second Move.</p>
+          <ul><li><b>Melee Attack</b>: hit an adjacent foe with a Readied weapon. Shock on a miss.</li><li><b>Ranged Attack</b>: fire or throw a Readied weapon. With an armed enemy in melee range you can't fire two-handed guns, and one-handed ones take −4.</li><li><b>Use a Skill</b>: something quick, like stabilizing an ally or running a prepared hack.</li><li><b>Ready or Stow an Item</b>: draw a stowed weapon, dig something out of your pack.</li><li><b>Reload</b>: swap in a Readied magazine or power cell.</li><li><b>Fighting Withdrawal</b>: disengage from melee so you can move away without free attacks.</li></ul></div>
+        <div class="actbox"><h4>Move Action <span class="tag">one per turn</span></h4><p class="hint">About 10 meters. Can't be split around your Main Action.</p>
+          <ul><li><b>Run</b>: 10 m (half when climbing, swimming, rough terrain, or prone).</li><li><b>Stand Up</b> from prone.</li><li><b>Pick Up an Item</b> with a free hand; it ends up Readied.</li><li><b>Club Up a Weapon</b>: grip a gun to use as a club (or switch back).</li><li><b>Hold an Action</b>: delay your other actions and trigger them later as Instants.</li></ul></div>
+        <div class="actbox"><h4>On Turn <span class="tag">any number, your turn</span></h4><p class="hint">Fast, simple things done alongside everything else.</p>
+          <ul><li><b>Go Prone</b>: −2 to hit you from range, but adjacent foes get +2.</li><li><b>Draw a Readied item.</b></li><li><b>Speak</b> a few words, <b>drop</b> or <b>activate</b> a simple device.</li></ul></div>
+        <div class="actbox"><h4>Instant <span class="tag">any number, any time</span></h4><p class="hint">Even on someone else's turn, or after dice are rolled.</p>
+          <ul><li><b>Snap Attack</b>: attack out of turn at −4 to hit. Spends your upcoming Main Action. Use the Snap button above.</li><li><b>Total Defense</b>: +2 AC and immune to melee Shock until your next turn. Spends your Main Action (can't if already used).</li><li><b>Drop an Item</b> to free your hands.</li><li>Some psychic powers and class abilities, like a Warrior's once-per-scene luck.</li></ul></div>
+      </div></div>`;
 }
 
 function renderInventory(path,c,R,can){
   const inv=c.inventory||[];
-  const rows=inv.map((e,i)=>{const it=R.items[i];return `<tr>
-    <td><button class="iname" data-act="item" data-i="${i}">${esc(it.name||"Item")}${it.linked?`<span class="tag hb">Homebrew</span>`:""}${(it.mods||[]).length?`<span class="tag on">${(it.mods||[]).length} bonus${(it.mods||[]).length>1?"es":""}</span>`:""}</button><span class="isub">${esc((ITEM_TYPES.find(t=>t[0]===it.type)||[0,"Gear"])[1])}${it.type==="armor"?" · AC "+num(it.ac,10):""}${it.type==="cyber"?" · strain "+num(it.strain):""}</span></td>
+  const row=(e,i)=>{const it=R.items[i];const loc=e.location||"stowed";return `<tr>
+    <td style="width:34px">${it.type==="cyber"?"":`<input type="checkbox" class="rdy" title="Readied" aria-label="Readied" data-act="ready-toggle" data-i="${i}" ${loc==="readied"?"checked":""} ${can&&loc!=="stored"?"":"disabled"}>`}</td>
+    <td><button class="iname" data-act="item" data-i="${i}">${esc(it.name||"Item")}${it.linked?`<span class="tag hb">Homebrew</span>`:""}${(it.mods||[]).length?`<span class="tag on">${(it.mods||[]).length} bonus${(it.mods||[]).length>1?"es":""}</span>`:""}</button><span class="isub">${esc((ITEM_TYPES.find(t=>t[0]===it.type)||[0,"Gear"])[1])}${it.type==="armor"?" · AC "+num(it.ac,10):""}${it.type==="shield"?" · shield":""}${it.type==="cyber"?" · strain "+num(it.strain):""}</span></td>
     <td style="width:70px">${can?inp(path,"inventory."+i+".qty",{type:"number",cls:"inp n",min:0}):num(e.qty,1)}</td>
-    <td style="width:150px">${it.type==="cyber"?`<span class="hint">Installed</span>`:can?sel(path,"inventory."+i+".location",LOCATIONS):esc((LOCATIONS.find(l=>l[0]===e.location)||["","Stowed"])[1])}</td>
-    <td class="num" style="width:50px">${num(it.enc)}</td>
-    <td style="width:40px">${can?`<button class="iconbtn" data-act="inv-remove" data-i="${i}" aria-label="Remove ${esc(it.name)}">${S.confirm==="inv"+i?"!":"×"}</button>`:""}</td></tr>`}).join("");
+    <td class="num" style="width:44px">${it.type==="cyber"?"—":num(it.enc)}</td>
+    <td style="width:${can?"118":"10"}px;text-align:right;white-space:nowrap">${can&&it.type!=="cyber"?`<button class="btn sm ghost" data-act="store-toggle" data-i="${i}" title="${loc==="stored"?"Bring it with you (Stowed)":"Leave it on the ship or at home"}">${loc==="stored"?"Carry":"Store"}</button> `:""}${can?`<button class="iconbtn" data-act="inv-remove" data-i="${i}" aria-label="Remove ${esc(it.name)}">${S.confirm==="inv"+i?"!":"×"}</button>`:""}</td></tr>`};
+  const group=f=>inv.map((e,i)=>({e,i})).filter(({e,i})=>f(R.items[i],e.location||"stowed"));
+  const sect=(title,sub,list,empty,cls="")=>`<div class="invsec ${cls}"><div class="invh"><span class="lbl">${title}</span><span class="hint">${sub}</span></div>
+    ${list.length?`<div class="tbl-wrap"><table><thead><tr><th>Ready</th><th>Item</th><th>Qty</th><th>Enc</th><th></th></tr></thead><tbody>${list.map(({e,i})=>row(e,i)).join("")}</tbody></table></div>`:`<p class="hint" style="margin:6px 0 0">${empty}</p>`}</div>`;
+  const ready=group((it,l)=>it.type!=="cyber"&&l==="readied"),stow=group((it,l)=>it.type!=="cyber"&&l==="stowed"),stored=group((it,l)=>it.type!=="cyber"&&l==="stored"),cyber=group(it=>it.type==="cyber");
   const hb=hbPaths();
   return `${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="hb-pick" class="inp" style="max-width:260px"><option value="">Add from compendium…</option>${hb.map(p=>`<option value="${esc(p.split("/")[1])}">${esc(S.docs[p].name)} (${esc(S.docs[p].type||"gear")})</option>`).join("")}</select>
       <button class="btn" data-act="inv-add-hb">Add</button><button class="btn ghost" data-act="inv-add-custom">+ Custom item</button></div>`:""}
-    ${inv.length?`<div class="tbl-wrap"><table><thead><tr><th>Item</th><th>Qty</th><th>Carried</th><th>Enc</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`:`<div class="empty">Nothing carried yet.</div>`}
+    ${sect("Readied",`${R.readied} / ${R.readiedLimit} · worn, in hand, or instantly usable. These count for AC and bonuses.`,ready,"Nothing readied. Check an item below to ready it.",R.readied>R.readiedLimit?"over":"")}
+    ${sect("Stowed",`${R.stowed} / ${R.stowedLimit} · packed away. Readying one takes a Main Action in combat.`,stow,"Nothing stowed.",R.stowed>R.stowedLimit?"over":"")}
+    ${cyber.length?sect("Cyberware","installed, always active, no encumbrance",cyber,""):""}
+    ${stored.length?sect("Stored","left on the ship or at home, not carried",stored,""):""}
     ${S.confirm&&S.confirm.startsWith("inv")?`<p class="hint" style="color:var(--bad)">Click the ! again to remove that item.</p>`:""}
-    <p class="hint">Readied items are worn, in hand, or instantly usable: readied armor and shields set your AC, and readied items apply their bonuses. Stowed items are packed away and don't. Cyberware always applies. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>`;
+    <p class="hint">Check the box to ready an item; uncheck it to stow it. <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="enc">Encumbrance rules</button> · <button class="hint" style="background:none;border:0;text-decoration:underline;cursor:help" data-act="rule" data-key="mods">How bonuses apply</button></p>`;
 }
 
 function focusSelectOpts(){
@@ -1042,7 +1071,9 @@ function renderFeatures(path,c,R,E){
     ${techs.map((t,j)=>{const d=DISC[t.disc];const tt=d?d.t1.find(x=>x[0]===t.name):null;return `<div class="feature"><h4>${esc(t.name)} <span class="tag">${esc(PSYK[t.disc]?.name||"")}</span>${E?` <button class="iconbtn" data-act="tech-remove" data-j="${j}" aria-label="Remove technique">×</button>`:""}</h4><p>${esc(tt?tt[1]:"")}</p></div>`}).join("")}
     ${E&&techOpts.length?`<div style="display:flex;gap:6px;align-items:center"><select id="tech-pick" class="inp" style="max-width:320px"><option value="">Add a level-1 technique…</option>${techOpts.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join("")}</select><button class="btn sm" data-act="tech-add">Add</button></div>`:""}</div>`:"";
   const eff=(c.effects||[]).filter(f=>f.active);
-  return `<div class="sect"><span class="lbl">Foci <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="foci">what are foci?</button></span>${foci||`<div class="empty">No foci yet.${canEdit(path)?" Turn on Edit sheet to add them.":""}</div>`}${E?`<button class="btn sm" data-act="focus-add">+ Add focus</button>`:""}</div>
+  const cls=CLASS_TEXT[c.class];
+  const clsHtml=`<div class="sect"><span class="lbl">Class abilities</span><div class="feature"><h4>${esc(cls?.t||c.class)}</h4><p>${esc(cls?.d||"")}</p></div>${c.class==="Adventurer"?(c.partials||[]).map(p=>`<div class="feature"><h4>Partial ${esc(p)}</h4><p>${esc(PARTIAL_TEXT[p]||"")}</p></div>`).join(""):""}</div>`;
+  return `${clsHtml}<div class="sect"><span class="lbl">Foci <button class="hint" style="background:none;border:0;cursor:help;text-transform:none;letter-spacing:0" data-act="rule" data-key="foci">what are foci?</button></span>${foci||`<div class="empty">No foci yet.${canEdit(path)?" Turn on Edit sheet to add them.":""}</div>`}${E?`<button class="btn sm" data-act="focus-add">+ Add focus</button>`:""}</div>
     ${techHtml}
     <div class="sect"><span class="lbl">Other features</span>${E?ta(path,"features",{ph:"Background perks, ship role, anything else…",rows:5}):c.features?`<div class="feature"><p>${esc(c.features)}</p></div>`:`<p class="hint">Nothing here yet.</p>`}</div>
     <div class="sect"><span class="lbl">Active effects</span>${eff.length?eff.map(f=>`<div class="feature"><h4>${esc(f.name||"Effect")}</h4><p>${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")||"No bonuses"}</p></div>`).join(""):`<p class="hint">None. Your GM can add conditions and temporary bonuses.</p>`}</div>`;
@@ -1279,7 +1310,7 @@ document.addEventListener("click",e=>{
     case "roll-init":doInit();break;
     case "attack":doAttack(t.dataset.i,"hit");break;
     case "damage":doAttack(t.dataset.i,"dmg");break;
-    case "shock":doAttack(t.dataset.i,"shock");break;
+    case "snap":doAttack(t.dataset.i,"snap");break;
     case "missdmg":doAttack(t.dataset.i,"miss");break;
     case "opt-sit":S.opts.sit=Math.max(-10,Math.min(10,num(S.opts.sit)+num(t.dataset.d)));render();break;
     case "hp":edit((c,p)=>{const amt=Math.abs(num($("#hp-amt")?.value));if(!amt)return;const R=compute(c);const v=Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.sign)*amt));setField(p,"hp.cur",v)});break;
@@ -1290,6 +1321,9 @@ document.addEventListener("click",e=>{
     case "reload":edit((c,p)=>{const i=num(t.dataset.i);const R=compute(c);setField(p,"inventory."+i+".ammo",num(R.items[i].mag))});break;
     case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addHb(c,p,id)});break;
     case "inv-add-custom":edit((c,p)=>{const inv=c.inventory||[];inv.push({id:rid(),type:"gear",name:"New item",qty:1,location:"readied",enc:1,mods:[],description:""});setField(p,"inventory",inv);S.drawer={kind:"item",i:inv.length-1}});break;
+    case "ready-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="readied"?"stowed":"readied")});break;
+    case "store-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="stored"?"stowed":"stored")});break;
+    case "total-def":edit((c,p)=>{setField(p,"totalDefense",!c.totalDefense)});break;
     case "inv-remove":edit((c,p)=>{const i=num(t.dataset.i);if(S.confirm!=="inv"+i){S.confirm="inv"+i;return}S.confirm=null;const inv=c.inventory||[];inv.splice(i,1);setField(p,"inventory",inv);S.drawer=null});break;
     case "focus-add":edit((c,p)=>{const f=c.foci||[];f.push({id:rid(),key:"",name:"",level:1,skill:"",text:""});setField(p,"foci",f)});break;
     case "focus-remove":edit((c,p)=>{const f=c.foci||[];f.splice(num(t.dataset.j),1);setField(p,"foci",f)});break;
