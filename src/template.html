@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
-<script>var THEMES={light:["Light",0],dark:["Dark",1],forest:["Forest",1],midnight:["Midnight",1],ocean:["Ocean Waves",0],synth:["Synth",1],pink:["Pop Pink",0],silky:["Silky Smooth",0]};
+<script>var THEMES={light:["Light",0],dark:["Dark",1],forest:["Forest",1],midnight:["Midnight",1],ocean:["Ocean Waves",0],synth:["Synth",1],pink:["Pop Pink",0],silky:["Silky Smooth",0],galaxy:["✦ Galaxy ✦",1]};
 function applyTheme(t){if(!THEMES[t])t="light";var r=document.documentElement;r.dataset.theme=t;r.dataset.tone=THEMES[t][1]?"dark":"light"}
 try{applyTheme(localStorage.getItem("swn.theme")||(window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light"))}catch(e){applyTheme("light")}</script>
 <style>
@@ -459,9 +459,67 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 :root[data-theme="silky"]{--ink:#eee8df;--sky:#e3d9cc;--card:#fcf9f5;--panel:#fcf9f5;--panel-2:#f5efe7;--raised:#eae1d5;--line:#cdbfae;--line-soft:#e4dace;
   --text:#2d2722;--muted:#73675c;--faint:#a7998b;--accent:#9b7858;--accent-soft:rgba(155,120,88,.1);--ring:rgba(155,120,88,.3);--accent-line:rgba(155,120,88,.5);
   --info:#5b7c8b;--good:#5a8961;--bad:#b3524a;--warn:#b5893a;--head1:#3b322b;--head2:#2b241f;--topbg:#211c18;color-scheme:light}
+
+/* ===== GALAXY ===== */
+:root[data-theme="galaxy"]{--ink:#05030f;--sky:#0b0624;--card:rgba(17,12,44,.78);--panel:rgba(17,12,44,.78);--panel-2:rgba(32,24,78,.72);--raised:#2a2160;--line:#4d3fa0;--line-soft:rgba(77,63,160,.45);
+  --text:#f3eeff;--muted:#bdb2ec;--faint:#857ac0;--accent:#b86cff;--accent-soft:rgba(184,108,255,.18);--ring:rgba(94,231,255,.45);--accent-line:rgba(184,108,255,.6);
+  --info:#5ee7ff;--good:#6cffbb;--bad:#ff5f8f;--warn:#ffd36b;--head1:#1a0b3d;--head2:#070418;--topbg:rgba(5,3,15,.82);--dark-line:#3d2f7a;color-scheme:dark}
+:root[data-theme="galaxy"] body{background:#05030f}
+:root[data-theme="galaxy"] #app{position:relative;z-index:1}
+:root[data-theme="galaxy"] body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(1.6px 1.6px at 20px 30px,#fff,transparent 60%),radial-gradient(1.6px 1.6px at 140px 80px,#cfe8ff,transparent 60%),
+    radial-gradient(2.2px 2.2px at 60px 150px,#fff,transparent 60%),radial-gradient(1.6px 1.6px at 190px 190px,#ffd9f5,transparent 60%),
+    radial-gradient(2px 2px at 100px 60px,#fff,transparent 60%),radial-gradient(1.6px 1.6px at 230px 120px,#fff,transparent 60%),
+    radial-gradient(1.5px 1.5px at 10px 220px,#bfe9ff,transparent 60%),radial-gradient(1.6px 1.6px at 170px 250px,#fff,transparent 60%);
+  background-size:220px 220px;animation:twinkle 4s ease-in-out infinite alternate}
+:root[data-theme="galaxy"] body::after{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 45% at 15% 20%,rgba(184,108,255,.42),transparent 70%),
+    radial-gradient(ellipse 55% 40% at 85% 35%,rgba(94,231,255,.28),transparent 70%),
+    radial-gradient(ellipse 70% 50% at 60% 90%,rgba(255,95,175,.3),transparent 70%),
+    radial-gradient(ellipse 40% 30% at 40% 55%,rgba(110,80,255,.15),transparent 70%),
+    radial-gradient(3px 3px at 37% 13%,#fff,transparent 70%),radial-gradient(2.5px 2.5px at 72% 64%,#fff,transparent 70%),radial-gradient(3px 3px at 88% 12%,#e8d4ff,transparent 70%);
+  animation:nebula 30s ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.55}to{opacity:1}}
+@keyframes nebula{from{filter:hue-rotate(0deg);transform:scale(1)}to{filter:hue-rotate(25deg);transform:scale(1.06)}}
+:root[data-theme="galaxy"] .shoot{position:fixed;top:-10px;left:60%;width:140px;height:2px;z-index:0;pointer-events:none;border-radius:2px;
+  background:linear-gradient(90deg,rgba(255,255,255,0),#fff 70%,#cfe8ff);transform:rotate(-28deg);opacity:0;animation:shoot 9s linear infinite}
+:root[data-theme="galaxy"] .shoot.s2{left:25%;animation-delay:4.5s;animation-duration:13s}
+@keyframes shoot{0%{opacity:0;transform:translate(0,0) rotate(-28deg)}2%{opacity:1}9%{opacity:0;transform:translate(-520px,280px) rotate(-28deg)}100%{opacity:0}}
+:root:not([data-theme="galaxy"]) .shoot{display:none}
+:root[data-theme="galaxy"] .frame,:root[data-theme="galaxy"] .attr,:root[data-theme="galaxy"] .stat,:root[data-theme="galaxy"] .hpbox,:root[data-theme="galaxy"] .ibox,:root[data-theme="galaxy"] .pcard,:root[data-theme="galaxy"] .credbox{
+  border-color:#9d6bff;backdrop-filter:blur(6px);box-shadow:inset 0 0 0 3px rgba(17,12,44,.0),inset 0 0 0 4px rgba(94,231,255,.35),0 0 18px rgba(184,108,255,.35),0 0 2px rgba(94,231,255,.6)}
+:root[data-theme="galaxy"] .attr .score{background:#120b33;border-color:#5ee7ff;box-shadow:0 0 10px rgba(94,231,255,.6)}
+:root[data-theme="galaxy"] .cname{background:linear-gradient(90deg,#fff 0%,#e3c8ff 40%,#8fefff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;filter:drop-shadow(0 0 10px rgba(184,108,255,.6))}
+:root[data-theme="galaxy"] .attr .mod,:root[data-theme="galaxy"] .stat .big,:root[data-theme="galaxy"] .hpnums .big,:root[data-theme="galaxy"] .credamt{text-shadow:0 0 10px rgba(94,231,255,.55),0 0 22px rgba(184,108,255,.35)}
+:root[data-theme="galaxy"] .sheethead{background:
+    radial-gradient(1.6px 1.6px at 12% 30%,#fff,transparent 70%),radial-gradient(1.5px 1.5px at 38% 70%,#fff,transparent 70%),radial-gradient(1.6px 1.6px at 63% 25%,#fff,transparent 70%),radial-gradient(1.6px 1.6px at 86% 60%,#fff,transparent 70%),
+    radial-gradient(ellipse 50% 120% at 20% 50%,rgba(184,108,255,.45),transparent 70%),radial-gradient(ellipse 45% 120% at 80% 40%,rgba(94,231,255,.3),transparent 70%),
+    linear-gradient(180deg,#1a0b3d,#070418);border-bottom:2px solid transparent;border-image:linear-gradient(90deg,#ff5faf,#b86cff,#5ee7ff) 1}
+:root[data-theme="galaxy"] .portrait{border-color:#5ee7ff;box-shadow:0 0 16px rgba(94,231,255,.7),0 0 30px rgba(184,108,255,.5)}
+:root[data-theme="galaxy"] .btn.pri,:root[data-theme="galaxy"] .role.gm{background:linear-gradient(90deg,#b86cff,#5ee7ff);border-color:transparent;color:#0a0520;box-shadow:0 0 14px rgba(184,108,255,.55)}
+:root[data-theme="galaxy"] .btn.pri:hover{filter:brightness(1.15)}
+:root[data-theme="galaxy"] .tab.on{border-image:linear-gradient(90deg,#ff5faf,#b86cff,#5ee7ff) 1;border-bottom-width:3px;text-shadow:0 0 10px rgba(184,108,255,.8)}
+:root[data-theme="galaxy"] .rollbtn{background:rgba(10,6,30,.7);border-color:#4d3fa0}
+:root[data-theme="galaxy"] .rollbtn:hover{border-color:#5ee7ff;color:#5ee7ff;box-shadow:0 0 12px rgba(94,231,255,.6)}
+:root[data-theme="galaxy"] .toast{background:rgba(17,12,44,.95);border-color:#5ee7ff;box-shadow:0 0 24px rgba(94,231,255,.5),0 0 50px rgba(184,108,255,.35)}
+:root[data-theme="galaxy"] .toast .line .t{text-shadow:0 0 12px #5ee7ff}
+:root[data-theme="galaxy"] .drawer{background:rgba(12,8,34,.96);border-left-color:#b86cff;box-shadow:-10px 0 40px rgba(184,108,255,.35)}
+:root[data-theme="galaxy"] .drawer-h,:root[data-theme="galaxy"] .log .frame-h{background:linear-gradient(90deg,#2a0f5c,#0b1d4a)}
+:root[data-theme="galaxy"] .log{background:rgba(12,8,34,.95);border-color:#b86cff;box-shadow:0 0 30px rgba(184,108,255,.4)}
+:root[data-theme="galaxy"] .logbtn{background:linear-gradient(90deg,#3a1478,#0f2c66);border-color:#5ee7ff;box-shadow:0 0 16px rgba(94,231,255,.5)}
+:root[data-theme="galaxy"] .acsvg .sh{fill:rgba(17,12,44,.85);stroke:#5ee7ff;filter:drop-shadow(0 0 6px rgba(94,231,255,.8))}
+:root[data-theme="galaxy"] .eslot{border-color:#5ee7ff}
+:root[data-theme="galaxy"] .eslot.used{background:#5ee7ff;box-shadow:0 0 10px #5ee7ff}
+:root[data-theme="galaxy"] .hpbar i{box-shadow:0 0 8px currentColor}
+:root[data-theme="galaxy"] .wstep.on{background:linear-gradient(90deg,#b86cff,#5ee7ff);color:#0a0520}
+:root[data-theme="galaxy"] .inp,:root[data-theme="galaxy"] select.inp,:root[data-theme="galaxy"] textarea.inp{background:rgba(8,5,25,.75)}
+@media (prefers-reduced-motion:reduce){:root[data-theme="galaxy"] body::before,:root[data-theme="galaxy"] body::after,:root[data-theme="galaxy"] .shoot{animation:none}}
 </style>
 </head>
 <body>
+<div class="shoot"></div><div class="shoot s2"></div>
 <div id="app"></div>
 <div id="toasts" aria-live="polite"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
