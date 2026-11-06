@@ -218,6 +218,7 @@ function wConcept(w){
   `<div class="grid2"><div class="field"><span class="lbl">Character name</span>${wInp("name",{live:true,ph:"e.g. Basil Hayes"})}</div><div class="field"><span class="lbl">Player name</span>${wInp("player",{live:true,ph:"Your name"})}</div>
    <div class="field"><span class="lbl">Homeworld</span>${wInp("homeworld",{live:true,ph:"Ask your GM for options"})}</div><div class="field"><span class="lbl">Species</span>${wInp("species",{live:true})}</div></div>
    <div class="field" style="margin-top:8px"><span class="lbl">Goal</span>${wInp("goal",{live:true,ph:"e.g. Be known as the greatest pilot in the sector"})}</div>
+   <div class="wport">${w.portrait?`<span class="portrait hasimg"><img src="${esc(w.portrait)}" alt=""></span>`:`<span class="portrait">${esc(initials(w.name||"?"))}</span>`}<label class="btn">${w.portrait?"Change picture":"Add a picture"}<input type="file" accept="image/*" data-wportrait hidden></label>${w.portrait?`<button class="btn ghost" data-act="wset" data-path="portrait" data-v="">Remove</button>`:""}<span class="hint">Optional. Square pictures work best; it's cropped to the center.</span></div>
    <p class="hint" style="margin-top:12px">You can change all of this later. Name is required before you create the sheet.</p>`;
 }
 function wAttributes(w,D){
@@ -373,6 +374,7 @@ function wizToSheet(w,D){
     const armors=c.inventory.filter(i=>i.type==="armor").sort((a,b)=>num(b.ac)-num(a.ac));armors.slice(1).forEach(a=>a.location="stowed")}
   else{c.inventory=[];c.credits=D.credits}
   c.features=c.techniques.length?"Psychic techniques: "+c.techniques.map(t=>t.name+" ("+PSYK[t.disc].name+")").join(", "):"";
+  if(w.portrait)c.portrait=w.portrait;
   c.creation={method:w.attrMethod,bgMethod:w.bgMethod,at:Date.now()};
   return c;
 }

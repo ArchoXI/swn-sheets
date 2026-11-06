@@ -296,6 +296,22 @@ textarea.inp{resize:vertical;min-height:70px}
 .actbox h4{margin:0 0 2px;font-family:var(--display);font-size:17px}
 .actbox ul{margin:6px 0 0;padding-left:18px}
 .actbox li{margin:3px 0;font-size:13px}
+.portrait.hasimg,.av.hasimg{padding:0;overflow:hidden}
+.portrait img,.av img{width:100%;height:100%;object-fit:cover;display:block}
+.portrait-edit{position:relative;cursor:pointer;display:block}
+.portrait-edit .pcam{position:absolute;right:-6px;bottom:-6px;width:28px;height:28px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-size:14px;border:2px solid #1b1b1d}
+.portrait-edit:hover .portrait{filter:brightness(1.1)}
+.btn.dk.lvlready{border-color:#f3c26b;color:#f3c26b;box-shadow:0 0 0 2px rgba(243,194,107,.25)}
+.ludice{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:10px}
+.pools{display:flex;gap:12px;flex-wrap:wrap}
+.pool{padding:10px 14px;border:2px solid var(--accent);border-radius:8px;background:#fff;display:flex;flex-direction:column}
+.atgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.atbox{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:6px 10px;border:1px solid var(--line-soft);border-radius:6px;background:#fff}
+.techlist{display:grid;gap:6px}
+.techrow{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border:1px solid var(--line-soft);border-radius:6px;background:#fff}
+.techrow.have{opacity:.6}
+.wport{display:flex;align-items:center;gap:14px;margin-top:12px}
+.wport .portrait{width:72px;height:72px;font-size:28px;color:#fff}
 /* wizard */
 .wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
 .wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
@@ -881,7 +897,7 @@ function nameOf(id){return ""}
 function renderTop(){
   const sheets=sheetPaths();
   const chips=sheets.map(p=>{const c=S.docs[p];const R=compute(c);const pct=R.hpMax>0?Math.max(0,Math.min(100,num(c.hp?.cur)/R.hpMax*100)):0;
-    return `<button class="chip ${S.view==="sheet"&&S.current===p?"on":""}" data-act="open" data-doc="${esc(p)}"><span class="av">${esc(initials(c.name))}</span>${esc(c.name||"Unnamed")}<span class="hpmini" title="HP"><i style="width:${pct}%;background:${pct<34?"var(--bad)":pct<67?"var(--warn)":"var(--good)"}"></i></span></button>`}).join("");
+    return `<button class="chip ${S.view==="sheet"&&S.current===p?"on":""}" data-act="open" data-doc="${esc(p)}">${portraitHtml(c,"av")}${esc(c.name||"Unnamed")}<span class="hpmini" title="HP"><i style="width:${pct}%;background:${pct<34?"var(--bad)":pct<67?"var(--warn)":"var(--good)"}"></i></span></button>`}).join("");
   return `<div class="topbar">
     <div class="brand"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#c53131" stroke-width="2"/><path d="M16 5 L19 13 L27 16 L19 19 L16 27 L13 19 L5 16 L13 13 Z" fill="#e7eaf0"/></svg>SWN Sheets</div>
     <nav class="nav">${chips}</nav>
@@ -912,7 +928,7 @@ function renderSheet(){
   const L=(key,text,extra="")=>`<button class="lbl" data-act="rule" data-key="${key}" ${extra}>${text}</button>`;
 
   const head=`<section class="sheethead"><div class="sheethead-in">
-    <div class="portrait">${esc(initials(c.name))}</div>
+    ${can?`<label class="portrait-edit" title="Click to change picture">${portraitHtml(c,"portrait")}<span class="pcam">📷</span><input type="file" accept="image/*" data-portrait="${esc(path)}" hidden></label>`:portraitHtml(c,"portrait")}
     <div style="min-width:0">
       <div class="cname">${E?inp(path,"name",{live:true,cls:""}):esc(c.name||"Unnamed")}</div>
       ${E?`<div class="grid4" style="margin-top:8px">
@@ -930,6 +946,8 @@ function renderSheet(){
       <div class="xp" style="margin-top:2px;justify-content:center;max-width:440px"><button style="background:none;border:0;padding:0;color:#bbb;cursor:help;font:inherit" data-act="rule" data-key="xp">${num(c.xp)} / ${R.nextXp??"—"} XP</button><span style="margin-left:14px">${num(c.credits)} CREDITS</span></div>
     </div>
     <div class="bactions">
+      ${can&&(num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)||S.isGM||S.offline)?`<button class="btn dk ${num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)?"lvlready":""}" data-act="lu-open" title="${num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)?"You have enough XP to level up":"GM: level up without enough XP"}">⬆ Level up</button>`:""}
+      ${can&&S.edit&&c.portrait?`<button class="btn dk" data-act="portrait-remove">Remove picture</button>`:""}
       ${can?`<button class="btn dk ${S.edit?"on":""}" data-act="edit-toggle">${S.edit?"Done editing":"Edit sheet"}</button>`:claimable&&!c.locked?`<button class="btn dk" data-act="claim">This is my character</button>`:`<span class="hint">${c.locked?"Locked by your GM":"View only"}</span>`}
       <button class="btn dk" data-act="view" data-v="party">Party</button>
     </div>
@@ -1125,7 +1143,7 @@ function renderParty(){
   if(!ps.length)return `<div class="empty">No sheets yet.</div>`;
   return `<h2 class="pagetitle">Party</h2><div class="pgrid">${ps.map(p=>{const c=S.docs[p];const R=compute(c);const pct=R.hpMax>0?Math.max(0,Math.min(100,num(c.hp?.cur)/R.hpMax*100)):0;
     const owner=c.npc?"NPC":(c.player||"");
-    return `<div class="pcard"><div class="top"><span class="av">${esc(initials(c.name))}</span><div style="min-width:0;flex:1"><h3>${esc(c.name||"Unnamed")}</h3><span class="hint">Lv ${R.level} ${esc(c.class)}${owner?" · "+esc(owner):""}</span></div><button class="btn sm" data-act="open" data-doc="${esc(p)}">Open</button></div>
+    return `<div class="pcard"><div class="top">${portraitHtml(c,"av")}<div style="min-width:0;flex:1"><h3>${esc(c.name||"Unnamed")}</h3><span class="hint">Lv ${R.level} ${esc(c.class)}${owner?" · "+esc(owner):""}</span></div><button class="btn sm" data-act="open" data-doc="${esc(p)}">Open</button></div>
       <div><div class="row" style="display:flex;justify-content:space-between"><span class="lbl">HP</span><span class="num">${num(c.hp?.cur)} / ${R.hpMax}</span></div><div class="hpbar"><i style="width:${pct}%;background:${pct<34?"var(--bad)":pct<67?"var(--warn)":"var(--good)"}"></i></div></div>
       <div class="pstats"><div><span class="lbl">AC</span><b class="num">${R.ac}</b></div><div><span class="lbl">Phys</span><b class="num">${R.save.physical}</b></div><div><span class="lbl">Evas</span><b class="num">${R.save.evasion}</b></div><div><span class="lbl">Ment</span><b class="num">${R.save.mental}</b></div></div>
       <div class="hint">Strain ${R.strainCur}/${R.strainMax}${R.psychic?" · Effort "+Math.max(0,R.effortMax-num(c.effort?.scene)-num(c.effort?.day))+"/"+R.effortMax:""} · ${num(c.credits)} cr</div>
@@ -1271,7 +1289,7 @@ function render(){
   if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
   if(S.slow&&!S.offline)notes.push(`<div class="notice"><b>Can't reach the saved sheets yet.</b> What you see may be out of date. The page keeps trying on its own.</div>`);
   if(S.view==="create"&&!S.wiz)S.wiz=loadWiz();
-  const main=S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="create"?renderWizard():renderSheet();
+  const main=S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
   $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
   if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
@@ -1281,9 +1299,12 @@ function render(){
 function resolveNames(){}
 
 /* ================= EVENTS ================= */
-document.addEventListener("input",e=>{const el=e.target;if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
+document.addEventListener("input",e=>{const el=e.target;if(el.dataset&&el.dataset.lu&&el.dataset.lulive!==undefined){luInput(el,true);return}if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
 document.addEventListener("change",e=>{
   const el=e.target;
+  if(el.dataset&&el.dataset.lu){luInput(el,false);return}
+  if(el.dataset&&(el.dataset.portrait||el.dataset.wportrait!==undefined)&&el.files&&el.files[0]){
+    readPortrait(el.files[0]).then(url=>{if(el.dataset.portrait){if(!canEdit(el.dataset.portrait))return;setField(el.dataset.portrait,"portrait",url);toastMsg("Picture updated.")}else wset("portrait",url);render()}).catch(err=>toastMsg(err.message||"Couldn't use that image.",true));return}
   if(el.dataset&&el.dataset.w){wizInput(el,false);return}
   if(el.id==="w_bgnum"){const v=num(el.value,0);if(v>=1&&v<=20){wset("bg",BG_ORDER[v-1]);render()}return}
   if(el.dataset&&el.dataset.opt){const k=el.dataset.opt;S.opts[k]=el.type==="checkbox"?el.checked:(k==="diff"?num(el.value):el.value);render();return}
@@ -1306,6 +1327,7 @@ document.addEventListener("click",e=>{
   const keepConfirm=["inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
+  if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
   const edit=fn=>{if(!cur||!canEdit(cur.path))return;fn(cur.c,cur.path);render()};
   switch(act){
     case "view":S.view=t.dataset.v;S.drawer=null;render();break;
@@ -1355,6 +1377,8 @@ document.addEventListener("click",e=>{
     case "hb-goto":S.compSel=t.dataset.doc;S.view="compendium";S.drawer=null;render();break;
     case "hb-del":{const p=t.dataset.doc;if(S.confirm!=="hb"+p){S.confirm="hb"+p;render();break}S.confirm=null;deleteDoc(p);S.compSel=null;render();break}
     case "hb-give":{const p=t.dataset.doc;const gm=S.isGM||S.offline;const target=gm?(cur?cur.path:null):(cur&&isMine(cur.path)?cur.path:myPath());if(!target||!canEdit(target))break;addHb(S.docs[target],target,p.split("/")[1]);toastMsg("Added "+(S.docs[p]?.name||"item")+" to "+(S.docs[target].name||"sheet"));render();break}
+    case "lu-open":{if(!cur||!canEdit(cur.path))break;S.lu=newLU(cur.path);S.view="levelup";S.drawer=null;render();window.scrollTo({top:0});break}
+    case "portrait-remove":edit((c,p)=>setField(p,"portrait",null));break;
     case "wiz-open":if(!S.wiz)S.wiz=loadWiz();S.view="create";S.drawer=null;render();window.scrollTo({top:0});break;
     case "comp-tab":S.compTab=t.dataset.v;render();break;
     case "hbf-sel":S.compFSel=t.dataset.doc;render();break;
@@ -1379,6 +1403,7 @@ function addHb(c,p,id){
 
 /*@@DATA@@*/
 /*@@WIZARD@@*/
+/*@@LEVELUP@@*/
 /* ================= BOOT ================= */
 async function gmSubmit(){
   const k=($("#gm-pass")?.value||"").trim();
