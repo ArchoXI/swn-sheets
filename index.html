@@ -928,7 +928,7 @@ function renderSheet(){
   const L=(key,text,extra="")=>`<button class="lbl" data-act="rule" data-key="${key}" ${extra}>${text}</button>`;
 
   const head=`<section class="sheethead"><div class="sheethead-in">
-    ${can?`<label class="portrait-edit" title="Click to change picture">${portraitHtml(c,"portrait")}<span class="pcam">📷</span><input type="file" accept="image/*" data-portrait="${esc(path)}" hidden></label>`:portraitHtml(c,"portrait")}
+    ${can?`<label class="portrait-edit" title="Click to change picture">${portraitHtml(c,"portrait")}<input type="file" accept="image/*" data-portrait="${esc(path)}" hidden></label>`:portraitHtml(c,"portrait")}
     <div style="min-width:0">
       <div class="cname">${E?inp(path,"name",{live:true,cls:""}):esc(c.name||"Unnamed")}</div>
       ${E?`<div class="grid4" style="margin-top:8px">
