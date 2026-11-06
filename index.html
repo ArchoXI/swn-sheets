@@ -330,6 +330,10 @@ textarea.inp{resize:vertical;min-height:70px}
 .credbox{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;margin-bottom:14px;border:2px solid var(--accent);border-radius:10px;background:var(--card)}
 .credamt{font-family:var(--display);font-size:30px;font-weight:700;line-height:1}
 .credctl{display:flex;gap:6px;align-items:center}
+.eslots{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
+.eslot{width:22px;height:22px;border:2px solid var(--info);border-radius:5px;background:var(--card);padding:0;display:inline-block}
+.eslot.used{background:var(--info)}
+button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 /* wizard */
 .wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
 .wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
@@ -538,7 +542,7 @@ const RULES = {
   ac:{t:"Armor Class",p:["To hit you, an enemy rolls 1d20 plus their attack bonus and must equal or beat your AC. Your AC is your armor's AC (10 with none) plus your DEX modifier.","Suits of armor don't stack; the sheet uses your best Readied armor. A Readied shield gives base AC 13, or +1 if your armor is already that good."]},
   hp:{t:"Hit Points",p:["Hit points show how close you are to being defeated.","At 1st level, roll 1d6 + CON modifier (minimum 1). Warriors and Partial Warriors add 2. When you level up you re-roll; the level-up wizard handles it.","At 0 HP from a lethal attack you're mortally wounded and die after six rounds unless someone stabilizes you (Int/Heal or Dex/Heal: difficulty 10 plus the rounds since you fell, 8 with a medkit, 6 with a Lazarus patch). Stabilized characters regain 1 HP after ten minutes.","If you're hurt but not mortally wounded, you regain your level in hit points after each night's peaceful rest."]},
   strain:{t:"System Strain",p:["System strain measures the stress on your body from psionic healing, cybernetic implants, and powerful drugs. Your maximum is your CON score.","If something would push your strain past your CON, it simply doesn't work on you.","Installed cyberware adds permanent strain. Other strain drops by 1 after each night of rest, if you're well-fed and not sick."]},
-  effort:{t:"Effort",p:["Psychics use Effort to power their techniques. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Effort is committed for a scene, for a day, or for as long as a power stays active, and comes back when that time ends."]},
+  effort:{t:"Effort",p:["Psychics use Effort to power their techniques. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Each use of a power commits one point. Depending on the power, it stays committed while the power is active, for the scene, or for the rest of the day, then returns. A good night's rest refreshes all Effort.","On the sheet, click a box to mark a point spent and click it again when it returns. Night's rest refreshes them all."]},
   init:{t:"Initiative",p:["At the start of combat, everyone rolls 1d8 + DEX modifier. Actors go from high to low, and PCs win ties. Initiative isn't re-rolled each round."]},
   enc:{t:"Encumbrance",p:["You can have Readied items up to half your STR score, rounded down. Readied items are worn, in hand, or in sheaths, holsters and belt pouches.","You can have Stowed items up to your full STR score. Getting a Stowed item out in a hurry takes your Main Action.","Up to 2 extra Readied or 4 extra Stowed items makes you Lightly Encumbered: movement drops from 10 to 7 meters per round. Up to 2 more Readied or 4 more Stowed beyond that makes you Heavily Encumbered: 5 meters per round.","Worn armor counts as Readied; normal clothes don't. Very small items in small numbers don't count. Small items can be bundled (about 6 power cells or 3 magazines per item), but getting into a bundle takes an extra round.","Stored items are left on the ship or at home and don't count."]},
   xp:{t:"Experience & Levels",p:["XP to reach each level: 2nd 3, 3rd 6, 4th 12, 5th 18, 6th 27, 7th 39, 8th 54, 9th 72, 10th 93.","A successful session usually earns about 3 XP."]},
@@ -592,7 +596,7 @@ function newCharacter(name){
     attrs:{str:10,dex:10,con:10,int:10,wis:10,cha:10},
     skills:Object.fromEntries(SKILLS.map(s=>[s[0],-1])),
     psy:Object.fromEntries(PSY.map(s=>[s[0],-1])),
-    hp:{cur:6,max:6},strain:{temp:0},effort:{scene:0,day:0},credits:0,
+    hp:{cur:6,max:6},strain:{temp:0},effortUsed:0,credits:0,
     inventory:[],foci:[{id:rid(),name:"",level:1,text:""}],features:"",notes:"",
     effects:[],overrides:{},locked:false,npc:false,owners:[],player:"",createdAt:Date.now()
   };
@@ -765,6 +769,8 @@ function compute(c){
   }else if(hasFocus(R,"wild_psychic")){
     const v=hasFocus(R,"wild_psychic",2)?2:1;R.effortMax=ovr("effortMax",v,[{l:"Wild Psychic Talent",v}]);
   }else R.effortMax=0;
+  R.effortUsed=Math.max(0,Math.min(R.effortMax,c.effortUsed!=null?num(c.effortUsed):num(c.effort?.scene)+num(c.effort?.day)));
+  R.effortLeft=R.effortMax-R.effortUsed;
   // init
   const inParts=[{l:"DEX modifier",v:R.mod.dex},...br("initiative")];
   R.init=ovr("init",inParts.reduce((s,p)=>s+p.v,0),inParts);
@@ -997,6 +1003,7 @@ function renderSheet(){
     </div>
     <div class="bactions">
       ${can&&(num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)||S.isGM||S.offline)?`<button class="btn dk ${num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)?"lvlready":""}" data-act="lu-open" title="${num(c.xp)>=(XP_TABLE[num(c.level,1)]??999)?"You have enough XP to level up":"GM: level up without enough XP"}">⬆ Level up</button>`:""}
+      ${can?`<button class="btn dk" data-act="rest-open" title="Recover Effort, 1 system strain, and HP">☾ Night's rest</button>`:""}
       ${can&&S.edit&&c.portrait?`<button class="btn dk" data-act="portrait-remove">Remove picture</button>`:""}
       ${can&&S.edit?`<button class="btn dk" data-act="del-open" style="color:#ff9b9b;border-color:#7a3a3a">Delete character</button>`:""}
       ${can?`<button class="btn dk ${S.edit?"on":""}" data-act="edit-toggle">${S.edit?"Done editing":"Edit sheet"}</button>`:claimable&&!c.locked?`<button class="btn dk" data-act="claim">This is my character</button>`:`<span class="hint">${c.locked?"Locked by your GM":"View only"}</span>`}
@@ -1022,10 +1029,10 @@ function renderSheet(){
 
   const acSvg=`<button class="ac" data-act="rule" data-key="ac" aria-label="Armor Class ${R.ac}"><svg class="acsvg" viewBox="0 0 100 112"><path class="sh" d="M50 4 L92 18 L88 62 Q82 92 50 108 Q18 92 12 62 L8 18 Z" fill="#fff" stroke="#c53131" stroke-width="3"/><path d="M50 11 L85 23 L81 61 Q76 86 50 100 Q24 86 19 61 L15 23 Z" fill="none" stroke="#c53131" stroke-opacity=".35" stroke-width="1"/><text x="50" y="36" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63" class="lb">ARMOR</text><text x="50" y="72" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="36" fill="#1d1d1f" class="tx">${R.ac}</text><text x="50" y="88" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63" class="lb">CLASS</text></svg>${R.ov.ac?`<span class="ovr-badge">GM</span>`:""}${R.totalDefense?`<span class="ovr-badge" style="background:var(--good);top:auto;bottom:4px;right:auto;left:0;position:absolute" title="Total Defense">+2 Total Defense</span>`:""}</button>`;
   const strainPips=Array.from({length:Math.max(R.strainMax,0)},(_,i)=>`<i class="${i<R.strainPerm?"p":i<R.strainCur?"f":""}"></i>`).join("");
-  const effUsed=num(c.effort?.scene)+num(c.effort?.day);
-  const effPips=Array.from({length:R.effortMax},(_,i)=>`<i class="${i<effUsed?"":"e"}"></i>`).join("");
+  const effUsed=R.effortUsed;
+  const effPips=Array.from({length:R.effortMax},(_,i)=>can?`<button class="eslot ${i<effUsed?"used":""}" data-act="eff-slot" data-i="${i}" title="${i<effUsed?"Spent: click to get it back":"Available: click to spend"}" aria-label="Effort point ${i+1}, ${i<effUsed?"spent":"available"}"></button>`:`<span class="eslot ${i<effUsed?"used":""}"></span>`).join("");
   const strainBox=`<div class="ibox"><div class="row">${L("strain","System Strain"+ovBadge(R,"strainMax"))}${can?`<span><button class="iconbtn" data-act="strain" data-d="-1" aria-label="Less strain">−</button> <button class="iconbtn" data-act="strain" data-d="1" aria-label="More strain">+</button></span>`:""}</div><span class="big num">${R.strainCur}<small> / ${R.strainMax}</small></span><div class="pipline" style="justify-content:flex-start" title="Red: permanent from cyberware. Amber: temporary.">${strainPips}</div></div>`;
-  const thirdBox=R.effortMax>0?`<div class="ibox"><div class="row">${L("effort","Effort"+ovBadge(R,"effortMax"))}<span class="big num">${Math.max(0,R.effortMax-effUsed)}<small> / ${R.effortMax}</small></span></div><div class="pipline" style="justify-content:flex-start">${effPips}</div>${can?`<div class="row" style="justify-content:flex-start;gap:4px"><span class="hint">Scene</span><button class="iconbtn" data-act="effort" data-k="scene" data-d="-1">−</button><button class="iconbtn" data-act="effort" data-k="scene" data-d="1">+</button><span class="hint">Day</span><button class="iconbtn" data-act="effort" data-k="day" data-d="-1">−</button><button class="iconbtn" data-act="effort" data-k="day" data-d="1">+</button></div>`:""}</div>`
+  const thirdBox=R.effortMax>0?`<div class="ibox"><div class="row">${L("effort","Effort"+ovBadge(R,"effortMax"))}<span class="big num">${R.effortLeft}<small> / ${R.effortMax}</small></span></div><div class="eslots">${effPips}</div><p>${can?"Click a box to spend Effort; click it again when it returns.":"Filled boxes are spent."}</p></div>`
     :`<div class="ibox"><span class="lbl" style="cursor:default">${esc(className(c))}</span>${classAbilities(c).filter(x=>x.short).map(x=>`<p>${esc(x.short)}</p>`).join("")}</div>`;
   const eff=(c.effects||[]).filter(f=>f.active);
   const condBox=`<div class="ibox">${L("mods","Effects & Conditions")}${eff.length?eff.map(f=>`<p><b style="color:var(--text)">${esc(f.name||"Effect")}</b> ${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")}</p>`).join(""):`<p>None active</p>`}</div>`;
@@ -1200,7 +1207,7 @@ function renderParty(){
     return `<div class="pcard"><div class="top">${portraitHtml(c,"av")}<div style="min-width:0;flex:1"><h3>${esc(c.name||"Unnamed")}</h3><span class="hint">Lv ${R.level} ${esc(c.class)}${owner?" · "+esc(owner):""}</span></div><button class="btn sm" data-act="open" data-doc="${esc(p)}">Open</button></div>
       <div><div class="row" style="display:flex;justify-content:space-between"><span class="lbl">HP</span><span class="num">${num(c.hp?.cur)} / ${R.hpMax}</span></div><div class="hpbar"><i style="width:${pct}%;background:${pct<34?"var(--bad)":pct<67?"var(--warn)":"var(--good)"}"></i></div></div>
       <div class="pstats"><div><span class="lbl">AC</span><b class="num">${R.ac}</b></div><div><span class="lbl">Phys</span><b class="num">${R.save.physical}</b></div><div><span class="lbl">Evas</span><b class="num">${R.save.evasion}</b></div><div><span class="lbl">Ment</span><b class="num">${R.save.mental}</b></div></div>
-      <div class="hint">Strain ${R.strainCur}/${R.strainMax}${R.psychic?" · Effort "+Math.max(0,R.effortMax-num(c.effort?.scene)-num(c.effort?.day))+"/"+R.effortMax:""} · ${num(c.credits)} cr</div>
+      <div class="hint">Strain ${R.strainCur}/${R.strainMax}${R.effortMax>0?" · Effort "+R.effortLeft+"/"+R.effortMax:""} · ${num(c.credits)} cr</div>
       ${S.isGM||S.offline?`<div style="display:flex;gap:6px"><button class="btn sm d" style="color:var(--bad)" data-act="party-hp" data-doc="${esc(p)}" data-d="-1">−1 HP</button><button class="btn sm" style="color:var(--good)" data-act="party-hp" data-doc="${esc(p)}" data-d="1">+1 HP</button><button class="btn sm" data-act="party-hp" data-doc="${esc(p)}" data-d="full">Full HP</button></div>`:""}
     </div>`}).join("")}</div>`;
 }
@@ -1316,6 +1323,15 @@ function renderDrawer(){
       <p>To confirm, type <b>${esc(fw)}</b> below.</p>
       <input id="del-confirm" class="inp" autocomplete="off" placeholder="${esc(fw)}" value="${esc(S.delText||"")}">
       <div style="display:flex;gap:8px;margin-top:12px"><button class="btn danger" data-act="del-sheet" ${ok?"":"disabled"}>Delete ${esc(c.name||"character")}</button><button class="btn" data-act="drawer-close">Cancel</button></div>`;
+  }else if(d.kind==="rest"){
+    const c=S.docs[d.path];if(!c){S.drawer=null;return ""}const r=restPreview(c);title="Night's rest";
+    body=`<p>After a good night's rest (well-fed, not sick or starving):</p>
+      <div class="calc"><div><span>Effort</span><span>${r.effortMax?r.effortLeft+" → "+r.effortMax:"—"}</span></div>
+      <div><span>System strain</span><span>${r.strainBefore} → ${r.strainAfterTotal}${r.strainDrop?"":" (no temporary strain)"}</span></div>
+      <div><span>Hit points</span><span>${r.hpBefore} → ${r.hpAfter}${r.heal>0?" (+"+r.heal+", your level)":""}</span></div></div>
+      ${r.hpNote?`<p class="hint">${esc(r.hpNote)}</p>`:""}
+      <p class="hint">Permanent strain from cyberware doesn't go away. Total Defense is turned off.</p>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn pri" data-act="rest-do">Rest</button><button class="btn" data-act="drawer-close">Cancel</button></div>`;
   }else if(d.kind==="gm"){
     const setup=S.setupDone===false;title=setup?"Set up GM access":"GM login";
     body=setup?`<p>No GM passcode exists yet. Pick one now. Anyone who enters it gets full GM control, so keep it to yourself.</p>`:`<p>Enter the GM passcode to unlock GM tools on this device.</p>`;
@@ -1382,6 +1398,14 @@ document.addEventListener("change",e=>{
   if(el.dataset&&el.dataset.path){applyInput(el);render()}
 });
 document.addEventListener("submit",e=>{if(e.target.dataset.form==="gm"){e.preventDefault();gmSubmit();return}if(e.target.dataset.form==="custom"){e.preventDefault();const v=$("#custom-roll").value.trim();if(v){doCustom(v);$("#custom-roll").value=""}}});
+function restPreview(c){
+  const R=compute(c);const lvl=R.level;const cur=num(c.hp?.cur);
+  const r={effortMax:R.effortMax,effortLeft:R.effortLeft,strainBefore:R.strainCur,hpBefore:cur};
+  const temp=num(c.strain?.temp);r.strainDrop=temp>0;r.strainAfter=Math.max(0,temp-1);r.strainAfterTotal=R.strainPerm+r.strainAfter;
+  if(cur<=0){r.heal=0;r.hpAfter=cur;r.hpNote="At 0 HP you're mortally wounded or unconscious, so you don't heal from rest. A stabilized character takes at least a week before they start recovering normally."}
+  else{r.heal=Math.max(0,Math.min(R.hpMax,cur+lvl)-cur);r.hpAfter=cur+r.heal;r.hpNote=r.heal?"":"Already at full HP."}
+  return r;
+}
 const firstWord=n=>String(n||"").trim().split(/\s+/)[0]||"delete";
 document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target&&e.target.id==="del-confirm"){const b=document.querySelector('[data-act="del-sheet"]:not([disabled])');if(b)b.click();return}if(e.key==="Escape"&&S.drawer){S.drawer=null;render()}});
 function applyInput(el){
@@ -1421,7 +1445,14 @@ document.addEventListener("click",e=>{
     case "opt-sit":S.opts.sit=Math.max(-10,Math.min(10,num(S.opts.sit)+num(t.dataset.d)));render();break;
     case "hp":edit((c,p)=>{const amt=Math.abs(num($("#hp-amt")?.value));if(!amt)return;const R=compute(c);const v=Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.sign)*amt));setField(p,"hp.cur",v)});break;
     case "strain":edit((c,p)=>{const R=compute(c);setField(p,"strain.temp",Math.max(0,Math.min(Math.max(0,R.strainMax-R.strainPerm),num(c.strain?.temp)+num(t.dataset.d))))});break;
-    case "effort":edit((c,p)=>{const R=compute(c);const k=t.dataset.k;const other=num(c.effort?.[k==="scene"?"day":"scene"]);setField(p,"effort."+k,Math.max(0,Math.min(R.effortMax-other,num(c.effort?.[k])+num(t.dataset.d))))});break;
+    case "eff-slot":edit((c,p)=>{const R=compute(c);const i=num(t.dataset.i);const used=R.effortUsed;setField(p,"effortUsed",i<used?i:i+1);if(c.effort)setField(p,"effort",null)});break;
+    case "rest-open":{if(!cur||!canEdit(cur.path))break;S.drawer={kind:"rest",path:cur.path};render();break}
+    case "rest-do":{const d=S.drawer;if(!d||d.kind!=="rest")break;const c=S.docs[d.path];if(!c||!canEdit(d.path))break;const r=restPreview(c);
+      setField(d.path,"effortUsed",0);if(c.effort)setField(d.path,"effort",null);
+      setField(d.path,"strain.temp",r.strainAfter);
+      if(r.heal>0)setField(d.path,"hp.cur",r.hpAfter);
+      if(c.totalDefense)setField(d.path,"totalDefense",false);
+      S.drawer=null;emitRoll(c,"took a night's rest",[{name:"HP",dice:[],parts:[],total:r.hpAfter,note:r.heal>0?"+"+r.heal+" HP":r.hpNote},{name:"System strain",dice:[],parts:[],total:r.strainAfterTotal,note:r.strainDrop?"−1":"no change"}]);render();break}
     case "skill":edit((c,p)=>{const g=t.dataset.g,k=t.dataset.k;setField(p,g+"."+k,Math.max(-1,Math.min(4,num(c[g]?.[k],-1)+num(t.dataset.d))))});break;
     case "ammo":edit((c,p)=>{const i=num(t.dataset.i);setField(p,"inventory."+i+".ammo",Math.max(0,num(c.inventory[i].ammo)+num(t.dataset.d)))});break;
     case "reload":edit((c,p)=>{const i=num(t.dataset.i);const R=compute(c);setField(p,"inventory."+i+".ammo",num(R.items[i].mag))});break;
