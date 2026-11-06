@@ -336,6 +336,21 @@ textarea.inp{resize:vertical;min-height:70px}
 .eslot{width:22px;height:22px;border:2px solid var(--info);border-radius:5px;background:var(--card);padding:0;display:inline-block}
 .eslot.used{background:var(--info)}
 button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
+.fxlayer{position:fixed;inset:0;pointer-events:none;z-index:55;overflow:hidden}
+.fxdie{position:absolute;left:0;top:0;width:64px;height:64px;display:grid;place-items:center;background:var(--accent);color:#fff;font-family:var(--display);font-weight:800;font-size:24px;will-change:transform,opacity;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))}
+.fxdie span{transform:translateY(1px)}
+.fxdie.d6{border-radius:12px}
+.fxdie.d20{clip-path:polygon(50% 0,94% 25%,94% 75%,50% 100%,6% 75%,6% 25%)}
+.fxdie.d4{clip-path:polygon(50% 4%,98% 92%,2% 92%)}
+.fxdie.d4 span{transform:translateY(10px);font-size:20px}
+.fxdie.d8{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.fxdie.d10{clip-path:polygon(50% 0,100% 42%,82% 100%,18% 100%,0 42%)}
+.fxdie.d12{clip-path:polygon(50% 0,98% 35%,80% 100%,20% 100%,2% 35%)}
+.fxdie.drop{opacity:.55}
+.fxdie.landed{background:var(--accent);box-shadow:none;outline:none}
+.fxdie.landed span{animation:fxpop .35s ease-out}
+@keyframes fxpop{0%{transform:scale(1.7)}100%{transform:scale(1)}}
+:root[data-theme="galaxy"] .fxdie{background:linear-gradient(135deg,#b86cff,#5ee7ff);color:#0a0520;filter:drop-shadow(0 0 12px rgba(94,231,255,.8))}
 /* wizard */
 .wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
 .wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
@@ -986,7 +1001,7 @@ function doCustom(expr){
 }
 function emitRoll(c,label,lines){
   const rec={ts:Date.now(),by:S.me||"",char:c?String(c.name||""):"",player:c?String(c.player||""):"",label,lines};
-  showToast(rec);
+  showRoll(rec);
   if(S.db&&!S.offline){
     S.db.collection("rolls").add(clone(rec)).then(()=>pruneLog()).catch(err=>{toastMsg("Your roll didn't post to the shared game log. Check your connection.",true)});
   }else{S.rolls.unshift({id:rid(),...rec});S.rolls=S.rolls.slice(0,60);render()}
@@ -1449,7 +1464,7 @@ function renderLog(){
   if(!S.logOpen)return btn;
   const all=(S.isGM||S.offline)?[...S.rolls,...S.npcRolls.map(r=>({...r,_npc:true}))].sort((a,b)=>num(b.ts)-num(a.ts)):S.rolls;
   const list=all.slice(0,60).map(r=>`<div class="entry ${r._npc?"npcentry":""}"><div class="who"><span><b>${esc(r.char||"Someone")}</b>${r.player?" · "+esc(r.player):""}${r._npc?` <span class="tag">GM only</span>`:""}</span><span>${ago(num(r.ts))}</span></div><div class="what">${esc(r.label)}</div>${(r.lines||[]).map(lineHtml).join("")}${r._npc?`<button class="btn sm ghost" style="margin-top:4px" data-act="npc-reveal" data-id="${esc(r.id)}">Show to players</button>`:""}</div>`).join("");
-  return `<aside class="log" aria-label="Game log"><div class="frame-h"><h3>Game log</h3><span style="display:flex;gap:6px">${S.isGM&&S.rolls.length?`<button class="btn sm ghost" data-act="clear-log">${S.confirm==="log"?"Click again":"Clear"}</button>`:""}<button class="iconbtn" data-act="log-toggle" aria-label="Close log">×</button></span></div>
+  return `<aside class="log" aria-label="Game log"><div class="frame-h"><h3>Game log</h3><span style="display:flex;gap:6px"><button class="btn sm ghost" data-act="fx-toggle" title="Dice animations on this device">🎲 ${fxEnabled()?"On":"Off"}</button>${S.isGM&&S.rolls.length?`<button class="btn sm ghost" data-act="clear-log">${S.confirm==="log"?"Click again":"Clear"}</button>`:""}<button class="iconbtn" data-act="log-toggle" aria-label="Close log">×</button></span></div>
     <div class="log-list">${list||`<div class="empty">No rolls yet. Click any number with a box around it on a sheet.</div>`}</div>
     <form class="log-f" data-form="custom"><input id="custom-roll" placeholder="Roll dice, e.g. 2d6+1" aria-label="Custom roll" autocomplete="off"><button class="btn pri sm" type="submit">Roll</button></form></aside>${btn}`;
 }
@@ -1575,6 +1590,7 @@ document.addEventListener("click",e=>{
     case "hb-goto":S.compSel=t.dataset.doc;S.view="compendium";S.drawer=null;render();break;
     case "hb-del":{const p=t.dataset.doc;if(S.confirm!=="hb"+p){S.confirm="hb"+p;render();break}S.confirm=null;deleteDoc(p);S.compSel=null;render();break}
     case "hb-give":{const p=t.dataset.doc;const gm=S.isGM||S.offline;const target=gm?(cur?cur.path:null):(cur&&isMine(cur.path)?cur.path:myPath());if(!target||!canEdit(target))break;addHb(S.docs[target],target,p.split("/")[1]);toastMsg("Added "+(S.docs[p]?.name||"item")+" to "+(S.docs[target].name||"sheet"));render();break}
+    case "fx-toggle":{let off=false;try{off=localStorage.getItem("swn.dicefx")==="off";localStorage.setItem("swn.dicefx",off?"on":"off")}catch(e){}toastMsg(off?"Dice animations on.":"Dice animations off.");render();break}
     case "lu-open":{if(!cur||!canEdit(cur.path))break;S.lu=newLU(cur.path);S.view="levelup";S.drawer=null;render();window.scrollTo({top:0});break}
     case "portrait-remove":edit((c,p)=>setField(p,"portrait",null));break;
     case "wiz-open":if(!S.wiz)S.wiz=loadWiz();S.view="create";S.drawer=null;render();window.scrollTo({top:0});break;
@@ -2608,7 +2624,7 @@ function npcFromTemplate(ti,name){
 }
 function npcRoll(npc,label,lines){
   const rec={ts:Date.now(),by:S.me||"",char:String(npc.name||"NPC"),npc:true,label,lines};
-  showToast(rec);
+  showRoll(rec);
   if(S.db&&!S.offline){S.db.collection("npcrolls").add(clone(rec)).catch(()=>toastMsg("NPC roll didn't save to the GM log.",true))}
   else{S.npcRolls.unshift({id:rid(),...rec});S.npcRolls=S.npcRolls.slice(0,60);render()}
 }
@@ -2689,6 +2705,50 @@ function renderNPCs(){
   <div class="frame">${sel?npcStatBlock(sel):`<div class="empty" style="margin:12px">${gm?"Create an NPC to see its stat block.":"Select an NPC."}</div>`}</div></div>`;
 }
 
+/* ================= DICE ANIMATION ================= */
+const FX={running:false,last:0,layer:null};
+function fxEnabled(){
+  try{if(localStorage.getItem("swn.dicefx")==="off")return false}catch(e){}
+  if(window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches)return false;
+  return true;
+}
+function fxShape(s){return s===20?"d20":s===4?"d4":s===8?"d8":s===10?"d10":s===12?"d12":"d6"}
+// Show a roll: animate dice (if allowed), then show the toast.
+function showRoll(rec){
+  const dice=((rec.lines||[]).find(l=>l.dice&&l.dice.length)||{}).dice||[];
+  const now=Date.now();
+  const skip=!fxEnabled()||document.hidden||FX.running||now-FX.last<900||!dice.length||typeof Element.prototype.animate!=="function";
+  if(skip){showToast(rec);return}
+  FX.running=true;FX.last=now;
+  if(!FX.layer){FX.layer=document.createElement("div");FX.layer.className="fxlayer";FX.layer.setAttribute("aria-hidden","true");document.body.appendChild(FX.layer)}
+  const show=dice.slice(0,4);const W=window.innerWidth,H=window.innerHeight;
+  const landY=H*0.42,spread=Math.min(110,W/(show.length+2));
+  const startX=W+60;const centerX=W*0.5;
+  const els=show.map((d,i)=>{
+    const el=document.createElement("div");el.className="fxdie "+fxShape(d.s)+(d.drop?" drop":"");
+    const n=document.createElement("span");n.textContent=String(1+Math.floor(Math.random()*d.s));el.appendChild(n);
+    FX.layer.appendChild(el);
+    const endX=centerX+(i-(show.length-1)/2)*spread-32,endY=landY+(i%2?18:-10);
+    const sy=H*(0.25+Math.random()*0.35);const spin=(Math.random()<.5?-1:1)*(Math.random()<.5?720:1080)+(Math.random()*16-8);
+    el.animate([
+      {transform:`translate(${startX}px,${sy}px) rotate(0deg) scale(.7)`,opacity:0},
+      {opacity:1,offset:.1},
+      {transform:`translate(${(startX+endX)/2}px,${Math.min(sy,endY)-70}px) rotate(${spin*0.6}deg) scale(1)`,offset:.55},
+      {transform:`translate(${endX}px,${endY}px) rotate(${spin}deg) scale(1)`,opacity:1}
+    ],{duration:850+i*90,easing:"cubic-bezier(.2,.7,.3,1)",fill:"forwards"});
+    return {el,n,d,end:850+i*90};
+  });
+  // flicker numbers while tumbling (one timer for all dice)
+  const t0=performance.now();
+  const tick=()=>{const t=performance.now()-t0;let live=false;
+    els.forEach(o=>{if(t<o.end-60){live=true;o.n.textContent=String(1+Math.floor(Math.random()*o.d.s))}else if(!o.done){o.done=true;o.n.textContent=String(o.d.v);o.el.classList.add("landed")}});
+    if(live)setTimeout(tick,70);};
+  tick();
+  const total=Math.max(...els.map(o=>o.end));
+  setTimeout(()=>{showToast(rec)},total);
+  setTimeout(()=>{els.forEach(o=>{const a=o.el.animate([{opacity:1},{opacity:0}],{duration:350,fill:"forwards"});a.onfinish=()=>o.el.remove()});FX.running=false},total+900);
+}
+
 /* ================= BOOT ================= */
 async function gmSubmit(){
   const k=($("#gm-pass")?.value||"").trim();
@@ -2746,7 +2806,7 @@ render();
   db.collection("rolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{
     const before=new Set(S.rolls.map(r=>r.id));const first=!S.rollsInit;S.rollsInit=true;
     S.rolls=snap.docs.map(d=>({id:d.id,...d.data()}));
-    if(!first){snap.docChanges().forEach(ch=>{if(ch.type==="added"&&!before.has(ch.doc.id)){const r=ch.doc.data();if(r&&r.by!==S.me&&Date.now()-num(r.ts)<15000)showToast(r)}})}
+    if(!first){snap.docChanges().forEach(ch=>{if(ch.type==="added"&&!before.has(ch.doc.id)){const r=ch.doc.data();if(r&&r.by!==S.me&&Date.now()-num(r.ts)<15000)showRoll(r)}})}
     done(snap);render();
   },onErr);
 })();

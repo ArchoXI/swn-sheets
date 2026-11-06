@@ -19,7 +19,7 @@ function npcFromTemplate(ti,name){
 }
 function npcRoll(npc,label,lines){
   const rec={ts:Date.now(),by:S.me||"",char:String(npc.name||"NPC"),npc:true,label,lines};
-  showToast(rec);
+  showRoll(rec);
   if(S.db&&!S.offline){S.db.collection("npcrolls").add(clone(rec)).catch(()=>toastMsg("NPC roll didn't save to the GM log.",true))}
   else{S.npcRolls.unshift({id:rid(),...rec});S.npcRolls=S.npcRolls.slice(0,60);render()}
 }
