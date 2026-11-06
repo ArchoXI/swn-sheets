@@ -470,6 +470,21 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .sact .pick .inp{width:auto;padding:4px 6px;font-size:13px}
 .cpcost{font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;letter-spacing:.03em}
 .cpcost.disc{background:#2f855a}
+.ctrs{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0}
+.ctr{display:inline-flex;align-items:center;gap:6px}
+.ctr b{font-family:var(--display);font-size:17px;min-width:24px;text-align:center}
+.actgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:6px 0}
+.actgrid2 .sact{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:3px;margin:0;padding:8px;border:1px solid var(--line-soft);border-radius:8px}
+.actgrid2 .sact>.btn{min-width:0;width:100%}
+.actgrid2 .sact>.hint{min-width:0;font-size:12px}
+.actgrid2 .sact .pick{flex-basis:auto}
+.shipguns td{vertical-align:middle}
+.shipguns td:nth-child(2){white-space:nowrap}
+.shipguns td .cpcost{margin-left:6px}
+.shipguns tr.dead{opacity:.55}
+.cheat>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+.cheat>summary::-webkit-details-marker{display:none}
+.cheat ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px;font-size:13.5px;line-height:1.35}
 .esc{display:flex;align-items:center;gap:8px;margin:6px 0}
 .esc b{font-family:var(--display);font-size:18px}
 .gen{margin:6px 0 2px}
@@ -478,6 +493,7 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .tgtbox label{display:flex;align-items:center;gap:6px;font-size:13px}
 .tgtbox .inp{width:64px;padding:4px 6px}
 .tgtbox .hint{flex-basis:100%;font-size:11px}
+.shipcombat>.deptsect:first-of-type{border-top:0;margin-top:0;padding-top:0}
 .wrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line-soft)}
 .wrow.dead{opacity:.6}
 .wrow .sact{margin:0}

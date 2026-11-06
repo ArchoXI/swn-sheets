@@ -470,6 +470,21 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .sact .pick .inp{width:auto;padding:4px 6px;font-size:13px}
 .cpcost{font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;letter-spacing:.03em}
 .cpcost.disc{background:#2f855a}
+.ctrs{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0}
+.ctr{display:inline-flex;align-items:center;gap:6px}
+.ctr b{font-family:var(--display);font-size:17px;min-width:24px;text-align:center}
+.actgrid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin:6px 0}
+.actgrid2 .sact{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:3px;margin:0;padding:8px;border:1px solid var(--line-soft);border-radius:8px}
+.actgrid2 .sact>.btn{min-width:0;width:100%}
+.actgrid2 .sact>.hint{min-width:0;font-size:12px}
+.actgrid2 .sact .pick{flex-basis:auto}
+.shipguns td{vertical-align:middle}
+.shipguns td:nth-child(2){white-space:nowrap}
+.shipguns td .cpcost{margin-left:6px}
+.shipguns tr.dead{opacity:.55}
+.cheat>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between}
+.cheat>summary::-webkit-details-marker{display:none}
+.cheat ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px;font-size:13.5px;line-height:1.35}
 .esc{display:flex;align-items:center;gap:8px;margin:6px 0}
 .esc b{font-family:var(--display);font-size:18px}
 .gen{margin:6px 0 2px}
@@ -478,6 +493,7 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .tgtbox label{display:flex;align-items:center;gap:6px;font-size:13px}
 .tgtbox .inp{width:64px;padding:4px 6px}
 .tgtbox .hint{flex-basis:100%;font-size:11px}
+.shipcombat>.deptsect:first-of-type{border-top:0;margin-top:0;padding-top:0}
 .wrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line-soft)}
 .wrow.dead{opacity:.6}
 .wrow .sact{margin:0}
@@ -3151,31 +3167,39 @@ function shipSpend(sp,cost,dept){
   return true;
 }
 const effCost=(s,cost,dept)=>(s.tmp||{}).support===dept&&cost>0?Math.max(0,cost-2):cost;
-function shipFire(sp,wid,{targetSys=false}={}){
-  const s=S.docs[sp];const C=shipCompute(s);const w=(s.weapons||[]).find(x=>x.id===wid);if(!w)return;
-  const W=SHIP_WEAPONS.find(x=>x[0]===w.name);if(!W)return;
-  const r=shipRoller(s,"gunnery");const tgt=S.shipTgt||{};const tac=num(tgt.ac,0),tarm=num(tgt.armor,0);
-  const d20={v:rand(20),s:20};let parts=[];let dmgMod=0;
-  if(r.pc){const a=bestOf(r.R,["int","dex"]);const useP=C.ci===0&&(r.R.skills.pilot??-1)>(r.R.skills.shoot??-1);const sk=useP?"pilot":"shoot";const lv=r.R.skills[sk]??-1;
+// Gunnery: separate hit and damage rolls, like a character's weapon
+function shipHitParts(s,C){
+  const r=shipRoller(s,"gunnery");let parts=[],dmgMod=0,sk="shoot";
+  if(r.pc){const a=bestOf(r.R,["int","dex"]);if(C.ci===0&&(r.R.skills.pilot??-1)>(r.R.skills.shoot??-1))sk="pilot";const lv=r.R.skills[sk]??-1;
     parts=[{l:"Attack bonus",v:r.R.bab},{l:a.toUpperCase(),v:r.R.mod[a]},{l:SKILL[sk].name+(lv<0?" (untrained)":""),v:lv}];dmgMod=r.R.mod[a]}
   else parts=[{l:"Crew gunnery",v:num(s.npcHit,num(s.crewSkill,1)+2)}];
   if(C.pen)parts.push({l:"Missed maintenance",v:C.pen});
   if(num((s.tmp||{}).hit))parts.push({l:"Defeat ECM",v:num(s.tmp.hit)});
-  if(targetSys)parts.push({l:"Target systems",v:-4});
+  return {r,parts,dmgMod,bonus:parts.reduce((a,p)=>a+p.v,0)};
+}
+function shipHit(sp,wid){
+  const s=S.docs[sp];const C=shipCompute(s);const w=(s.weapons||[]).find(x=>x.id===wid);const W=w&&SHIP_WEAPONS.find(x=>x[0]===w.name);if(!W)return;
+  const tmp=s.tmp||{};const targeted=num(tmp.targetSys)>0;const tgt=S.shipTgt||{};const tac=num(tgt.ac,0);
+  const H=shipHitParts(s,C);const parts=[...H.parts];
+  if(targeted)parts.push({l:"Targeting a system",v:-4});
   if(/Clumsy/.test(W[10])&&tgt.fighter)parts.push({l:"Clumsy vs fighter",v:-4});
-  const hit=d20.v+parts.reduce((a,p)=>a+p.v,0);
-  const lines=[{name:"Hit",dice:[d20],parts,total:hit,verdict:tac?(hit>=tac?["ok","Hit"]:["no","Miss"]):null,note:tac?"vs AC "+tac:"Compare to the target's AC"}];
-  if(W[3]!=="Special"&&(!tac||hit>=tac)){
-    const p=parseDice(W[3]);const rr=rollGroups(p);let raw=rr.sum+p.flat+dmgMod;
-    const dparts=[...(p.flat?[{l:"Weapon",v:p.flat}]:[]),...(dmgMod?[{l:"Int/Dex",v:dmgMod}]:[])];
-    let note=[W[9]?"AP "+W[9]:"",W[10]].filter(Boolean).join(", ");
-    if(targetSys){const half=Math.ceil(raw/2);note=(note?note+" · ":"")+"halved for a targeted shot ("+raw+" → "+half+")";raw=half}
-    let final=raw;
-    if(tac||tarm){const eff=Math.max(0,tarm-W[9]);final=Math.max(0,raw-eff);note=(note?note+" · ":"")+"after Armor "+tarm+(W[9]?" − AP "+W[9]+" = "+eff:"")+": "+final+(targetSys&&final>0?" · system disabled":"")}
-    lines.push({name:"Damage",dice:rr.dice,parts:dparts,total:raw,note});
-  }
-  if(W[11]){const am=(s.ammo||{})[wid];const mx=weapAmmoMax(w.name,C.ci,w.extraAmmo);const cur=am==null?mx:num(am);setField(sp,"ammo",{...(s.ammo||{}),[wid]:Math.max(0,cur-1)})}
-  shipEmit(sp,r,"Fire "+w.name+(targetSys?" (targeted)":""),lines);
+  const d20={v:rand(20),s:20};const hit=d20.v+parts.reduce((a,p)=>a+p.v,0);
+  const t2={...(S.docs[sp].tmp||{})};if(targeted){t2.targetSys=num(t2.targetSys)-1;t2.targeted={...(t2.targeted||{}),[wid]:true}}else if(t2.targeted&&t2.targeted[wid]){const x={...t2.targeted};delete x[wid];t2.targeted=x}
+  setField(sp,"tmp",t2);
+  if(W[11]){const mx=weapAmmoMax(w.name,C.ci,w.extraAmmo);const am=(s.ammo||{})[wid];setField(sp,"ammo",{...(s.ammo||{}),[wid]:Math.max(0,(am==null?mx:num(am))-1)})}
+  shipEmit(sp,H.r,w.name+" hit"+(targeted?" (targeting a system)":""),[{name:"Hit",dice:[d20],parts,total:hit,verdict:tac?(hit>=tac?["ok","Hit"]:["no","Miss"]):null,note:tac?"vs AC "+tac:"Compare to the target's AC"}]);
+}
+function shipDmg(sp,wid){
+  const s=S.docs[sp];const C=shipCompute(s);const w=(s.weapons||[]).find(x=>x.id===wid);const W=w&&SHIP_WEAPONS.find(x=>x[0]===w.name);if(!W)return;
+  if(W[3]==="Special"){toastMsg("Nuclear missiles don't roll ship damage.",true);return}
+  const H=shipHitParts(s,C);const tgt=S.shipTgt||{};const tarm=tgt.armor==null?null:num(tgt.armor);const targeted=!!((s.tmp||{}).targeted||{})[wid];
+  const p=parseDice(W[3]);const rr=rollGroups(p);let raw=rr.sum+p.flat+H.dmgMod;
+  const dparts=[...(p.flat?[{l:"Weapon",v:p.flat}]:[]),...(H.dmgMod?[{l:"Int/Dex",v:H.dmgMod}]:[])];
+  const notes=[W[9]?"AP "+W[9]:"",W[10]].filter(Boolean);
+  let total=raw;if(targeted){total=Math.ceil(raw/2);notes.push("halved for a targeted shot ("+raw+" → "+total+")")}
+  if(tarm!=null){const eff=Math.max(0,tarm-W[9]);const fin=Math.max(0,total-eff);notes.push("after Armor "+tarm+(W[9]?" − AP "+W[9]+" = "+eff:"")+": "+fin+" gets through"+(targeted&&fin>0?", system disabled":""))}
+  if(targeted){const t2={...(S.docs[sp].tmp||{})};const x={...(t2.targeted||{})};delete x[wid];t2.targeted=x;setField(sp,"tmp",t2)}
+  shipEmit(sp,H.r,w.name+" damage",[{name:"Damage",dice:rr.dice,parts:dparts,total,note:notes.join(" · ")}]);
 }
 
 /* ---------- actions ---------- */
@@ -3185,6 +3209,7 @@ function shipAct(act,t){
   const need=(dept)=>{if(!shipCanAct(sp,dept)){toastMsg("Only the GM or the character in that department can do that.",true);return false}return true};
   switch(act){
     case "ship-sel":S.shipSel=sp;S.shipTab=S.shipTab||"combat";render();return true;
+    case "ship-cheat":{const det=t.closest("details");setTimeout(()=>{S.cheatOpen=!!(det&&det.open)},0);return true}
     case "ship-gen":{const det=t.closest("details");setTimeout(()=>{S.shipGen={...(S.shipGen||{}),[D]:!!(det&&det.open)}},0);return true}
     case "ship-tab":S.shipTab=t.dataset.v;render();return true;
     case "ship-new":if(!gm)return true;S.sw={step:0,name:"",hull:"Free Merchant",drive:1,weapons:[],defenses:[],fittings:[],crewSkill:1,npc:false,npcCP:4,crew:1};S.view="shipwiz";render();return true;
@@ -3226,15 +3251,17 @@ function shipAct(act,t){
       const res=shipCheck(sp,"bridge",{attrs:["int","dex"],skill:"pilot",diff:9,label:"Evasive Maneuvers",extra:C.speed?[{l:"Speed",v:C.speed}]:[],note:"success: +"+lv+" AC until next turn"});
       const t2=S.docs[sp].tmp||{};setField(sp,"tmp",{...t2,evasive:res.ok?lv:0,ac:num(t2.ac)+(res.ok?lv:0)});render();return true}
     case "ship-fireall":{if(!need("gunnery"))return true;const C=shipCompute(s);if(C.decal){toastMsg("Target Decalibration: the guns can't lock on until it's resolved.",true);return true}
-      const ws=(s.weapons||[]).filter(w=>C.sysOf(w.id)==="ok");if(!ws.length){toastMsg("No working weapons.",true);return true}
-      if(!shipSpend(sp,3,"gunnery"))return true;ws.forEach(w=>shipFire(sp,w.id));render();return true}
-    case "ship-fire":{if(!need("gunnery"))return true;const C=shipCompute(s);if(C.decal){toastMsg("Target Decalibration: the guns can't lock on until it's resolved.",true);return true}
+      if((s.tmp||{}).fireAll){toastMsg("Fire All Guns is already paid for this turn.",true);return true}
+      if(!shipSpend(sp,3,"gunnery"))return true;setField(sp,"tmp",{...(S.docs[sp].tmp||{}),fireAll:true,fired:{}});toastMsg("Fire All Guns: roll Hit on each weapon, no extra CP.");render();return true}
+    case "ship-hit":{if(!need("gunnery"))return true;const C=shipCompute(s);if(C.decal){toastMsg("Target Decalibration: the guns can't lock on until it's resolved.",true);return true}
       const id=t.dataset.id;if(C.sysOf(id)!=="ok"){toastMsg("That weapon is "+C.sysOf(id)+".",true);return true}
       const w=(s.weapons||[]).find(x=>x.id===id);const mx=weapAmmoMax(w.name,C.ci,w.extraAmmo);const am=(s.ammo||{})[id];if(mx&&(am==null?mx:num(am))<=0){toastMsg("Out of ammo.",true);return true}
-      const tmp=s.tmp||{};const ts=num(tmp.targetSys)>0;
-      if(!shipSpend(sp,2,"gunnery"))return true;if(ts)setField(sp,"tmp",{...(S.docs[sp].tmp||{}),targetSys:num(tmp.targetSys)-1});
-      shipFire(sp,id,{targetSys:ts});render();return true}
-    case "ship-target":{if(!need("gunnery"))return true;if(!shipSpend(sp,1,"gunnery"))return true;const tmp=S.docs[sp].tmp||{};setField(sp,"tmp",{...tmp,targetSys:num(tmp.targetSys)+1});toastMsg("Your next Fire One Weapon will target a system (−4 to hit, half damage).");render();return true}
+      const tmp=s.tmp||{};const free=tmp.fireAll&&!(tmp.fired||{})[id];
+      if(!free&&!shipSpend(sp,2,"gunnery"))return true;
+      if(tmp.fireAll){const t2=S.docs[sp].tmp||{};setField(sp,"tmp",{...t2,fired:{...(t2.fired||{}),[id]:true}})}
+      shipHit(sp,id);render();return true}
+    case "ship-dmg":{if(!need("gunnery"))return true;shipDmg(sp,t.dataset.id);render();return true}
+    case "ship-target":{if(!need("gunnery"))return true;if(!shipSpend(sp,1,"gunnery"))return true;const tmp=S.docs[sp].tmp||{};setField(sp,"tmp",{...tmp,targetSys:num(tmp.targetSys)+1});toastMsg("Your next Hit roll targets a system: −4 to hit, half damage.");render();return true}
     case "ship-boost":{if(!need("engineering"))return true;if(!shipSpend(sp,2,"engineering"))return true;
       const res=shipCheck(sp,"engineering",{attrs:["int"],skill:"fix",diff:8,label:"Boost Engines",note:"success: +2 Speed until next turn"});
       if(res.ok){const tmp=S.docs[sp].tmp||{};setField(sp,"tmp",{...tmp,speed:num(tmp.speed)+2})}render();return true}
@@ -3345,10 +3372,10 @@ function renderShipSheet(sp){
   const roles=`<div class="frame"><div class="frame-h"><span>Crew stations</span><span><button class="iconbtn" data-act="rule" data-key="ship_dept">?</button></span></div><div class="frame-b roles">
     ${DEPTS.map(([k,l,sk])=>`<label class="rolerow"><span class="rlbl">${l}</span><select class="inp" data-shiprole="${esc(sp)}" data-dept="${k}" ${anyAct?"":"disabled"}>${roleOpts(s,k)}</select><span class="hint">${rollerHint(s,k,{bridge:"pilot",gunnery:"shoot",engineering:"fix",comms:"program",captain:"lead"}[k])}</span></label>`).join("")}
     ${anyAct?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" data-act="ship-role-clear" data-doc="${esc(sp)}">Clear all stations</button><button class="btn sm" data-act="ship-endfight" data-doc="${esc(sp)}">${S.confirm==="ship-endfight"?"Click again to end the fight":"End fight"}</button></div>`:""}
-    <p class="hint" style="margin:6px 0 0">Anyone in the party can be put on any station, and one character can hold several. Rolls use that character's own skills. An empty station uses the NPC crew.</p></div></div>`;
+    <p class="hint" style="margin:6px 0 0">Anyone can take any station, and one person can hold several. Empty stations use the NPC crew.</p></div></div>`;
   const tabs=`<nav class="tabs">${[["combat","Combat"],["systems","Weapons & systems"],["travel","Travel"],["notes","Notes"]].map(([k,l])=>`<button class="tab ${tab===k?"on":""}" data-act="ship-tab" data-v="${k}">${l}</button>`).join("")}</nav>`;
   const body=tab==="systems"?shipSystemsTab(sp,s,C):tab==="travel"?shipTravelTab(sp,s,C):tab==="notes"?`<div class="frame-b">${gm?`<textarea class="inp" rows="10" data-doc="${esc(sp)}" data-path="notes" data-live placeholder="Ship notes, cargo manifest, debts…">${esc(s.notes||"")}</textarea>`:`<p style="white-space:pre-wrap">${esc(s.notes||"No notes.")}</p>`}</div>`:shipCombatTab(sp,s,C);
-  return `${head}${top}<section class="shipbody"><div class="stack">${roles}${shipCrisesBox(sp,s,C)}</div><div class="frame col-panel">${tabs}${body}</div></section>`;
+  return `${head}${top}<section class="shipbody"><div class="stack">${shipCheatSheet()}${roles}${shipCrisesBox(sp,s,C)}</div><div class="frame col-panel">${tabs}${body}</div></section>`;
 }
 function actBtn(sp,s,act,dept,cost,label,desc,extra=""){
   const ec=effCost(s,cost,dept);const can=shipCanAct(sp,dept);const short=num(s.cp)<ec;
@@ -3357,45 +3384,64 @@ function actBtn(sp,s,act,dept,cost,label,desc,extra=""){
 const ATTR_OPTS=["str","dex","con","int","wis","cha"].map(a=>`<option value="${a}" ${a==="int"?"selected":""}>${a.toUpperCase()}</option>`).join("");
 const shipSkillOpts=sel=>Object.keys(SKILL).filter(k=>!/^(biopsionics|metapsionics|precognition|telekinesis|telepathy|teleportation)$/.test(k)||true).map(k=>`<option value="${k}" ${k===sel?"selected":""}>${esc(SKILL[k].name)}</option>`).join("");
 function shipCombatTab(sp,s,C){
-  const tmp=s.tmp||{};const tgt=S.shipTgt||{};const gl=(d)=>`<span class="hint deptby">${esc(shipRoller(s,d).name)}</span>`;
-  const sect=(d,title,inner)=>`<div class="sect deptsect"><div class="deptttl"><span class="lbl">${title}</span>${gl(d)}<span style="flex:1"></span><button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="${d}" ${shipCanAct(sp,d)?"":"disabled"} title="General action: +1 Command Point">Do Your Duty <span class="cpcost disc">+1</span></button></div>${inner}</div>`;
-  const ws=(s.weapons||[]);
-  const tgtBox=`<div class="tgtbox"><span class="lbl">Target</span><label>AC <input class="inp" id="tgt-ac" type="number" value="${esc(tgt.ac??"")}" placeholder="?" data-shiptgt="ac"></label><label>Armor <input class="inp" id="tgt-arm" type="number" value="${esc(tgt.armor??"")}" placeholder="0" data-shiptgt="armor"></label><label class="chk"><input type="checkbox" data-act="ship-tgt" ${tgt.fighter?"checked":""}> Fighter</label><span class="hint">Only on your screen. Fill in to see hit/miss and damage after Armor.</span></div>`;
-  const weapRows=ws.length?ws.map(w=>{const W=SHIP_WEAPONS.find(x=>x[0]===w.name)||[];const st=C.sysOf(w.id);const mx=weapAmmoMax(w.name,C.ci,w.extraAmmo);const am=(s.ammo||{})[w.id];const cur=am==null?mx:num(am);
-    return `<div class="wrow ${st!=="ok"?"dead":""}"><div><b>${esc(w.name)}</b><div class="hint">${W[3]||""}${W[9]?" · AP "+W[9]:""}${W[10]?" · "+esc(W[10]):""}${mx?" · Ammo "+cur+"/"+mx:""}${st!=="ok"?" · <b style='color:var(--bad)'>"+st+"</b>":""}</div></div>
-      ${actBtn(sp,s,"ship-fire","gunnery",2,"Fire","").replace('data-dept="gunnery"','data-dept="gunnery" data-id="'+esc(w.id)+'"')}</div>`}).join(""):`<p class="hint">No weapons mounted.</p>`;
+  const tmp=s.tmp||{};const tgt=S.shipTgt||{};const can=shipCanAny(sp);
+  const who=d=>`<span class="hint deptby">${esc(shipRoller(s,d).name)}</span>`;
+  const sect=(d,title,inner,note="")=>`<div class="sect deptsect"><div class="deptttl"><span class="lbl">${title}</span>${who(d)}<span style="flex:1"></span><button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="${d}" ${shipCanAct(sp,d)?"":"disabled"} title="General action: +1 Command Point">Do Your Duty <span class="cpcost disc">+1</span></button></div>${note}<div class="actgrid2">${inner}</div>${genFor(d)}</div>`;
+  const counter=(f,val,lbl,post="")=>`<span class="ctr"><span class="lbl">${lbl}</span>${can?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="${f}" data-d="-1">−</button>`:""}<b>${val}</b>${post}${can?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="${f}" data-d="1">+</button>`:""}</span>`;
   const crises=s.crises||[];
-  const genFor=(d)=>`<details class="gen" ${(S.shipGen||{})[d]?"open":""}><summary class="hint" data-act="ship-gen" data-dept="${d}">More general actions: Above and Beyond${crises.length?", Deal With a Crisis":""}</summary>
-    ${actBtn(sp,s,"ship-above",d,0,"Above and Beyond","Roll vs 9 with a skill you explain. Success: skill + 1 CP. Failure: −1 CP.",`<span class="pick"><select class="inp" id="ab-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="ab-skill-${d}">${shipSkillOpts({bridge:"pilot",gunnery:"shoot",engineering:"fix",comms:"program",captain:"lead"}[d])}</select></span>`)}
-    ${crises.length?actBtn(sp,s,"ship-crisis-deal",d,0,"Deal With a Crisis","Explain the plan; the GM sets 8–12.",`<span class="pick"><select class="inp" id="cr-pick-${d}">${crises.map(c=>`<option value="${esc(c.id)}">${esc(c.type)}</option>`).join("")}</select><select class="inp" id="cr-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="cr-skill-${d}">${shipSkillOpts("fix")}</select><input class="inp" id="cr-diff-${d}" type="number" value="10" min="6" max="14" style="width:56px" title="Difficulty"></span>`):""}
-    <p class="hint">General actions (including Do Your Duty) are exclusive: taking one means no other action this turn. Do Your Duty: name something useful you're doing, and not the same thing two rounds running.</p></details>`;
+  function genFor(d){return `<details class="gen" ${(S.shipGen||{})[d]?"open":""}><summary class="hint" data-act="ship-gen" data-dept="${d}">Other general actions</summary>
+    ${actBtn(sp,s,"ship-above",d,0,"Above and Beyond","Explain how you help, roll vs 9. Success: skill + 1 CP. Failure: −1 CP.",`<span class="pick"><select class="inp" id="ab-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="ab-skill-${d}">${shipSkillOpts({bridge:"pilot",gunnery:"shoot",engineering:"fix",comms:"program",captain:"lead"}[d])}</select></span>`)}
+    ${crises.length?actBtn(sp,s,"ship-crisis-deal",d,0,"Deal With a Crisis","Explain your plan, roll vs 10 (GM can shift it ±2).",`<span class="pick"><select class="inp" id="cr-pick-${d}">${crises.map(c=>`<option value="${esc(c.id)}">${esc(c.type)}</option>`).join("")}</select><select class="inp" id="cr-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="cr-skill-${d}">${shipSkillOpts("fix")}</select><input class="inp" id="cr-diff-${d}" type="number" value="10" min="6" max="14" style="width:56px" title="Difficulty"></span>`):""}
+  </details>`}
+  // weapons table, like a character's attacks
+  const H=shipHitParts(s,C);const gunOk=shipCanAct(sp,"gunnery");
+  const weapRows=(s.weapons||[]).map(w=>{const W=SHIP_WEAPONS.find(x=>x[0]===w.name)||[];const st=C.sysOf(w.id);const mx=weapAmmoMax(w.name,C.ci,w.extraAmmo);const am=(s.ammo||{})[w.id];const cur=am==null?mx:num(am);
+    const free=tmp.fireAll&&!(tmp.fired||{})[w.id];const hitCost=free?0:effCost(s,2,"gunnery");const dead=st!=="ok";const noAmmo=mx&&cur<=0;
+    const hitDis=!gunOk||dead||C.decal||noAmmo||num(s.cp)<hitCost;
+    return `<tr class="${dead?"dead":""}"><td><b>${esc(w.name)}</b><div class="hint">${[W[9]?"AP "+W[9]:"",W[10]||"",dead?`<b style="color:var(--bad)">${st}</b>`:""].filter(Boolean).join(" · ")||"&nbsp;"}</div></td>
+      <td><button class="rollbtn" data-act="ship-hit" data-doc="${esc(sp)}" data-dept="gunnery" data-id="${esc(w.id)}" ${hitDis?"disabled":""} title="${free?"Paid by Fire All Guns":"Fire One Weapon: "+hitCost+" CP"}">${sgn(H.bonus+(num(tmp.targetSys)?-4:0))}</button><span class="cpcost ${free?"disc":""}">${free?"paid":hitCost+" CP"}</span>${(tmp.targeted||{})[w.id]?` <span class="tag on">targeted</span>`:""}</td>
+      <td><button class="rollbtn" data-act="ship-dmg" data-doc="${esc(sp)}" data-dept="gunnery" data-id="${esc(w.id)}" ${!gunOk||W[3]==="Special"?"disabled":""}>${esc(W[3]||"")}${H.dmgMod?sgn(H.dmgMod).replace("+0",""):""}</button></td>
+      <td class="num">${mx?`${cur}/${mx}`:"—"}</td></tr>`}).join("");
+  const gun=`${C.decal?`<div class="notice">Target Decalibration: the guns can't fire until it's resolved.</div>`:""}
+    <div class="tgtbox"><span class="lbl">Target</span><label>AC <input class="inp" id="tgt-ac" type="number" value="${esc(tgt.ac??"")}" placeholder="?" data-shiptgt="ac"></label><label>Armor <input class="inp" id="tgt-arm" type="number" value="${esc(tgt.armor??"")}" placeholder="?" data-shiptgt="armor"></label><label class="chk"><input type="checkbox" data-act="ship-tgt" ${tgt.fighter?"checked":""}> Fighter</label><button class="iconbtn" data-act="rule" data-key="ship_attack" title="How ship attacks work">?</button></div>
+    ${(s.weapons||[]).length?`<div class="tbl-wrap"><table class="shipguns"><thead><tr><th>Weapon</th><th>Hit</th><th>Damage</th><th>Ammo</th></tr></thead><tbody>${weapRows}</tbody></table></div>`:`<p class="hint">No weapons mounted.</p>`}
+    <div class="actgrid2">${actBtn(sp,s,"ship-fireall","gunnery",3,"Fire All Guns",tmp.fireAll?"Paid. Roll Hit on each weapon.":"Every weapon gets one free Hit roll this turn.")}
+    ${actBtn(sp,s,"ship-target","gunnery",1,"Target Systems",num(tmp.targetSys)?"Next Hit roll is aimed at a system.":"Next Hit: −4, half damage, disables a system.")}</div>
+    <div class="ctrs">${counter("tmp.hit",sgn(num(tmp.hit)),"Defeat ECM bonus")}</div>`;
   const disabled=[...(s.weapons||[]).map(w=>[w.id,w.name]),...(s.defenses||[]).map(x=>[x.id,x.name]),...(s.fittings||[]).map(x=>[x.id,x.name])].filter(([id])=>C.sysOf(id)==="disabled");
   return `<div class="frame-b shipcombat">
     ${C.pen?`<div class="notice">Missed maintenance: ${C.pen} to all ship checks and hit rolls.</div>`:""}
-    ${sect("bridge","Bridge",`${C.engineLock?`<div class="notice">Engine Lock: no bridge actions until resolved.</div>`:""}
-      ${actBtn(sp,s,"ship-evasive","bridge",2,"Evasive Maneuvers","Int/Dex Pilot + Speed vs 9: add Pilot skill to AC until next turn. Once per round."+(tmp.evasive!=null?" Used this round.":""))}
-      ${actBtn(sp,s,"ship-escape","bridge",4,"Escape Combat","Opposed Pilot + Speed vs the fastest enemy. Each win gives them 1 Escape point; at 3 you're out.")}
-      ${actBtn(sp,s,"ship-pursue","bridge",3,"Pursue Target","Opposed Pilot + Speed. On a win, the target loses 1 Escape point on you.")}
-      <div class="esc"><span class="lbl">Escape points</span>${shipCanAny(sp)?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="escape" data-d="-1">−</button>`:""}<b>${num(s.escape)}</b>/3${shipCanAny(sp)?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="escape" data-d="1">+</button>`:""}</div>${genFor("bridge")}`)}
-    ${sect("gunnery","Gunnery",`${C.decal?`<div class="notice">Target Decalibration: guns can't lock on until resolved.</div>`:""}${tgtBox}
-      <div class="lbl" style="margin:8px 0 4px">Fire One Weapon <button class="iconbtn" data-act="rule" data-key="ship_attack">?</button>${num(tmp.targetSys)?` <span class="tag on">next shot targets a system</span>`:""}</div>${weapRows}
-      ${actBtn(sp,s,"ship-fireall","gunnery",3,"Fire All Guns","Fire every working weapon.")}
-      ${actBtn(sp,s,"ship-target","gunnery",1,"Target Systems","Your next Fire One Weapon aims at a weapon, engine or fitting: −4 to hit, half damage before Armor, and it's disabled if damage gets through.")}
-      <div class="esc"><span class="lbl">Defeat ECM bonus</span>${shipCanAny(sp)?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="tmp.hit" data-d="-1">−</button>`:""}<b>${sgn(num(tmp.hit))}</b>${shipCanAny(sp)?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="tmp.hit" data-d="1">+</button>`:""}<span class="hint">to hit this round</span></div>${genFor("gunnery")}`)}
+    <div class="sect deptsect"><div class="deptttl"><span class="lbl">Gunnery</span>${who("gunnery")}<span style="flex:1"></span><button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="gunnery" ${shipCanAct(sp,"gunnery")?"":"disabled"}>Do Your Duty <span class="cpcost disc">+1</span></button></div>${gun}${genFor("gunnery")}</div>
+    ${sect("bridge","Bridge",`
+      ${actBtn(sp,s,"ship-evasive","bridge",2,"Evasive Maneuvers",tmp.evasive!=null?"Used this round.":"Pilot vs 9: +Pilot to AC until your next turn.")}
+      ${actBtn(sp,s,"ship-escape","bridge",4,"Escape Combat","Opposed Pilot. Each win is 1 Escape point; 3 and you're out.")}
+      ${actBtn(sp,s,"ship-pursue","bridge",3,"Pursue Target","Opposed Pilot. A win takes 1 Escape point off the target.")}`,
+      (C.engineLock?`<div class="notice">Engine Lock: no bridge actions until it's resolved.</div>`:"")+`<div class="ctrs">${counter("escape",num(s.escape),"Escape points","/3")}</div>`)}
     ${sect("engineering","Engineering",`
-      ${actBtn(sp,s,"ship-boost","engineering",2,"Boost Engines","Int/Fix vs 8: +2 Speed until next turn.")}
-      ${actBtn(sp,s,"ship-dc","engineering",3,"Damage Control","Int/Fix vs "+(7+num(s.dcUses))+": repair Fix × "+[2,3,4,6][C.ci]+" HP. Each later try this fight is +1 harder.")}
-      ${actBtn(sp,s,"ship-repair","engineering",3,"Emergency Repairs","Int/Fix vs 8: fix a disabled system or restore 1 drive rating.",`<span class="pick"><select class="inp" id="er-pick">${disabled.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("")}${num(s.driveDmg)?`<option value="drive">Spike drive (−${num(s.driveDmg)})</option>`:""}${!disabled.length&&!num(s.driveDmg)?`<option value="">Nothing disabled</option>`:""}</select></span>`)}${genFor("engineering")}`)}
+      ${actBtn(sp,s,"ship-boost","engineering",2,"Boost Engines","Int/Fix vs 8: +2 Speed until your next turn.")}
+      ${actBtn(sp,s,"ship-dc","engineering",3,"Damage Control","Int/Fix vs "+(7+num(s.dcUses))+": repair Fix × "+[2,3,4,6][C.ci]+" HP.")}
+      ${actBtn(sp,s,"ship-repair","engineering",3,"Emergency Repairs","Int/Fix vs 8: get a disabled system working.",disabled.length||num(s.driveDmg)?`<span class="pick"><select class="inp" id="er-pick">${disabled.map(([id,n])=>`<option value="${esc(id)}">${esc(n)}</option>`).join("")}${num(s.driveDmg)?`<option value="drive">Spike drive (−${num(s.driveDmg)})</option>`:""}</select></span>`:"")}`)}
     ${sect("comms","Comms",`
-      ${actBtn(sp,s,"ship-crash","comms",2,"Crash Systems","Opposed Int/Program: the target starts its next turn with −Program CP.")}
-      ${actBtn(sp,s,"ship-ecm","comms",2,"Defeat ECM","Opposed Int/Program: your attacks on the target get +2 × Program to hit this round.")}
-      ${actBtn(sp,s,"ship-ghost","comms",2,"Sensor Ghost","Int/Program vs 9: add Program to AC until next turn. Once per round."+(tmp.ghost!=null?" Used this round.":""))}${genFor("comms")}`)}
+      ${actBtn(sp,s,"ship-crash","comms",2,"Crash Systems","Opposed Program: the target loses CP next turn.")}
+      ${actBtn(sp,s,"ship-ecm","comms",2,"Defeat ECM","Opposed Program: +2 × Program to hit it this round.")}
+      ${actBtn(sp,s,"ship-ghost","comms",2,"Sensor Ghost",tmp.ghost!=null?"Used this round.":"Program vs 9: +Program to AC until your next turn.")}`)}
     ${sect("captain","Captain",`
-      ${actBtn(sp,s,"ship-intofire","captain",0,"Into the Fire","Accept a Crew Lost crisis and gain Lead + 1 CP. Once per round.")}
-      ${actBtn(sp,s,"ship-keep","captain",0,"Keep It Together","As an Instant, negate an enemy hit and roll a Crisis instead. Once per round.")}
-      ${actBtn(sp,s,"ship-support","captain",0,"Support Department","One action by the chosen department costs 2 fewer CP. Once per round."+(tmp.support?" Active: "+DEPTS.find(d=>d[0]===tmp.support)?.[1]+".":""),`<span class="pick"><select class="inp" id="sup-pick">${DEPTS.filter(d=>d[0]!=="captain").map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></span>`)}${genFor("captain")}`)}
-    ${(s.defenses||[]).some(d=>d.name==="Burst ECM Generator")?`<div class="sect"><span class="lbl">Defenses</span><div class="sact"><button class="btn" data-act="ship-ecmburst" data-doc="${esc(sp)}" ${s.ecmUsed?"disabled":""}>Burst ECM</button><span class="hint">Negate one successful hit after damage is rolled. Once per engagement.${s.ecmUsed?" Used.":""}</span></div></div>`:""}
+      ${actBtn(sp,s,"ship-support","captain",0,"Support Department",tmp.support?"Active: "+DEPTS.find(d=>d[0]===tmp.support)?.[1]+".":tmp.supportUsed?"Used this round.":"One action there costs 2 less CP.",`<span class="pick"><select class="inp" id="sup-pick">${DEPTS.filter(d=>d[0]!=="captain").map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></span>`)}
+      ${actBtn(sp,s,"ship-intofire","captain",0,"Into the Fire","Take a Crew Lost crisis, gain Lead + 1 CP.")}
+      ${actBtn(sp,s,"ship-keep","captain",0,"Keep It Together","Turn an enemy hit into a Crisis.")}`)}
+    ${(s.defenses||[]).some(d=>d.name==="Burst ECM Generator")?`<div class="sect"><span class="lbl">Defenses</span><div class="sact"><button class="btn" data-act="ship-ecmburst" data-doc="${esc(sp)}" ${s.ecmUsed?"disabled":""}>Burst ECM</button><span class="hint">Negate one hit, once per fight.${s.ecmUsed?" Used.":""}</span></div></div>`:""}
   </div>`;
+}
+function shipCheatSheet(){
+  return `<details class="frame cheat" ${(S.cheatOpen??!window.matchMedia("(max-width:640px)").matches)?"open":""}><summary class="frame-h" data-act="ship-cheat"><span>Space combat cheat sheet</span><span class="hint">▾</span></summary><div class="frame-b"><ol>
+    <li><b>Initiative:</b> each ship rolls 1d8 + its pilot's Int or Dex.</li>
+    <li><b>Your ship's turn:</b> press <b>New turn</b>. You start with 0 Command Points (CP).</li>
+    <li><b>Earn CP:</b> <i>Do Your Duty</i> (+1) or <i>Above and Beyond</i> (a skill roll).</li>
+    <li><b>Spend CP</b> on your station's actions, like firing a gun (2 CP).</li>
+    <li><b>One kind per person:</b> station actions <i>or</i> a general action, not both.</li>
+    <li><b>Leftover CP is lost</b> when the turn ends.</li>
+    <li><b>Big hit?</b> Once per round, take a <i>Crisis</i> instead, then fix it with <i>Deal With a Crisis</i>.</li>
+  </ol></div></details>`;
 }
 function shipCrisesBox(sp,s,C){
   const cr=s.crises||[];const can=shipCanAny(sp);
