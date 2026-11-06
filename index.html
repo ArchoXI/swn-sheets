@@ -470,6 +470,8 @@ button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .sact .pick .inp{width:auto;padding:4px 6px;font-size:13px}
 .cpcost{font-size:11px;font-weight:700;background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;letter-spacing:.03em}
 .cpcost.disc{background:#2f855a}
+.rword{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-transform:inherit;letter-spacing:inherit;cursor:help;text-align:inherit}
+.rword:hover{text-decoration:underline dotted;text-underline-offset:3px}
 .ctrs{display:flex;gap:16px;flex-wrap:wrap;margin:6px 0}
 .ctr{display:inline-flex;align-items:center;gap:6px}
 .ctr b{font-family:var(--display);font-size:17px;min-width:24px;text-align:center}
@@ -3373,20 +3375,20 @@ function renderShipSheet(sp){
       <div class="sub" style="opacity:.8">Crew ${num(s.crew,C.crewMin)} (min ${C.crewMin}, max ${C.crewMax})${C.cargo?" · Cargo "+C.cargo+" tons":""} · Value ${money(C.cost)} cr · Maintenance ${money(C.maint)} cr / 6 months</div></div>
     <div class="bactions">${gm?`<button class="btn dk" data-act="ship-refit" data-doc="${esc(sp)}">Refit / edit</button>${s.npc?`<button class="btn dk" data-act="ship-share" data-doc="${esc(sp)}">${s.shared?"Hide from players":"Show to players"}</button>`:""}<button class="btn dk" data-act="ship-del" data-doc="${esc(sp)}">${S.confirm==="ship-del"?"Click again to delete":"Delete"}</button>`:""}</div>
   </div></header>`;
-  const box=(label,val,sub,extra="",key="")=>`<div class="frame stat shipstat"><div class="lbl">${label}${key?` <button class="iconbtn" data-act="rule" data-key="${key}">?</button>`:""}</div><div class="big">${val}</div>${sub?`<div class="hint">${sub}</div>`:""}${extra}</div>`;
+  const box=(label,val,sub,extra="",key="")=>`<div class="frame stat shipstat"><div class="lbl">${key?`<button class="rword" data-act="rule" data-key="${key}">${label}</button>`:label}</div><div class="big">${val}</div>${sub?`<div class="hint">${sub}</div>`:""}${extra}</div>`;
   const top=`<section class="shiptop">
     <div class="frame hpbox shiphp"><div class="hpctl">${anyAct?`<button class="btn sm" style="color:var(--accent2,#2f855a)" data-act="ship-hp" data-doc="${esc(sp)}" data-d="1">Repair</button><input id="ship-hp-amt" class="inp" type="number" min="0" placeholder="0"><button class="btn sm" style="color:var(--bad)" data-act="ship-hp" data-doc="${esc(sp)}" data-d="-1">Damage</button>`:""}</div>
-      <div><div class="hpnums"><b style="color:${hpCol}">${hp}</b> / ${C.hpMax}</div><div class="hpbar"><i style="width:${hpPct}%;background:${hpCol}"></i></div><div class="lbl" style="text-align:center">Hull points <button class="iconbtn" data-act="rule" data-key="ship_hp">?</button></div></div></div>
+      <div><div class="hpnums"><b style="color:${hpCol}">${hp}</b> / ${C.hpMax}</div><div class="hpbar"><i style="width:${hpPct}%;background:${hpCol}"></i></div><div class="lbl" style="text-align:center"><button class="rword" data-act="rule" data-key="ship_hp">Hull points</button></div></div></div>
     ${box("Armor Class",C.ac,C.acNote.join(", "),"","ship_ac")}
     ${box("Armor",C.armor,C.armor<C.armorBase?"Halved by Armor Loss":"Subtracted from damage","","ship_armor")}
     ${box("Speed",C.speed==null?"—":sgn(C.speed),C.speed==null?"Stations can't maneuver":"Added to Pilot checks"+(num(tmp.speed)?" · Boost +"+tmp.speed:""),"","ship_speed")}
-    <div class="frame stat shipstat cpbox"><div class="lbl">Command Points <button class="iconbtn" data-act="rule" data-key="ship_cp">?</button></div><div class="big">${num(s.cp)}</div>
+    <div class="frame stat shipstat cpbox"><div class="lbl"><button class="rword" data-act="rule" data-key="ship_cp">Command Points</button></div><div class="big">${num(s.cp)}</div>
       <div class="cpctl">${anyAct?step("cp",-1,"Spend 1 CP")+step("cp",1,"Add 1 CP"):""}</div>
       ${anyAct?`<button class="btn sm" data-act="ship-turn" data-doc="${esc(sp)}">New turn</button>`:""}<div class="hint">${s.npc?"Starts each turn at "+num(s.npcCP,4):"Starts each turn at 0"}${C.haywire?" −"+2*C.haywire+" (Haywire)":""}${num(s.round)?" · turn "+num(s.round):""}</div></div>
-    <div class="frame stat shipstat"><div class="lbl">Fuel <button class="iconbtn" data-act="rule" data-key="ship_fuel">?</button></div><div class="big">${fuel}<small>/${C.fuelMax}</small></div><div class="cpctl">${anyAct?step("fuel",-1,"Use fuel")+step("fuel",1,"Refuel"):""}</div><div class="hint">500 cr per load</div></div>
+    <div class="frame stat shipstat"><div class="lbl"><button class="rword" data-act="rule" data-key="ship_fuel">Fuel</button></div><div class="big">${fuel}<small>/${C.fuelMax}</small></div><div class="cpctl">${anyAct?step("fuel",-1,"Use fuel")+step("fuel",1,"Refuel"):""}</div><div class="hint">500 cr per load</div></div>
   </section>`;
   // Roles
-  const roles=`<div class="frame"><div class="frame-h"><span>Crew stations</span><span><button class="iconbtn" data-act="rule" data-key="ship_crew">?</button></span></div><div class="frame-b roles">
+  const roles=`<div class="frame"><div class="frame-h"><span><button class="rword" data-act="rule" data-key="ship_crew">Crew stations</button></span></div><div class="frame-b roles">
     ${DEPTS.map(([k,l,sk])=>`<label class="rolerow"><span class="rlbl">${l}</span><select class="inp" data-shiprole="${esc(sp)}" data-dept="${k}" ${anyAct?"":"disabled"}>${roleOpts(s,k)}</select><span class="hint">${rollerHint(s,k,{bridge:"pilot",gunnery:"shoot",engineering:"fix",comms:"program",captain:"lead"}[k])}</span></label>`).join("")}
     ${anyAct?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn sm" data-act="ship-role-clear" data-doc="${esc(sp)}">Clear all stations</button><button class="btn sm" data-act="ship-endfight" data-doc="${esc(sp)}">${S.confirm==="ship-endfight"?"Click again to end the fight":"End fight"}</button></div>`:""}
     <p class="hint" style="margin:6px 0 0">Anyone can take any station, and one person can hold several. Empty stations use the NPC crew.</p></div></div>`;
@@ -3403,10 +3405,10 @@ const shipSkillOpts=sel=>Object.keys(SKILL).filter(k=>!/^(biopsionics|metapsioni
 function shipCombatTab(sp,s,C){
   const tmp=s.tmp||{};const tgt=S.shipTgt||{};const can=shipCanAny(sp);
   const who=d=>`<span class="hint deptby">${esc(shipRoller(s,d).name)}</span>`;
-  const sect=(d,title,inner,note="")=>`<div class="sect deptsect"><div class="deptttl"><span class="lbl">${title}</span><button class="iconbtn" data-act="rule" data-key="ship_${d}">?</button>${who(d)}<span style="flex:1"></span><button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="${d}" ${shipCanAct(sp,d)?"":"disabled"} title="General action: +1 Command Point">Do Your Duty <span class="cpcost disc">+1</span></button></div>${note}<div class="actgrid2">${inner}</div>${genFor(d)}</div>`;
+  const sect=(d,title,inner,note="")=>`<div class="sect deptsect"><div class="deptttl"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_${d}">${title}</button></span>${who(d)}<span style="flex:1"></span><button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="${d}" ${shipCanAct(sp,d)?"":"disabled"} title="General action: +1 Command Point">Do Your Duty <span class="cpcost disc">+1</span></button></div>${note}<div class="actgrid2">${inner}</div>${genFor(d)}</div>`;
   const counter=(f,val,lbl,post="")=>`<span class="ctr"><span class="lbl">${lbl}</span>${can?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="${f}" data-d="-1">−</button>`:""}<b>${val}</b>${post}${can?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="${f}" data-d="1">+</button>`:""}</span>`;
   const crises=s.crises||[];
-  function genFor(d){return `<details class="gen" ${(S.shipGen||{})[d]?"open":""}><summary class="hint" data-act="ship-gen" data-dept="${d}">Other general actions</summary><p class="hint" style="margin:4px 0">Taking a general action means no other action this turn. <button class="iconbtn" data-act="rule" data-key="ship_general">?</button></p>
+  function genFor(d){return `<details class="gen" ${(S.shipGen||{})[d]?"open":""}><summary class="hint" data-act="ship-gen" data-dept="${d}">Other general actions</summary><p class="hint" style="margin:4px 0"><button class="rword" data-act="rule" data-key="ship_general">Taking a general action means no other action this turn.</button></p>
     ${actBtn(sp,s,"ship-above",d,0,"Above and Beyond","Explain how you help, roll vs 9. Success: skill + 1 CP. Failure: −1 CP.",`<span class="pick"><select class="inp" id="ab-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="ab-skill-${d}">${shipSkillOpts({bridge:"pilot",gunnery:"shoot",engineering:"fix",comms:"program",captain:"lead"}[d])}</select></span>`)}
     ${crises.length?actBtn(sp,s,"ship-crisis-deal",d,0,"Deal With a Crisis","Explain your plan, roll vs 10 (GM can shift it ±2).",`<span class="pick"><select class="inp" id="cr-pick-${d}">${crises.map(c=>`<option value="${esc(c.id)}">${esc(c.type)}</option>`).join("")}</select><select class="inp" id="cr-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="cr-skill-${d}">${shipSkillOpts("fix")}</select><input class="inp" id="cr-diff-${d}" type="number" value="10" min="6" max="14" style="width:56px" title="Difficulty"></span>`):""}
   </details>`}
@@ -3420,15 +3422,15 @@ function shipCombatTab(sp,s,C){
       <td><button class="rollbtn" data-act="ship-dmg" data-doc="${esc(sp)}" data-dept="gunnery" data-id="${esc(w.id)}" ${!gunOk||W[3]==="Special"?"disabled":""}>${esc(W[3]||"")}${H.dmgMod?sgn(H.dmgMod).replace("+0",""):""}</button></td>
       <td class="num">${mx?`${cur}/${mx}`:"—"}</td></tr>`}).join("");
   const gun=`${C.decal?`<div class="notice">Target Decalibration: the guns can't fire until it's resolved.</div>`:""}
-    <div class="tgtbox"><span class="lbl">Target</span><label>AC <input class="inp" id="tgt-ac" type="number" value="${esc(tgt.ac??"")}" placeholder="?" data-shiptgt="ac"></label><label>Armor <input class="inp" id="tgt-arm" type="number" value="${esc(tgt.armor??"")}" placeholder="?" data-shiptgt="armor"></label><label class="chk"><input type="checkbox" data-act="ship-tgt" ${tgt.fighter?"checked":""}> Fighter</label><button class="iconbtn" data-act="rule" data-key="ship_attack" title="How ship attacks work">?</button></div>
-    ${(s.weapons||[]).length?`<div class="tbl-wrap"><table class="shipguns"><thead><tr><th>Weapon <button class="iconbtn" data-act="rule" data-key="ship_weapq" title="Weapon qualities">?</button></th><th>Hit</th><th>Damage</th><th>Ammo</th></tr></thead><tbody>${weapRows}</tbody></table></div>`:`<p class="hint">No weapons mounted.</p>`}
+    <div class="tgtbox"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_attack">Target</button></span><label>AC <input class="inp" id="tgt-ac" type="number" value="${esc(tgt.ac??"")}" placeholder="?" data-shiptgt="ac"></label><label>Armor <input class="inp" id="tgt-arm" type="number" value="${esc(tgt.armor??"")}" placeholder="?" data-shiptgt="armor"></label><label class="chk"><input type="checkbox" data-act="ship-tgt" ${tgt.fighter?"checked":""}> Fighter</label></div>
+    ${(s.weapons||[]).length?`<div class="tbl-wrap"><table class="shipguns"><thead><tr><th><button class="rword" data-act="rule" data-key="ship_weapq">Weapon</button></th><th><button class="rword" data-act="rule" data-key="ship_attack">Hit</button></th><th>Damage</th><th>Ammo</th></tr></thead><tbody>${weapRows}</tbody></table></div>`:`<p class="hint">No weapons mounted.</p>`}
     <div class="actgrid2">${actBtn(sp,s,"ship-fireall","gunnery",3,"Fire All Guns",tmp.fireAll?"Paid. Roll Hit on each weapon.":"Every weapon gets one free Hit roll this turn.")}
     ${actBtn(sp,s,"ship-target","gunnery",1,"Target Systems",num(tmp.targetSys)?"Next Hit roll is aimed at a system.":"Next Hit: −4, half damage, disables a system.")}</div>
     <div class="ctrs">${counter("tmp.hit",sgn(num(tmp.hit)),"Defeat ECM bonus")}</div>`;
   const disabled=[...(s.weapons||[]).map(w=>[w.id,w.name]),...(s.defenses||[]).map(x=>[x.id,x.name]),...(s.fittings||[]).map(x=>[x.id,x.name])].filter(([id])=>C.sysOf(id)==="disabled");
   return `<div class="frame-b shipcombat">
     ${C.pen?`<div class="notice">Missed maintenance: ${C.pen} to all ship checks and hit rolls.</div>`:""}
-    <div class="sect deptsect"><div class="deptttl"><span class="lbl">Gunnery</span><button class="iconbtn" data-act="rule" data-key="ship_gunnery">?</button>${who("gunnery")}<span style="flex:1"></span><button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="gunnery" ${shipCanAct(sp,"gunnery")?"":"disabled"}>Do Your Duty <span class="cpcost disc">+1</span></button></div>${gun}${genFor("gunnery")}</div>
+    <div class="sect deptsect"><div class="deptttl"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_gunnery">Gunnery</button></span>${who("gunnery")}<span style="flex:1"></span><button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="gunnery" ${shipCanAct(sp,"gunnery")?"":"disabled"}>Do Your Duty <span class="cpcost disc">+1</span></button></div>${gun}${genFor("gunnery")}</div>
     ${sect("bridge","Bridge",`
       ${actBtn(sp,s,"ship-evasive","bridge",2,"Evasive Maneuvers",tmp.evasive!=null?"Used this round.":"Pilot vs 9: +Pilot to AC until your next turn.")}
       ${actBtn(sp,s,"ship-escape","bridge",4,"Escape Combat","Opposed Pilot. Each win is 1 Escape point; 3 and you're out.")}
@@ -3462,7 +3464,7 @@ function shipCheatSheet(){
 }
 function shipCrisesBox(sp,s,C){
   const cr=s.crises||[];const can=shipCanAny(sp);
-  return `<div class="frame"><div class="frame-h"><span>Crises</span><span><button class="iconbtn" data-act="rule" data-key="ship_crisis">?</button></span></div><div class="frame-b">
+  return `<div class="frame"><div class="frame-h"><span><button class="rword" data-act="rule" data-key="ship_crisis">Crises</button></span></div><div class="frame-b">
     ${cr.length?cr.map(c=>{const d=SHIP_CRISES.find(x=>x[0]===c.type)||["","",""];return `<div class="crisis ${d[1]==="Acute"?"acute":""}"><div><b>${esc(c.type)}</b> <span class="tag ${d[1]==="Acute"?"on":""}">${d[1]}</span><div class="hint">${esc(d[2])}${d[1]==="Acute"?" Resolve it by the end of the next round.":""}</div></div>${can?`<button class="iconbtn" data-act="ship-crisis-x" data-doc="${esc(sp)}" data-id="${esc(c.id)}" title="Mark resolved">✓</button>`:""}</div>`}).join(""):`<p class="hint" style="margin:0">No active crises.</p>`}
     ${can?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"><button class="btn sm" data-act="ship-crisis-roll" data-doc="${esc(sp)}">Take a Crisis instead of a hit</button><select class="inp" id="cr-add" style="width:auto"><option value="">Add a specific crisis…</option>${SHIP_CRISES.map(c=>`<option>${c[0]}</option>`).join("")}</select><button class="btn sm" data-act="ship-crisis-add" data-doc="${esc(sp)}">Add</button></div>`:""}
   </div></div>`;
@@ -3477,8 +3479,8 @@ function shipSystemsTab(sp,s,C){
   const fits=(s.fittings||[]).map(x=>{const F=SHIP_FITTINGS.find(y=>y[0]===x.name)||[];return row(x.id,x.name+(num(x.qty,1)>1?" ×"+num(x.qty,1):""),"",F[8])}).join("")||`<p class="hint">None.</p>`;
   return `<div class="frame-b">
     <div class="budget" style="margin-bottom:16px">${budgetBar("Power",C.power,C.powerMax)}${budgetBar("Mass",C.mass,C.massMax)}${budgetBar("Hardpoints",C.hard,C.hardMax)}</div>
-    <div class="sect"><span class="lbl">Spike drive <button class="iconbtn" data-act="rule" data-key="ship_drive">?</button></span><div class="sysrow"><div><b>${C.sysDrive?"System drive (no spike drilling)":"Drive-"+C.driveFull}</b>${num(s.driveDmg)?` <span class="tag sys-disabled">−${num(s.driveDmg)} damaged</span>`:""}<div class="hint">${C.sysDrive?"":"Range "+C.drive+" hex"+(C.drive===1?"":"es")+" · 6 days per hex ÷ "+C.drive}</div></div>${gm&&!C.sysDrive?`<span><button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="driveDmg" data-d="-1" title="Repair drive">−</button><button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="driveDmg" data-d="1" title="Damage drive">+</button></span>`:""}</div></div>
-    <div class="sect"><span class="lbl">Weapons <button class="iconbtn" data-act="rule" data-key="ship_weapq">?</button></span>${weap}</div>
+    <div class="sect"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_drive">Spike drive</button></span><div class="sysrow"><div><b>${C.sysDrive?"System drive (no spike drilling)":"Drive-"+C.driveFull}</b>${num(s.driveDmg)?` <span class="tag sys-disabled">−${num(s.driveDmg)} damaged</span>`:""}<div class="hint">${C.sysDrive?"":"Range "+C.drive+" hex"+(C.drive===1?"":"es")+" · 6 days per hex ÷ "+C.drive}</div></div>${gm&&!C.sysDrive?`<span><button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="driveDmg" data-d="-1" title="Repair drive">−</button><button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="driveDmg" data-d="1" title="Damage drive">+</button></span>`:""}</div></div>
+    <div class="sect"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_weapq">Weapons</button></span>${weap}</div>
     <div class="sect"><span class="lbl">Defenses</span>${defs}</div>
     <div class="sect"><span class="lbl">Fittings</span>${fits}</div>
     <p class="hint">Click a status tag to cycle it: working → disabled → destroyed → working. Disabled systems can be fixed with Emergency Repairs; destroyed ones can't be fixed during a fight.</p>
@@ -3490,7 +3492,7 @@ function shipTravelTab(sp,s,C){
   const tin=(k,attrs)=>`data-shiptrip="${esc(sp)}" data-k="${k}" ${can?"":"disabled"} ${attrs||""}`;
   const reg=(within)=>{const base=within?6:48;const t=base/Math.max(1,C.drive);const tt=base/Math.max(1,C.drive+1);return `${Math.round(t*10)/10} h <span class="hint">(trimmed ${Math.round(tt*10)/10} h)</span>`};
   return `<div class="frame-b">
-    <div class="sect"><span class="lbl">Spike drill <button class="iconbtn" data-act="rule" data-key="ship_drill">?</button></span>
+    <div class="sect"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_drill">Spike drill</button></span>
       ${C.sysDrive?`<p class="hint">This ship has a system drive and can't drill between stars.</p>`:`
       <div class="drill">
         <label>Hexes <input class="inp" type="number" min="1" max="${Math.max(1,C.drive)}" value="${D.hexes}" ${tin("hexes")}></label>
@@ -3503,15 +3505,15 @@ function shipTravelTab(sp,s,C){
       ${D.hexes>C.drive?`<div class="notice">Out of range for drive-${C.drive}.</div>`:""}
       <div class="sact"><button class="btn pri" data-act="ship-drill" data-doc="${esc(sp)}" ${shipCanAct(sp,"bridge")?"":"disabled"}>Make the drill</button><span class="hint">Uses 1 fuel. Rolled by the bridge (${esc(shipRoller(s,"bridge").name)}). On a failure the mishap table is rolled for you.</span></div>`}
     </div>
-    <div class="sect"><span class="lbl">In-system travel <button class="iconbtn" data-act="rule" data-key="ship_insys">?</button></span>
+    <div class="sect"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_insys">In-system travel</button></span>
       <table class="mini"><tr><td>Within a region</td><td>${reg(true)}</td></tr><tr><td>Between regions</td><td>${reg(false)}</td></tr></table>
       <div class="sact"><button class="btn" data-act="ship-trim" data-doc="${esc(sp)}" ${shipCanAct(sp,"bridge")?"":"disabled"}>Trim the course</button><span class="hint">Pilot vs 9. Failure doubles the trip.</span></div></div>
-    <div class="sect"><span class="lbl">Sensors and pursuit <button class="iconbtn" data-act="rule" data-key="ship_sensors">?</button></span>
+    <div class="sect"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_sensors">Sensors and pursuit</button></span>
       <div class="sact"><button class="btn" data-act="ship-detect" data-doc="${esc(sp)}" ${shipCanAct(sp,"comms")?"":"disabled"}>Get a detection lock</button><span class="pick"><select class="inp" id="sen-tgt"><option value="3">Target: fighter (+3)</option><option value="2" selected>Target: frigate (+2)</option><option value="1">Target: cruiser (+1)</option><option value="0">Target: capital (+0)</option><option value="-2">Target: station (−2)</option></select><label class="chk"><input type="checkbox" id="sen-passive"> Passive (−2)</label></span></div>
       <div class="sact"><button class="btn" data-act="ship-hide" data-doc="${esc(sp)}" ${shipCanAct(sp,"comms")?"":"disabled"}>Avoid detection</button><span class="pick"><label class="chk"><input type="checkbox" id="sen-avoid"> Avoiding population centers (+2)</label></span></div>
       <div class="sact"><button class="btn" data-act="ship-scan" data-doc="${esc(sp)}" ${shipCanAct(sp,"comms")?"":"disabled"}>Ask a scan question</button><span class="hint">Int/Program vs ${8+num(s.scanQ)}. Ask the question first.${num(s.scanQ)?" "+num(s.scanQ)+" answered today.":""}</span>${can&&num(s.scanQ)?`<button class="btn sm" data-act="ship-step" data-doc="${esc(sp)}" data-f="scanQ" data-d="${-num(s.scanQ)}">New day</button>`:""}</div>
       <div class="sact"><button class="btn" data-act="ship-chase" data-doc="${esc(sp)}" ${shipCanAct(sp,"bridge")?"":"disabled"}>Long-range pursuit</button><span class="hint">Opposed Pilot + drive rating.</span></div></div>
-    <div class="sect"><span class="lbl">Upkeep <button class="iconbtn" data-act="rule" data-key="ship_maint">?</button></span>
+    <div class="sect"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_maint">Upkeep</button></span>
       <table class="mini"><tr><td>Maintenance every 6 months</td><td>${C.maint.toLocaleString()} cr</td></tr><tr><td>Periods skipped</td><td>${gm?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="maintSkipped" data-d="-1">−</button>`:""} <b>${num(s.maintSkipped)}</b> ${gm?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="maintSkipped" data-d="1">+</button>`:""} ${num(s.maintSkipped)?`<span class="hint">(${-num(s.maintSkipped)} to ship rolls${num(s.maintSkipped)>=4?", 10% monthly breakdown chance":""})</span>`:""}</td></tr>
       <tr><td>Hull repairs</td><td>1,000 cr per point · ${C.hpMax-num(s.hp,C.hpMax)} missing = ${((C.hpMax-num(s.hp,C.hpMax))*1000).toLocaleString()} cr</td></tr><tr><td>Fuel</td><td>500 cr per load</td></tr><tr><td>NPC crew wages</td><td>120 cr per crew member per day (100 wages + 20 stores)</td></tr></table></div>
   </div>`;
