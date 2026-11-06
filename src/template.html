@@ -327,6 +327,9 @@ textarea.inp{resize:vertical;min-height:70px}
 .encstage.s1{background:#fff7e6;border-color:#f3c88b}
 .encstage.s2{background:#fdecec;border-color:#f0a8a8}
 .encstage.s3{background:var(--bad);border-color:var(--bad);color:#fff}
+.credbox{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;margin-bottom:14px;border:2px solid var(--accent);border-radius:10px;background:var(--card)}
+.credamt{font-family:var(--display);font-size:30px;font-weight:700;line-height:1}
+.credctl{display:flex;gap:6px;align-items:center}
 /* wizard */
 .wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
 .wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
@@ -1112,7 +1115,9 @@ function renderInventory(path,c,R,can){
     ${list.length?`<div class="tbl-wrap"><table><thead><tr><th>Ready</th><th>Item</th><th>Qty</th><th>Enc</th><th></th></tr></thead><tbody>${list.map(({e,i})=>row(e,i)).join("")}</tbody></table></div>`:`<p class="hint" style="margin:6px 0 0">${empty}</p>`}</div>`;
   const ready=group((it,l)=>it.type!=="cyber"&&l==="readied"),stow=group((it,l)=>it.type!=="cyber"&&l==="stowed"),stored=group((it,l)=>it.type!=="cyber"&&l==="stored"),cyber=group(it=>it.type==="cyber");
   const hb=hbPaths();
-  return `${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+  const credits=`<div class="credbox"><div><span class="lbl">Credits</span><div class="credamt num">${num(c.credits).toLocaleString()}</div></div>
+    ${can?`<div class="credctl"><input id="cr-amt" class="inp n" type="number" min="0" placeholder="0" aria-label="Amount"><button class="btn sm" style="color:var(--good)" data-act="cr" data-sign="1">Receive</button><button class="btn sm" style="color:var(--bad)" data-act="cr" data-sign="-1">Spend</button></div>`:""}</div>`;
+  return `${credits}${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="hb-pick" class="inp" style="max-width:300px">${itemPickOpts("Add an item…")}</select>
       <button class="btn" data-act="inv-add-hb">Add</button><button class="btn ghost" data-act="inv-add-custom">+ Custom item</button></div>`:""}
     <div class="encstage s${R.encStage}" style="margin-bottom:10px"><b>${R.encLabel}</b><span>${R.encStage<3?"Move "+R.move+" m per round":"Too much to carry. Drop or store something."}</span></div>
@@ -1422,6 +1427,8 @@ document.addEventListener("click",e=>{
     case "reload":edit((c,p)=>{const i=num(t.dataset.i);const R=compute(c);setField(p,"inventory."+i+".ammo",num(R.items[i].mag))});break;
     case "inv-add-hb":edit((c,p)=>{const id=$("#hb-pick")?.value;if(!id)return;addPicked(c,p,id)});break;
     case "inv-add-custom":edit((c,p)=>{const inv=c.inventory||[];inv.push({id:rid(),type:"gear",name:"New item",qty:1,location:"readied",enc:1,mods:[],description:""});setField(p,"inventory",inv);S.drawer={kind:"item",i:inv.length-1}});break;
+    case "cr":edit((c,p)=>{const amt=Math.abs(num($("#cr-amt")?.value));if(!amt)return;const sign=num(t.dataset.sign);const next=num(c.credits)+sign*amt;
+      if(next<0){toastMsg("Not enough credits ("+num(c.credits)+" available).",true);return}setField(p,"credits",next);toastMsg((sign>0?"+":"−")+amt+" credits")});break;
     case "ready-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="readied"?"stowed":"readied")});break;
     case "store-toggle":edit((c,p)=>{const i=num(t.dataset.i);const cur=c.inventory[i].location||"stowed";setField(p,"inventory."+i+".location",cur==="stored"?"stowed":"stored")});break;
     case "total-def":edit((c,p)=>{setField(p,"totalDefense",!c.totalDefense)});break;
