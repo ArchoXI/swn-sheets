@@ -320,6 +320,11 @@ textarea.inp{resize:vertical;min-height:70px}
 .npcrolls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .entry.npcentry{border-left:3px solid var(--warn);background:#fffaf0}
 @media (max-width:820px){.npcmake{grid-template-columns:1fr 1fr}}
+.encstage{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:6px 10px;border-radius:6px;font-size:13px;background:#eef8f1;border:1px solid #b6e0c4}
+.encstage b{font-family:var(--display);font-size:14px}
+.encstage.s1{background:#fff7e6;border-color:#f3c88b}
+.encstage.s2{background:#fdecec;border-color:#f0a8a8}
+.encstage.s3{background:var(--bad);border-color:var(--bad);color:#fff}
 /* wizard */
 .wiz{display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;align-items:start}
 .wsteps{padding:8px;display:flex;flex-direction:column;gap:2px;position:sticky;top:64px}
@@ -503,7 +508,7 @@ const RULES = {
   strain:{t:"System Strain",p:["System strain tracks how hard your body has been pushed by cyberware, drugs, and medical treatment. Your maximum is your CON score.","Installed cyberware adds permanent strain. Stims and healing add temporary strain, which drops by 1 after each night of good rest.","You can't accept strain past your maximum."]},
   effort:{t:"Effort",p:["Psychics fuel techniques with Effort. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Effort can be committed for a scene, for a day, or for as long as a power stays active. It comes back when that period ends."]},
   init:{t:"Initiative",p:["At the start of combat, roll 1d8 + DEX modifier. Higher results act first."]},
-  enc:{t:"Encumbrance",p:["Readied items are in hand or instantly usable. You can have Readied items up to half your STR score, rounded down.","Stowed items are packed away and take a moment to dig out. You can have Stowed items up to your STR score.","Going over either limit slows you down. Stored items are left on the ship or at home and don't count."]},
+  enc:{t:"Encumbrance",p:["Readied items are in hand or instantly usable. You can have Readied items up to half your STR score, rounded down.","Stowed items are packed away and take a moment to dig out. You can have Stowed items up to your STR score.","You can carry more if you accept being slower. Up to 2 extra Readied or 4 extra Stowed items makes you Lightly Encumbered: movement drops from 10 to 7 meters per round. Up to 2 more Readied or 4 more Stowed beyond that makes you Heavily Encumbered: 5 meters per round. Past that you can't carry it.","Worn armor counts as Readied; ordinary clothes don't. Very small items in small numbers don't count. Small items can be bundled (about 6 power cells or 3 magazines per item), but getting into a bundle takes an extra round.","Stored items are left on the ship or at home and don't count."]},
   xp:{t:"Experience & Levels",p:["XP to reach each level: 2nd 3, 3rd 6, 4th 12, 5th 18, 6th 27, 7th 39, 8th 54, 9th 72, 10th 93."]},
   foci:{t:"Foci",p:["Foci are special talents that set your character apart. Most have two levels; the second builds on the first.","You start with one (sometimes more) and pick up new ones at certain levels."]},
   mods:{t:"Item & Effect Bonuses",p:["Equipped items and active effects apply their bonuses automatically everywhere they matter.","On a weapon, Attack and Damage bonuses apply only to that weapon. On anything else, they apply to all your attacks.","Save bonuses lower the save's target number. Attribute bonuses raise the score, which can change the modifier."]},
@@ -739,6 +744,10 @@ function compute(c){
   R.stowedLimit=ovr("stowed",sParts.reduce((s,p)=>s+p.v,0),sParts);
   const encOf=loc=>items.filter(i=>i.type!=="cyber"&&(i.location||"stowed")===loc).reduce((s,i)=>s+(i.encFixed?num(i.enc):num(i.enc)*Math.max(0,num(i.qty,1))),0);
   R.readied=encOf("readied");R.stowed=encOf("stowed");
+  {const ro=R.readied-R.readiedLimit,so=R.stowed-R.stowedLimit;
+   const st=o=>o<=0?0:o;const rs=ro<=0?0:ro<=2?1:ro<=4?2:3;const ss=so<=0?0:so<=4?1:so<=8?2:3;
+   R.encStage=Math.max(rs,ss);R.move=[10,7,5,0][R.encStage];
+   R.encLabel=["Unencumbered","Lightly Encumbered","Heavily Encumbered","Overloaded"][R.encStage];}
   // xp
   R.nextXp=XP_TABLE[lvl]??null;R.prevXp=XP_TABLE[lvl-1]??0;
   return R;
@@ -1001,7 +1010,7 @@ function renderSheet(){
   const enc=`<div class="frame enc"><div class="frame-b" style="padding-top:14px">
     <div class="row"><span>Readied</span><span class="num">${R.readied} / ${R.readiedLimit}${ovBadge(R,"readied")}</span></div><div class="meter"><i class="${R.readied>R.readiedLimit?"over":""}" style="width:${Math.min(100,R.readiedLimit?R.readied/R.readiedLimit*100:100)}%"></i></div>
     <div class="row"><span>Stowed</span><span class="num">${R.stowed} / ${R.stowedLimit}${ovBadge(R,"stowed")}</span></div><div class="meter"><i class="${R.stowed>R.stowedLimit?"over":""}" style="width:${Math.min(100,R.stowedLimit?R.stowed/R.stowedLimit*100:100)}%"></i></div>
-    ${R.readied>R.readiedLimit||R.stowed>R.stowedLimit?`<p class="hint" style="color:var(--bad);margin:0">Over your limit: you're slowed.</p>`:""}
+    <div class="encstage s${R.encStage}"><b>${R.encLabel}</b><span>${R.encStage<3?"Move "+R.move+" m per round":"Too much to carry. Drop or store something."}</span></div>
   </div><div class="frame-f">Encumbrance <button class="iconbtn" data-act="rule" data-key="enc" aria-label="Encumbrance rules">?</button></div></div>`;
 
   const skillRow=(k,name,group,attrLbl)=>{
@@ -1075,6 +1084,7 @@ function renderInventory(path,c,R,can){
   return `${can?`<div class="sect" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="hb-pick" class="inp" style="max-width:300px">${itemPickOpts("Add an item…")}</select>
       <button class="btn" data-act="inv-add-hb">Add</button><button class="btn ghost" data-act="inv-add-custom">+ Custom item</button></div>`:""}
+    <div class="encstage s${R.encStage}" style="margin-bottom:10px"><b>${R.encLabel}</b><span>${R.encStage<3?"Move "+R.move+" m per round":"Too much to carry. Drop or store something."}</span></div>
     ${sect("Readied",`${R.readied} / ${R.readiedLimit} · worn, in hand, or instantly usable. These count for AC and bonuses.`,ready,"Nothing readied. Check an item below to ready it.",R.readied>R.readiedLimit?"over":"")}
     ${sect("Stowed",`${R.stowed} / ${R.stowedLimit} · packed away. Readying one takes a Main Action in combat.`,stow,"Nothing stowed.",R.stowed>R.stowedLimit?"over":"")}
     ${cyber.length?sect("Cyberware","installed, always active, no encumbrance",cyber,""):""}
@@ -1601,7 +1611,7 @@ const G = {
   goggles:{type:"gear",name:"Low-light Goggles",enc:1},
   rations:{type:"gear",name:"Rations (1 day)",enc:1,bundle:3},
   rope:{type:"gear",name:"Rope, 20m (TL0)",enc:2},
-  cells:{type:"gear",name:"Type A Power Cell",enc:1,bundle:3},
+  cells:{type:"gear",name:"Type A Power Cell",enc:1,bundle:6},
   ammo:{type:"gear",name:"Ammo (20 rounds)",enc:1,bundle:3}
 };
 const PACKAGES = {

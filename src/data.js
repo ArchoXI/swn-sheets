@@ -159,7 +159,7 @@ const G = {
   goggles:{type:"gear",name:"Low-light Goggles",enc:1},
   rations:{type:"gear",name:"Rations (1 day)",enc:1,bundle:3},
   rope:{type:"gear",name:"Rope, 20m (TL0)",enc:2},
-  cells:{type:"gear",name:"Type A Power Cell",enc:1,bundle:3},
+  cells:{type:"gear",name:"Type A Power Cell",enc:1,bundle:6},
   ammo:{type:"gear",name:"Ammo (20 rounds)",enc:1,bundle:3}
 };
 const PACKAGES = {
