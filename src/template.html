@@ -1800,7 +1800,6 @@ function renderHome(){
   const pcs=all.filter(p=>!S.docs[p].npc);const others=pcs.filter(p=>!mine.includes(p));
   const unclaimed=pcs.filter(p=>!(S.docs[p].owners||[]).length&&!S.docs[p].locked);
   const ships=shipPaths().filter(p=>!S.docs[p].npc&&(gm||S.docs[p].shared));
-  const hour=new Date().getHours();const greet=hour<12?"Good morning":hour<18?"Good afternoon":"Good evening";
   // GM alerts: crises or mishaps waiting for a roll
   const alerts=gm?shipPaths().flatMap(p=>{const s=S.docs[p];const a=[];(s.crises||[]).filter(c=>c.pending).forEach(()=>a.push([p,"Crisis waiting for your d10 on "+(s.name||"a ship")]));if(s.mishap&&s.mishap.pending)a.push([p,"Drill mishap waiting for your 3d6 on "+(s.name||"a ship")]);return a}):[];
   const mineBlock=mine.length?`<div class="hmegrid">${mine.map(p=>homeCharCard(p,true)).join("")}</div>`
@@ -1818,7 +1817,7 @@ function renderHome(){
       <button class="btn" data-act="view" data-v="party">Party overview</button>
       <button class="btn" data-act="wiz-open">New character</button></div></div>`:"";
   return `<div class="home">
-    <div class="hhead"><h1 class="pagetitle" style="margin:0">${greet}${mine.length===1?", "+esc(S.docs[mine[0]].player||S.docs[mine[0]].name||""):""}</h1><span class="hint">${gm?"You're the GM.":mine.length?"":"Welcome aboard."}</span></div>
+    <div class="hhead"><h1 class="pagetitle" style="margin:0">Home</h1>${gm?`<span class="hint">GM view</span>`:""}</div>
     ${alerts.length?`<div class="frame halert">${alerts.map(([p,t])=>`<button class="rword" data-act="ship-home" data-doc="${esc(p)}">⚠ ${esc(t)}</button>`).join("")}</div>`:""}
     ${mineBlock}
     <div class="hcols">
