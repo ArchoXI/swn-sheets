@@ -158,10 +158,19 @@ main{padding:0 18px 120px;max-width:1400px;margin:0 auto}
 .save .rollbtn{border-radius:999px}
 .rollbtn.tgt::before{content:"≥ ";color:var(--faint);font-size:13px}
 .skills{list-style:none;margin:0;padding:0}
-.skhead{display:grid;grid-template-columns:30px 36px 1fr 52px;gap:6px;padding:0 2px 4px;font-family:var(--display);font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase}
-.skills li{display:grid;grid-template-columns:30px 36px 1fr 52px;align-items:center;gap:6px;padding:3px 2px;border-bottom:1px solid var(--line-soft)}
+.skhead{display:grid;grid-template-columns:34px 36px 1fr 52px;gap:6px;padding:0 2px 4px;font-family:var(--display);font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase}
+.skills li{display:grid;grid-template-columns:34px 36px 1fr 52px;align-items:center;gap:6px;padding:3px 2px;border-bottom:1px solid var(--line-soft)}
 .skills li:last-child{border-bottom:0}
 .prof{display:flex;align-items:center;gap:3px}
+.sklv{display:inline-grid;place-items:center;width:26px;height:22px;border-radius:5px;font-family:var(--display);font-weight:700;font-size:14px;line-height:1;border:1.5px solid var(--accent);color:var(--accent);background:transparent}
+.sklv.lvu{border:1.5px dashed var(--faint);color:var(--faint);font-weight:400}
+.sklv.lv0{border-color:var(--muted);color:var(--text)}
+.sklv.lv1{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.sklv.lv2{background:color-mix(in srgb,var(--accent) 50%,transparent);color:#fff}
+.sklv.lv3,.sklv.lv4{background:var(--accent);color:#fff}
+.sklegend{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--muted)}
+.sklegend .sklv{width:20px;height:18px;font-size:11px}
+.sklegend .sklv.lvu{margin-right:2px}.sklegend .sklv.lv0{margin-left:8px}
 .prof .dot{width:10px;height:10px;border-radius:50%;border:1px solid var(--faint);background:var(--card)}
 .prof .dot.f{background:#222;border-color:#222}
 .prof small{font-family:var(--display);font-weight:700;font-size:11px;color:var(--muted)}
@@ -1449,14 +1458,15 @@ function renderSheet(){
     const a=(S.opts.attr==="auto"?attrLbl:S.opts.attr);
     const tot=group==="psy"?null:lv+R.mod[(a||"int").toLowerCase()]+R.sum("skillChecks")+num(S.opts.sit);
     const left=E?`<span class="skedit"><button class="iconbtn" data-act="skill" data-g="${group}" data-k="${k}" data-d="-1" aria-label="Lower ${name}">−</button><span class="num" style="min-width:18px;text-align:center">${base}</span><button class="iconbtn" data-act="skill" data-g="${group}" data-k="${k}" data-d="1" aria-label="Raise ${name}">+</button></span>`
-      :`<span class="prof" title="${lv<0?"Untrained":"Level "+lv}"><span class="dot ${lv>=0?"f":""}"></span>${lv>0?`<small>${lv}</small>`:""}</span><span class="sattr">${group==="psy"?"":esc(a)}</span>`;
+      :`<span class="sklv lv${lv<0?"u":Math.min(4,lv)}" title="${lv<0?"Untrained: −1 to checks":"Level "+lv}">${lv<0?"–":lv}</span><span class="sattr">${group==="psy"?"":esc(a)}</span>`;
     return `<li>${left}
       <button class="sname ${lv<0?"untr":""}" data-act="rule" data-key="skill_${k}">${esc(name)}${lv!==base?` <span class="tag hb" title="Changed by items">${sgn(lv-base)}</span>`:""}</button>
       ${group==="psy"?`<span class="num" style="text-align:center;font-family:var(--display);font-size:17px">${lv<0?"—":lv}</span>`:`<button class="rollbtn" data-act="roll-skill" data-skill="${k}" title="Roll 2d6 ${sgn(tot)}">${sgn(tot)}</button>`}</li>`;
   };
   const skills=`<div class="frame"><div class="frame-b" style="padding-top:12px">
-    <div class="skhead"><span>${E?"Level":"Prof"}</span><span>${E?"":"Mod"}</span><span>Skill</span><span style="text-align:center">Bonus</span></div>
+    <div class="skhead"><span>Level</span><span>${E?"":"Attr"}</span><span>Skill</span><span style="text-align:center">Bonus</span></div>
     <ul class="skills">${SKILLS.map(s=>skillRow(s[0],s[1],"skills",s[2])).join("")}</ul>
+    ${E?"":`<div class="sklegend"><span class="sklv lvu">–</span> untrained <span class="sklv lv0">0</span><span class="sklv lv1">1</span><span class="sklv lv2">2</span><span class="sklv lv3">3</span><span class="sklv lv4">4</span> skill level</div>`}
     ${R.psychic||E?`<div class="lbl" style="margin:14px 0 4px;color:var(--info)">Psychic disciplines</div><ul class="skills">${PSY.map(s=>skillRow(s[0],s[1],"psy","")).join("")}</ul>`:""}
   </div><div class="frame-f"><button class="rword" data-act="rule" data-key="skilllevels">Skills</button></div></div>`;
 
