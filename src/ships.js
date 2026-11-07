@@ -272,6 +272,7 @@ function shipAct(act,t){
   const need=(dept)=>{if(!shipCanAct(sp,dept)){toastMsg("Only the GM or the character in that department can do that.",true);return false}return true};
   switch(act){
     case "ship-sel":S.shipSel=sp;S.shipTab=S.shipTab||"combat";render();return true;
+    case "ship-vis":{if(!gm||!s||s.npc)return true;setField(sp,"shared",!s.shared);toastMsg(s.shared?"Players can see this ship now.":"Hidden. Players can't see this ship until you show it.");render();return true}
     case "ship-mode":S.shipMode=t.dataset.v;S.shipFull=false;render();return true;
     case "ship-full":if(!gm)return true;S.shipSel=sp;S.shipFull=true;S.shipMode="npc";S.shipTab="combat";render();window.scrollTo(0,0);return true;
     case "ship-dup":{if(!gm||!s)return true;const C=shipCompute(s);const path=(S.offline?"ships/local-":"ships/")+rid();const base=clone(s);const m=String(s.name||"Ship").match(/^(.*?)\s*(\d+)$/);const stem=m?m[1]:String(s.name||"Ship");const used=new Set(shipPaths().map(p=>S.docs[p].name));let k=2;while(used.has(stem+" "+k))k++;
@@ -425,7 +426,7 @@ function renderShips(){
   }
   const sel=S.shipSel&&S.docs[S.shipSel]&&party.includes(S.shipSel)?S.shipSel:party[0];
   const list=`<div class="shiplist">${party.map(p=>{const s=S.docs[p];const C=shipCompute(s);const hp=num(s.hp,C.hpMax);
-    return `<button class="chip ${p===sel?"on":""}" data-act="ship-sel" data-doc="${esc(p)}"><span class="av">✦</span>${esc(s.name||"Unnamed")}<span class="mini"><i style="width:${Math.round(100*hp/Math.max(1,C.hpMax))}%"></i></span></button>`}).join("")}
+    return `<button class="chip ${p===sel?"on":""}" data-act="ship-sel" data-doc="${esc(p)}"><span class="av">✦</span>${esc(s.name||"Unnamed")}<span class="mini"><i style="width:${Math.round(100*hp/Math.max(1,C.hpMax))}%"></i></span>${gm&&!s.shared?`<span class="tag">hidden</span>`:""}</button>`}).join("")}
     ${gm?`<button class="btn pri sm" data-act="ship-new">+ New party ship</button>`:""}</div>`;
   if(!sel)return switcher+`${list}<div class="empty" style="margin-top:16px">${gm?"No party ship yet. Use “+ New party ship” to build one.":"Your GM hasn't added a ship yet."}</div>`;
   return switcher+list+renderShipSheet(sel);
@@ -482,9 +483,9 @@ function renderShipSheet(sp){
   const step=(f,d,lbl,dis)=>`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="${f}" data-d="${d}" ${dis?"disabled":""} aria-label="${lbl}">${d>0?"+":"−"}</button>`;
   const head=`<header class="sheethead shiphead"><div class="sheethead-in">
     <div class="portrait shipicon">${s.npc?"⚠":"✦"}</div>
-    <div class="who"><h1>${esc(s.name||"Unnamed ship")}</h1><div class="sub">${esc(C.H[0])} · ${C.cls}${C.sysDrive?" · System drive":" · Spike drive-"+C.drive+(C.drive<C.driveFull?" (damaged from "+C.driveFull+")":"")}${s.npc?` · <b style="color:var(--bad)">NPC ship</b> (only you see this)`:""}</div>
+    <div class="who"><h1>${esc(s.name||"Unnamed ship")}</h1><div class="sub">${esc(C.H[0])} · ${C.cls}${C.sysDrive?" · System drive":" · Spike drive-"+C.drive+(C.drive<C.driveFull?" (damaged from "+C.driveFull+")":"")}${s.npc?` · <b style="color:var(--bad)">NPC ship</b> (only you see this)`:!s.shared?` · <b style="color:#c27b13">Hidden from players</b>`:""}</div>
       <div class="sub" style="opacity:.8">Crew ${num(s.crew,C.crewMin)} (min ${C.crewMin}, max ${C.crewMax})${C.cargo?" · Cargo "+C.cargo+" tons":""} · Value ${money(C.cost)} cr · Maintenance ${money(C.maint)} cr / 6 months</div></div>
-    <div class="bactions">${gm?`<button class="btn dk" data-act="ship-refit" data-doc="${esc(sp)}">Refit / edit</button>${s.npc?`<button class="btn dk" data-act="view" data-v="ships" onclick="S.shipMode='npc';S.shipFull=false">← NPC ships</button>`:""}<button class="btn dk" data-act="ship-del" data-doc="${esc(sp)}">${S.confirm==="ship-del:"+sp?"Click again to delete":"Delete"}</button>`:""}</div>
+    <div class="bactions">${gm?`<button class="btn dk" data-act="ship-refit" data-doc="${esc(sp)}">Refit / edit</button>${s.npc?`<button class="btn dk" data-act="view" data-v="ships" onclick="S.shipMode='npc';S.shipFull=false">← NPC ships</button>`:`<button class="btn dk" data-act="ship-vis" data-doc="${esc(sp)}">${s.shared?"Hide from players":"Show to players"}</button>`}<button class="btn dk" data-act="ship-del" data-doc="${esc(sp)}">${S.confirm==="ship-del:"+sp?"Click again to delete":"Delete"}</button>`:""}</div>
   </div></header>`;
   const box=(label,val,sub,extra="",key="")=>`<div class="frame stat shipstat"><div class="lbl">${key?`<button class="rword" data-act="rule" data-key="${key}">${label}</button>`:label}</div><div class="big">${val}</div>${sub?`<div class="hint">${sub}</div>`:""}${extra}</div>`;
   const top=`<section class="shiptop">
@@ -663,7 +664,7 @@ function renderShipWizard(){
     body=`<div class="grid2">
       <div class="field"><span class="lbl">Crew aboard</span><input class="inp" type="number" min="${D.crewMin}" max="${D.crewMax}" data-sw="crew" value="${num(w.crew,D.crewMin)}"><span class="hint">Min ${D.crewMin}, max ${D.crewMax}. Three are needed for a safe drill.</span></div>
       <div class="field"><span class="lbl">NPC crew skill</span><input class="inp" type="number" min="-1" max="4" data-sw="crewSkill" value="${num(w.crewSkill,1)}"><span class="hint">Used for any station no character is on. The book uses +1 for civilian crews, +2 military, +3 elite.</span></div>
-      ${S.isGM||S.offline?`<label class="chk"><input type="checkbox" data-sw="npc" ${w.npc?"checked":""}> Enemy / NPC ship (hidden from players until you show it)</label>`:""}
+      ${S.isGM||S.offline?`<label class="chk"><input type="checkbox" data-sw="npc" ${w.npc?"checked":""}> NPC ship (only you see it)</label>${w.npc?"":`<label class="chk"><input type="checkbox" data-sw="hidden" ${w.hidden?"checked":""}> Hide from players for now (no spoilers)</label>`}`:""}
       ${w.npc?`<div class="field"><span class="lbl">Command Points per turn</span><select class="inp" data-sw="npcCP">${[[4,"4: fighters and civilians"],[5,"5: military or pirates"],[6,"6: native spacers, elite warships"],[7,"7: the finest crews in space"]].map(([v,l])=>`<option value="${v}" ${num(w.npcCP,4)===v?"selected":""}>${l}</option>`).join("")}</select></div>
       <div class="field"><span class="lbl">Gunnery hit bonus</span><input class="inp" type="number" data-sw="npcHit" value="${esc(w.npcHit??num(w.crewSkill,1)+2)}"><span class="hint">The book's example ships list this next to each gun.</span></div>`:""}
     </div>
@@ -690,7 +691,7 @@ function swAct(act,t){
     case "sw-finish":{const D=swDesign();if(D.power>D.powerMax||D.mass>D.massMax||D.hard>D.hardMax||D.issues.length)return true;
       const data={name:(w.name||"").trim()||"Unnamed ship",hull:w.hull,drive:D.sysDrive?0:num(w.drive,1),weapons:w.weapons||[],defenses:w.defenses||[],fittings:w.fittings||[],crew:Math.max(D.crewMin,Math.min(D.crewMax,num(w.crew,D.crewMin))),crewSkill:num(w.crewSkill,1),npc:!!w.npc,npcCP:num(w.npcCP,4),npcHit:w.npc?num(w.npcHit,num(w.crewSkill,1)+2):null};
       if(w.editing){const sp=w.editing;const s=S.docs[sp];if(!s)return true;Object.entries(data).forEach(([k,v])=>setField(sp,k,v));const C=shipCompute(S.docs[sp]);if(num(s.hp,C.hpMax)>C.hpMax)setField(sp,"hp",C.hpMax);if(num(s.fuel,C.fuelMax)>C.fuelMax)setField(sp,"fuel",C.fuelMax);toastMsg("Refit saved.");S.shipSel=sp}
-      else{const path=(S.offline?"ships/local-":"ships/")+rid();createDoc(path,{...data,hp:D.hpMax,fuel:D.fuelMax,cp:0,crises:[],roles:{},tmp:{},sys:{},ammo:{},escape:0,shared:!data.npc,notes:"",createdAt:Date.now()});if(S.offline)S.exists[path]=true;S.shipSel=path;toastMsg("Ship created.")}
+      else{const path=(S.offline?"ships/local-":"ships/")+rid();createDoc(path,{...data,hp:D.hpMax,fuel:D.fuelMax,cp:0,crises:[],roles:{},tmp:{},sys:{},ammo:{},escape:0,shared:!data.npc&&!w.hidden,notes:"",createdAt:Date.now()});if(S.offline)S.exists[path]=true;S.shipSel=path;toastMsg("Ship created.")}
       S.shipMode=data.npc?"npc":"party";S.shipFull=false;S.sw=null;S.view="ships";S.shipTab="combat";render();return true}
   }
   return false;
