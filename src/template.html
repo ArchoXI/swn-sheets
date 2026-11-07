@@ -1775,7 +1775,7 @@ function renderLog(){
   if(!S.logOpen)return btn;
   const all=(S.isGM||S.offline)?[...S.rolls,...S.npcRolls.map(r=>({...r,_npc:true}))].sort((a,b)=>num(b.ts)-num(a.ts)):S.rolls;
   const list=all.slice(0,60).reverse().map(r=>`<div class="entry ${r._npc?"npcentry":""}"><div class="who"><span><b>${esc(r.char||"Someone")}</b>${r.player?" · "+esc(r.player):""}${r._npc?` <span class="tag">GM only</span>`:""}</span><span>${ago(num(r.ts))}</span></div><div class="what">${esc(r.label)}</div>${(r.lines||[]).map(lineHtml).join("")}${r._npc?`<button class="btn sm ghost" style="margin-top:4px" data-act="npc-reveal" data-id="${esc(r.id)}">Show to players</button>`:""}</div>`).join("");
-  return `<aside class="log" aria-label="Game log"><div class="frame-h"><h3>Game log</h3><span style="display:flex;gap:6px"><button class="btn sm ghost" data-act="fx-toggle" title="Dice animations on this device">🎲 ${fxEnabled()?"On":"Off"}</button>${S.isGM&&S.rolls.length?`<button class="btn sm ghost" data-act="clear-log">${S.confirm==="log"?"Click again":"Clear"}</button>`:""}<button class="iconbtn" data-act="log-toggle" aria-label="Close log">×</button></span></div>
+  return `<aside class="log" aria-label="Game log"><div class="frame-h"><h3>Game log</h3><span style="display:flex;gap:6px"><button class="btn sm ghost" data-act="fx-toggle" title="Dice animations on this device">🎲 ${fxEnabled()?"On":"Off"}</button>${(S.isGM||S.offline)&&(S.rolls.length||(S.npcRolls||[]).length)?`<button class="btn sm ghost" data-act="clear-log" title="Deletes every roll for everyone, including your GM log">${S.confirm==="log"?"Clear everything?":"Clear"}</button>`:""}<button class="iconbtn" data-act="log-toggle" aria-label="Close log">×</button></span></div>
     <div class="log-list">${list||`<div class="empty">No rolls yet. Click any number with a box around it on a sheet.</div>`}</div>
     <form class="log-f" data-form="custom"><input id="custom-roll" placeholder="Roll dice, e.g. 2d6+1" aria-label="Custom roll" autocomplete="off"><button class="btn pri sm" type="submit">Roll</button></form></aside>${btn}`;
 }
@@ -1987,7 +1987,10 @@ document.addEventListener("click",e=>{
     case "release":{if(!cur||!S.isGM)break;setField(cur.path,"owners",[]);render();break}
     case "gm-login":S.drawer={kind:"gm"};render();break;
     case "gm-submit":gmSubmit();break;
-    case "clear-log":{if(S.confirm!=="log"){S.confirm="log";render();break}S.confirm=null;const ids=S.rolls.map(r=>r.id);S.rolls=[];render();(async()=>{for(const id of ids){try{await S.db.doc("rolls/"+id).delete()}catch(e){}}})();break}
+    case "clear-log":{if(!(S.isGM||S.offline))break;if(S.confirm!=="log"){S.confirm="log";render();break}S.confirm=null;S.rolls=[];S.npcRolls=[];render();
+      if(S.offline||!S.db)break;
+      (async()=>{let n=0;try{for(const coll of ["rolls","npcrolls"]){for(;;){const snap=await S.db.collection(coll).limit(300).get();if(snap.empty)break;const b=S.db.batch();snap.docs.forEach(d=>b.delete(d.ref));await b.commit();n+=snap.size}}
+        toastMsg("Game log cleared ("+n+" roll"+(n===1?"":"s")+").")}catch(e){toastMsg("Couldn't clear all of the log. Try again.",true)}})();break}
   }
 });
 function itemPickOpts(blank,weaponsOnly){
