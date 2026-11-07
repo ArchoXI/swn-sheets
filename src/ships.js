@@ -207,7 +207,7 @@ function shipEmit(sp,r,label,lines){
 }
 const bestOf=(R,attrs)=>attrs.reduce((b,a)=>R.mod[a]>R.mod[b]?a:b,attrs[0]);
 // A ship skill check. attrs like ["int","dex"]; returns {total, ok}
-function shipCheck(sp,dept,{attrs=["int"],skill,diff=null,label,extra=[],note="",opposed=false,skillOverride}={}){
+function shipCheck(sp,dept,{attrs=["int"],skill,diff=null,label,extra=[],note="",opposed=false,skillOverride,result}={}){
   const s=S.docs[sp];const C=shipCompute(s);const r=shipRoller(s,dept);
   const dice=[{v:rand(6),s:6},{v:rand(6),s:6}];let parts=[];
   if(r.pc){const sk=skillOverride||skill;const a=bestOf(r.R,attrs);const lv=r.R.skills[sk]??-1;
@@ -217,7 +217,9 @@ function shipCheck(sp,dept,{attrs=["int"],skill,diff=null,label,extra=[],note=""
   parts.push(...extra);
   const total=dice.reduce((a,d)=>a+d.v,0)+parts.reduce((a,p)=>a+p.v,0);
   const ok=diff!=null?total>=diff:null;
-  shipEmit(sp,r,label,[{name:r.name,dice,parts,total,verdict:diff!=null?(ok?["ok","Success"]:["no","Failure"]):null,note:[opposed?"Opposed roll":"",diff!=null?"vs difficulty "+diff:"",note].filter(Boolean).join(" · ")}]);
+  const lines=[{name:r.name,dice,parts,total,verdict:diff!=null?(ok?["ok","Success"]:["no","Failure"]):null,note:[opposed?"Opposed roll":"",diff!=null?"vs difficulty "+diff:"",note].filter(Boolean).join(" · ")}];
+  if(result){const x=result(ok,r);if(x)lines.push({dice:[],parts:[],...x})}
+  shipEmit(sp,r,label,lines);
   return {total,ok,r};
 }
 function shipSkillLv(s,dept,sk){const r=shipRoller(s,dept);return r.pc?Math.max(0,r.R.skills[sk]??-1):Math.max(0,num(s.crewSkill,1))}
@@ -307,8 +309,10 @@ function shipAct(act,t){
     // ---- department actions
     case "ship-duty":{if(!need(D))return true;setField(sp,"cp",num(s.cp)+1);shipEmit(sp,shipRoller(s,D),"Do Your Duty",[{name:"Command Points",dice:[],parts:[],total:"+1",note:"Now "+(num(s.cp))+" CP"}]);render();return true}
     case "ship-above":{if(!need(D))return true;const a=$("#ab-attr-"+D)?.value||"int";const sk=$("#ab-skill-"+D)?.value||"fix";
-      const res=shipCheck(sp,D,{attrs:[a],skill:sk,diff:9,label:"Above and Beyond",note:"success: +"+(shipSkillLv(s,D,sk)+1)+" CP · failure: −1 CP"});
-      setField(sp,"cp",num(s.cp)+(res.ok?shipSkillLv(s,D,sk)+1:-1));render();return true}
+      const lv=shipSkillLv(s,D,sk);const before=num(s.cp);const skName=shipRoller(s,D).pc?(SKILL[sk]?.name||sk)+"-"+lv:"Crew skill "+lv;
+      shipCheck(sp,D,{attrs:[a],skill:sk,diff:9,label:"Above and Beyond",result:ok=>{const g=ok?lv+1:-1;setField(sp,"cp",before+g);
+        return {name:"Command Points",total:g,note:(ok?skName+" + 1 = +"+g+" CP":"Failed: the ship loses 1 CP")+" · ship now has "+(before+g)+" CP"}}});
+      render();return true}
     case "ship-crisis-deal":{if(!need(D))return true;const id=$("#cr-pick-"+D)?.value;const cr=(s.crises||[]).find(c=>c.id===id);if(!cr){toastMsg("No crisis selected.",true);return true}
       const a=$("#cr-attr-"+D)?.value||"int";const sk=$("#cr-skill-"+D)?.value||"fix";const diff=num($("#cr-diff-"+D)?.value,10);
       const res=shipCheck(sp,D,{attrs:[a],skill:sk,diff,label:"Deal With a Crisis: "+cr.type});
