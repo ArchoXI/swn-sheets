@@ -1466,7 +1466,6 @@ function renderSheet(){
   const skills=`<div class="frame"><div class="frame-b" style="padding-top:12px">
     <div class="skhead"><span>Level</span><span>${E?"":"Attr"}</span><span>Skill</span><span style="text-align:center">Bonus</span></div>
     <ul class="skills">${SKILLS.map(s=>skillRow(s[0],s[1],"skills",s[2])).join("")}</ul>
-    ${E?"":`<div class="sklegend"><span class="sklv lvu">–</span> untrained <span class="sklv lv0">0</span><span class="sklv lv1">1</span><span class="sklv lv2">2</span><span class="sklv lv3">3</span><span class="sklv lv4">4</span> skill level</div>`}
     ${R.psychic||E?`<div class="lbl" style="margin:14px 0 4px;color:var(--info)">Psychic disciplines</div><ul class="skills">${PSY.map(s=>skillRow(s[0],s[1],"psy","")).join("")}</ul>`:""}
   </div><div class="frame-f"><button class="rword" data-act="rule" data-key="skilllevels">Skills</button></div></div>`;
 
