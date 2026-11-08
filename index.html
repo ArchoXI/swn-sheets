@@ -346,6 +346,11 @@ textarea.inp{resize:vertical;min-height:70px}
 .eslots{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0}
 .eslot{width:22px;height:22px;border:2px solid var(--info);border-radius:5px;background:var(--card);padding:0;display:inline-block}
 .eslot.used{background:var(--info)}
+.eslot.torch{border-color:#e8590c;border-style:dashed}.eslot.torch.used{background:#e8590c;border-style:solid}
+.torchrow{display:flex;align-items:center;gap:4px 8px;flex-wrap:wrap;margin-top:6px;font-size:12px}
+.torchrow .hint{font-size:12px}
+.torchbtn{color:#c2410c;border-color:#e8590c}
+.torchpick{margin-top:6px}.torchpick>div{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
 button.eslot:hover{box-shadow:0 0 0 2px rgba(44,122,148,.25)}
 .fxlayer{position:fixed;inset:0;pointer-events:none;z-index:55;overflow:hidden}
 .fxdie{position:absolute;left:0;top:0;width:92px;height:92px;display:grid;place-items:center;background:var(--accent);color:#fff;font-family:var(--display);font-weight:800;font-size:34px;will-change:transform,opacity;filter:drop-shadow(0 8px 12px rgba(0,0,0,.35))}
@@ -924,13 +929,14 @@ const RULES = {
   skilllevels:{t:"Skill Levels",p:["Level-0: basic competence. Level-1: an experienced professional. Level-2: a veteran expert. Level-3: a master, likely one of the best on the planet. Level-4: one of the best in the sector.","Untrained skills count as −1. No starting character has a skill above level-1."]},
   keep3:{t:"3d6, keep best 2",p:["Some foci let you roll 3d6 and drop the lowest die on checks with a particular skill. Turn this on before rolling when it applies."]},
   attack:{t:"Attack Rolls",p:["Roll 1d20 and add your attack bonus, your Shoot, Stab, or Punch skill, and the weapon's attribute modifier (the better one if two are listed). Energy weapons add +1. If the total equals or beats the target's Armor Class, you hit.","Without even level-0 in the combat skill, take −2.","Damage is the weapon's damage dice plus the same attribute modifier. Punch attacks also add your Punch skill."]},
+  torch:{t:"Torching",p:["Psychics can push past their limits by torching. It's an Instant action, once per round, that gives a free point of Effort for the rest of the scene, even over your maximum.","Every time you torch, roll a d6. On a 1 or 2, lose 1 point of Wisdom. On a 3 or 4, lose 1 Constitution. On a 5, lose 1 point from an attribute you choose. On a 6, no harm is done. The loss is permanent; nothing known can heal it.","A psychic whose Wisdom drops below 3 goes violently insane and becomes a feral psychic. Below 3 in any other attribute, they're dead or no longer playable. Untrained psychics torch every time they use their powers."]},
   shock:{t:"Shock",p:["Many melee weapons have a Shock score, like 2/AC 15. If you miss a target whose AC is equal to or less than that number, they still take the Shock damage, plus your attribute modifier and any other damage bonuses.","A hit never does less damage than its Shock would on a miss."]},
   bab:{t:"Attack Bonus",p:["Your attack bonus is half your level, rounded down. Warriors use their full level.","Partial Warriors add +1 at 1st level and another +1 at 5th."]},
   saves:{t:"Saving Throws",p:["Roll 1d20. If you equal or beat the save, you resist. A natural 20 always succeeds.","Each save is 16 minus your level, minus the better of two attribute modifiers (so 15 minus the modifier at 1st level).","Physical (STR or CON): poison, disease, exhaustion. Evasion (DEX or INT): dodging sudden perils and explosions. Mental (WIS or CHA): psychic influence and mind-bending technology.","Bonuses to a save lower its target number."]},
   ac:{t:"Armor Class",p:["To hit you, an enemy rolls 1d20 plus their attack bonus and must equal or beat your AC. Your AC is your armor's AC (10 with none) plus your DEX modifier.","Suits of armor don't stack; the sheet uses your best Readied armor. A Readied shield gives base AC 13, or +1 if your armor is already that good."]},
   hp:{t:"Hit Points",p:["Hit points show how close you are to being defeated.","At 1st level, roll 1d6 + CON modifier (minimum 1). Warriors and Partial Warriors add 2. When you level up you re-roll; the level-up wizard handles it.","At 0 HP from a lethal attack you're mortally wounded and die after six rounds unless someone stabilizes you (Int/Heal or Dex/Heal: difficulty 10 plus the rounds since you fell, 8 with a medkit, 6 with a Lazarus patch). Stabilized characters regain 1 HP after ten minutes.","If you're hurt but not mortally wounded, you regain your level in hit points after each night's peaceful rest."]},
   strain:{t:"System Strain",p:["System strain measures the stress on your body from psionic healing, cybernetic implants, and powerful drugs. Your maximum is your CON score.","If something would push your strain past your CON, it simply doesn't work on you.","Installed cyberware adds permanent strain. Other strain drops by 1 after each night of rest, if you're well-fed and not sick."]},
-  effort:{t:"Effort",p:["Psychics use Effort to power their techniques. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Each use of a power commits one point. Depending on the power, it stays committed while the power is active, for the scene, or for the rest of the day, then returns. A good night's rest refreshes all Effort.","On the sheet, click a box to mark a point spent and click it again when it returns. Night's rest refreshes them all."]},
+  effort:{t:"Effort",p:["Psychics use Effort to power their techniques. Max Effort = 1 + your highest psychic skill + the better of your WIS or CON modifiers.","Each use of a power commits one point. Depending on the power, it stays committed while the power is active, for the scene, or for the rest of the day, then returns. A good night's rest refreshes all Effort.","On the sheet, click a box to mark a point spent and click it again when it returns. Night's rest refreshes them all.","Torching: once per round, as an Instant, a psychic can gain a free point of Effort for the rest of the scene, even over their maximum. Each torch rolls a d6: 1–2 lose 1 Wisdom, 3–4 lose 1 Constitution, 5 lose 1 point from an attribute you choose, 6 no harm. The loss is permanent. Wisdom below 3 makes the psychic feral; any other attribute below 3 ends the character. Torched points show dashed orange and vanish at the end of the scene or on a night's rest."]},
   init:{t:"Initiative",p:["At the start of combat, everyone rolls 1d8 + DEX modifier. Actors go from high to low, and PCs win ties. Initiative isn't re-rolled each round."]},
   enc:{t:"Encumbrance",p:["You can have Readied items up to half your STR score, rounded down. Readied items are worn, in hand, or in sheaths, holsters and belt pouches.","You can have Stowed items up to your full STR score. Getting a Stowed item out in a hurry takes your Main Action.","Up to 2 extra Readied or 4 extra Stowed items makes you Lightly Encumbered: movement drops from 10 to 7 meters per round. Up to 2 more Readied or 4 more Stowed beyond that makes you Heavily Encumbered: 5 meters per round.","Worn armor counts as Readied; normal clothes don't. Very small items in small numbers don't count. Small items can be bundled (about 6 power cells or 3 magazines per item), but getting into a bundle takes an extra round.","Stored items are left on the ship or at home and don't count."]},
   xp:{t:"Experience & Levels",p:["XP to reach each level: 2nd 3, 3rd 6, 4th 12, 5th 18, 6th 27, 7th 39, 8th 54, 9th 72, 10th 93.","A successful session usually earns about 3 XP."]},
@@ -1166,6 +1172,7 @@ function compute(c){
   }else if(hasFocus(R,"wild_psychic")){
     const v=hasFocus(R,"wild_psychic",2)?2:1;R.effortMax=ovr("effortMax",v,[{l:"Wild Psychic Talent",v}]);
   }else R.effortMax=0;
+  R.torched=R.effortMax>0?Math.max(0,num(c.torched)):0;R.effortBase=R.effortMax;R.effortMax+=R.torched;
   R.effortUsed=Math.max(0,Math.min(R.effortMax,c.effortUsed!=null?num(c.effortUsed):num(c.effort?.scene)+num(c.effort?.day)));
   R.effortLeft=R.effortMax-R.effortUsed;
   // init
@@ -1435,9 +1442,18 @@ function renderSheet(){
   const acSvg=`<button class="ac" data-act="rule" data-key="ac" aria-label="Armor Class ${R.ac}"><svg class="acsvg" viewBox="0 0 100 112"><path class="sh" d="M50 4 L92 18 L88 62 Q82 92 50 108 Q18 92 12 62 L8 18 Z" fill="#fff" stroke="#c53131" stroke-width="3"/><path d="M50 11 L85 23 L81 61 Q76 86 50 100 Q24 86 19 61 L15 23 Z" fill="none" stroke="#c53131" stroke-opacity=".35" stroke-width="1"/><text x="50" y="36" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63" class="lb">ARMOR</text><text x="50" y="72" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="36" fill="#1d1d1f" class="tx">${R.ac}</text><text x="50" y="88" text-anchor="middle" font-family="Roboto Condensed,Arial Narrow,sans-serif" font-weight="700" font-size="12" fill="#5f5f63" class="lb">CLASS</text></svg>${R.ov.ac?`<span class="ovr-badge">GM</span>`:""}${R.totalDefense?`<span class="ovr-badge" style="background:var(--good);top:auto;bottom:4px;right:auto;left:0;position:absolute" title="Total Defense">+2 Total Defense</span>`:""}</button>`;
   const strainPips=Array.from({length:Math.max(R.strainMax,0)},(_,i)=>`<i class="${i<R.strainPerm?"p":i<R.strainCur?"f":""}"></i>`).join("");
   const effUsed=R.effortUsed;
-  const effPips=Array.from({length:R.effortMax},(_,i)=>can?`<button class="eslot ${i<effUsed?"used":""}" data-act="eff-slot" data-i="${i}" title="${i<effUsed?"Spent: click to get it back":"Available: click to spend"}" aria-label="Effort point ${i+1}, ${i<effUsed?"spent":"available"}"></button>`:`<span class="eslot ${i<effUsed?"used":""}"></span>`).join("");
+  const effPips=Array.from({length:R.effortMax},(_,i)=>can?`<button class="eslot ${i<effUsed?"used":""} ${i>=R.effortBase?"torch":""}" data-act="eff-slot" data-i="${i}" title="${i<effUsed?"Spent: click to get it back":"Available: click to spend"}" aria-label="Effort point ${i+1}, ${i<effUsed?"spent":"available"}"></button>`:`<span class="eslot ${i<effUsed?"used":""}"></span>`).join("");
   const strainBox=`<div class="ibox"><div class="row">${L("strain","System Strain"+ovBadge(R,"strainMax"))}${can?`<span><button class="iconbtn" data-act="strain" data-d="-1" aria-label="Less strain">−</button> <button class="iconbtn" data-act="strain" data-d="1" aria-label="More strain">+</button></span>`:""}</div><span class="big num">${R.strainCur}<small> / ${R.strainMax}</small></span><div class="pipline" style="justify-content:flex-start" title="Red: permanent from cyberware. Amber: temporary.">${strainPips}</div></div>`;
-  const thirdBox=R.effortMax>0?`<div class="ibox"><div class="row">${L("effort","Effort"+ovBadge(R,"effortMax"))}<span class="big num">${R.effortLeft}<small> / ${R.effortMax}</small></span></div><div class="eslots">${effPips}</div></div>`
+  const tl=(c.torchLog||[]).slice(-1)[0];const low=["wis","con","str","dex","int","cha"].filter(a=>num(c.attrs?.[a],10)<=3);
+  const torchUI=R.effortMax>0&&(R.effortBase>0)?`<div class="torchrow">
+      ${can?`<button class="btn sm torchbtn" data-act="torch" title="Instant, once per round: +1 Effort for the scene. Roll d6 for permanent attribute loss.">${S.confirm==="torch"?"Torch? Click again":"🔥 Torch"}</button>`:""}
+      ${R.torched?`<span class="hint">+${R.torched} torched${can?` · <button class="rword hint" data-act="torch-endscene" title="Torched Effort lasts only for the scene">end scene</button>`:""}</span>`:""}
+      ${(S.isGM||S.offline)&&tl?`<button class="rword hint" data-act="torch-undo" title="Undo the last torch: restores the attribute point and removes the torched Effort">${S.confirm==="torch-undo"?"Click again":"Undo torch"}</button>`:""}
+    </div>
+    ${c.torchPick&&can?`<div class="torchpick"><span class="hint">Rolled a 5: choose the attribute to lose 1 point from</span><div>${["str","dex","con","int","wis","cha"].map(a=>`<button class="btn sm" data-act="torch-pick" data-a="${a}">${a.toUpperCase()} ${num(c.attrs?.[a],10)}</button>`).join("")}</div></div>`:""}
+    ${S.confirm==="torch"&&low.length?`<div class="notice">${low.map(a=>a.toUpperCase()+" "+num(c.attrs?.[a],10)).join(", ")}: one more point lost here would drop below 3. ${low.includes("wis")?"Wisdom below 3 means a feral psychic.":"Below 3 means the character is no longer playable."}</div>`:""}
+    ${["str","dex","con","int","wis","cha"].some(a=>num(c.attrs?.[a],10)<3)?`<div class="notice">${num(c.attrs?.wis,10)<3?"Wisdom is below 3: this psychic has gone feral.":"An attribute is below 3: this character is dead or no longer playable."}</div>`:""}`:"";
+  const thirdBox=R.effortMax>0?`<div class="ibox"><div class="row">${L("effort","Effort"+ovBadge(R,"effortMax"))}<span class="big num">${R.effortLeft}<small> / ${R.effortMax}</small></span></div><div class="eslots">${effPips}</div>${torchUI}</div>`
     :`<div class="ibox"><span class="lbl" style="cursor:default">${esc(className(c))}</span>${classAbilities(c).filter(x=>x.short).map(x=>`<p>${esc(x.short)}</p>`).join("")}</div>`;
   const eff=(c.effects||[]).filter(f=>f.active);
   const condBox=`<div class="ibox">${L("mods","Effects & Conditions")}${eff.length?eff.map(f=>`<p><b style="color:var(--text)">${esc(f.name||"Effect")}</b> ${(f.mods||[]).map(m=>esc(TARGET_NAME[m.target]||m.target)+" "+sgn(m.value)).join(", ")}</p>`).join(""):`<p>None active</p>`}</div>`;
@@ -1890,7 +1906,7 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  const keepConfirm=["torch","torch-undo","ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
@@ -1930,10 +1946,28 @@ document.addEventListener("click",e=>{
     case "opt-sit":S.opts.sit=Math.max(-10,Math.min(10,num(S.opts.sit)+num(t.dataset.d)));render();break;
     case "hp":edit((c,p)=>{const amt=Math.abs(num($("#hp-amt")?.value));if(!amt)return;const R=compute(c);const v=Math.max(0,Math.min(R.hpMax,num(c.hp?.cur)+num(t.dataset.sign)*amt));setField(p,"hp.cur",v)});break;
     case "strain":edit((c,p)=>{const R=compute(c);setField(p,"strain.temp",Math.max(0,Math.min(Math.max(0,R.strainMax-R.strainPerm),num(c.strain?.temp)+num(t.dataset.d))))});break;
+    case "torch":edit((c,p)=>{if(S.confirm!=="torch"){S.confirm="torch";render();return}S.confirm=null;
+      const R=compute(c);if(!R.effortBase){toastMsg("Only psychics can torch.",true);return}
+      const v=rand(6);const res=v<=2?"wis":v<=4?"con":v===5?"pick":null;const log=[...(c.torchLog||[])];
+      setField(p,"torched",num(c.torched)+1);
+      let note;if(res==="pick"){note="Lose 1 point from an attribute of your choice";setField(p,"torchPick",true);log.push({ts:Date.now(),v,attr:null})}
+      else if(res){const before=num(c.attrs?.[res],10);setField(p,"attrs."+res,before-1);note="Lose 1 "+(res==="wis"?"Wisdom":"Constitution")+" ("+before+" → "+(before-1)+")";log.push({ts:Date.now(),v,attr:res})}
+      else{note="No harm done";log.push({ts:Date.now(),v,attr:null})}
+      setField(p,"torchLog",log.slice(-20));
+      emitRoll(c,"Torching (+1 Effort for the scene)",[{name:"d6",dice:[{v,s:6}],parts:[],total:v,note}]);
+      const after=compute(S.docs[p]);if(["str","dex","con","int","wis","cha"].some(a=>num(S.docs[p].attrs?.[a],10)<3))toastMsg(num(S.docs[p].attrs?.wis,10)<3?"Wisdom has dropped below 3. This psychic goes feral.":"An attribute has dropped below 3.",true)});break;
+    case "torch-pick":edit((c,p)=>{if(!c.torchPick)return;const a=t.dataset.a;const before=num(c.attrs?.[a],10);setField(p,"attrs."+a,before-1);setField(p,"torchPick",false);
+      const log=[...(c.torchLog||[])];if(log.length)log[log.length-1]={...log[log.length-1],attr:a};setField(p,"torchLog",log);
+      emitRoll(c,"Torching: chose "+a.toUpperCase(),[{name:a.toUpperCase(),dice:[],parts:[],total:before-1,note:"Lost 1 point ("+before+" → "+(before-1)+")"}])});break;
+    case "torch-endscene":edit((c,p)=>{const R=compute(c);setField(p,"torched",0);setField(p,"effortUsed",Math.min(num(c.effortUsed),R.effortBase));toastMsg("Torched Effort is gone.")});break;
+    case "torch-undo":{if(!(S.isGM||S.offline))break;const cur=currentChar();if(!cur)break;if(S.confirm!=="torch-undo"){S.confirm="torch-undo";render();break}S.confirm=null;
+      const c=cur.c,p=cur.path;const log=[...(c.torchLog||[])];const last=log.pop();if(!last)break;
+      if(last.attr)setField(p,"attrs."+last.attr,num(c.attrs?.[last.attr],10)+1);
+      setField(p,"torched",Math.max(0,num(c.torched)-1));setField(p,"torchPick",false);setField(p,"torchLog",log);toastMsg("Last torch undone"+(last.attr?": "+last.attr.toUpperCase()+" restored.":"."));render();break}
     case "eff-slot":edit((c,p)=>{const R=compute(c);const i=num(t.dataset.i);const used=R.effortUsed;setField(p,"effortUsed",i<used?i:i+1);if(c.effort)setField(p,"effort",null)});break;
     case "rest-open":{if(!cur||!canEdit(cur.path))break;S.drawer={kind:"rest",path:cur.path};render();break}
     case "rest-do":{const d=S.drawer;if(!d||d.kind!=="rest")break;const c=S.docs[d.path];if(!c||!canEdit(d.path))break;const r=restPreview(c);
-      setField(d.path,"effortUsed",0);if(c.effort)setField(d.path,"effort",null);
+      setField(d.path,"effortUsed",0);if(c.effort)setField(d.path,"effort",null);if(num(c.torched))setField(d.path,"torched",0);
       setField(d.path,"strain.temp",r.strainAfter);
       if(r.heal>0)setField(d.path,"hp.cur",r.hpAfter);
       if(c.totalDefense)setField(d.path,"totalDefense",false);
