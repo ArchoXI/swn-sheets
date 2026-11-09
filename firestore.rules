@@ -8,6 +8,11 @@ service cloud.firestore {
     }
 
     // One-time GM setup marker. Created together with the first GM passcode.
+    // GM-only private notes (initiative tracker).
+    match /gmprivate/{id} {
+      allow read, write: if isGM();
+    }
+
     match /config/setup {
       allow read: if signedIn();
       allow create: if signedIn() && request.resource.data.keys().hasOnly(['done', 'at']);

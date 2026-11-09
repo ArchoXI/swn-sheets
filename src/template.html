@@ -889,6 +889,30 @@ button,a,input,select,label{touch-action:manipulation}
 :root[data-theme="galaxy"] .inp,:root[data-theme="galaxy"] select.inp,:root[data-theme="galaxy"] textarea.inp{background:rgba(8,5,25,.75)}
 @media (prefers-reduced-motion:reduce){:root[data-theme="galaxy"] body::before,:root[data-theme="galaxy"] body::after,:root[data-theme="galaxy"] .shoot{animation:none}}
 .hidtag{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 4px;vertical-align:middle}
+.inibar{display:flex;align-items:center;gap:18px;padding:12px 16px;margin-bottom:12px;flex-wrap:wrap}
+.inibar>div{display:flex;flex-direction:column;gap:2px}
+.inibtns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.inigrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px;align-items:start}
+.inirow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px}
+.inirow.cur{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.inirow.out{opacity:.45}
+.inival{display:flex;flex-direction:column;gap:4px;align-items:center}
+.inival input{width:56px;text-align:center;font-size:20px;font-weight:700;padding:4px}
+.ininame{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ininame .rword{text-align:left;padding:0}
+.ininote{font-size:12px;padding:3px 6px}
+.inib{width:48px;padding:1px 4px;font-size:12px}
+.inihp{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:110px}
+.inihpc{display:flex;gap:4px;align-items:center}.inihpc input{width:52px;text-align:center;padding:3px}
+.inictl{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end;max-width:170px}
+.iniq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.iniq label{display:flex;flex-direction:column;gap:2px}.iniq input{width:100%}
+@media (max-width:760px){.inigrid{grid-template-columns:minmax(0,1fr)}
+.inirow{grid-template-columns:auto minmax(0,1fr);gap:8px 10px;padding:8px}
+.inival{flex-direction:row}.inival input{width:48px;font-size:18px}
+.inirow .inival{grid-column:1/2;grid-row:1}.inirow .ininame{grid-column:2/3;grid-row:1/3}
+.inihp{grid-column:1/2;grid-row:2;flex-direction:row;min-width:0;align-items:center}.inihp .lbl{display:none}.inihp .hint{display:none}.inihpc input{width:42px}
+.inictl{grid-column:1/3;grid-row:3;max-width:none;justify-content:flex-start}
+.inibar{gap:10px;padding:10px 12px}}
 </style>
 </head>
 <body>
@@ -1437,7 +1461,7 @@ function renderTop(){
     <button class="navbtn ${S.view==="party"?"on":""}" data-act="view" data-v="party">Party</button>
     <button class="navbtn ${S.view==="compendium"?"on":""}" data-act="view" data-v="compendium">Compendium</button>
     ${S.me||S.offline?`<button class="btn pri sm" data-act="wiz-open">+ New character</button>`:""}
-    ${S.isGM||S.offline?`<button class="navbtn ${S.view==="generators"?"on":""}" data-act="view" data-v="generators">Generators</button><button class="navbtn ${S.view==="mechs"||S.view==="mechwiz"?"on":""}" data-act="view" data-v="mechs">Mechs</button>`:""}
+    ${S.isGM||S.offline?`<button class="navbtn ${S.view==="generators"?"on":""}" data-act="view" data-v="generators">Generators</button><button class="navbtn ${S.view==="initiative"?"on":""}" data-act="view" data-v="initiative">Initiative</button><button class="navbtn ${S.view==="mechs"||S.view==="mechwiz"?"on":""}" data-act="view" data-v="mechs">Mechs</button>`:""}
     ${shipNav()?`<button class="navbtn ${S.view==="ships"||S.view==="shipwiz"?"on":""}" data-act="view" data-v="ships">Ships</button>`:""}
     ${S.isGM||S.offline||npcPaths().some(p=>S.docs[p].shared)?`<button class="navbtn ${S.view==="npcs"?"on":""}" data-act="view" data-v="npcs">NPCs</button>`:""}
     ${S.isGM||S.offline?`<span class="role gm">${S.offline?"Preview":"GM"}</span>`:`<button class="role" style="background:none;cursor:pointer" data-act="gm-login">${S.setupDone===false?"Set up GM":"GM login"}</button>`}
@@ -1876,7 +1900,7 @@ function render(){
   if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
   if(S.slow&&!S.offline)notes.push(`<div class="notice"><b>Can't reach the saved sheets yet.</b> What you see may be out of date. The page keeps trying on its own.</div>`);
   if(S.view==="create"&&!S.wiz)S.wiz=loadWiz();
-  const main=S.view==="home"?renderHome():S.view==="mechs"?renderMechs():S.view==="mechwiz"?renderMechWizard():S.view==="generators"?renderGenerators():S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
+  const main=S.view==="home"?renderHome():S.view==="mechs"?renderMechs():S.view==="mechwiz"?renderMechWizard():S.view==="generators"?renderGenerators():S.view==="initiative"?renderInitiative():S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
   $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
   if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
@@ -1916,6 +1940,7 @@ function renderHome(){
       <button class="btn" data-act="view" data-v="npcs">NPCs <span class="tag">${npcPaths().length}</span></button>
       <button class="btn" data-act="ship-home-npc">NPC ships <span class="tag">${shipPaths().filter(p=>S.docs[p].npc).length}</span></button>
       <button class="btn" data-act="view" data-v="generators">Generators</button>
+      <button class="btn" data-act="view" data-v="initiative">Initiative</button>
       <button class="btn" data-act="view" data-v="mechs">Mechs <span class="tag">${mechPaths().length}</span></button>
       <button class="btn" data-act="view" data-v="compendium">Compendium & house rules</button>
       <button class="btn" data-act="view" data-v="party">Party overview</button>
@@ -1941,6 +1966,7 @@ document.addEventListener("change",e=>{
   const el=e.target;
   if(el.id&&/^(ab-|cr-|sup-pick|er-pick|sen-|nsh-tpl)/.test(el.id)){S.uiSel={...(S.uiSel||{}),[el.id]:el.type==="checkbox"?el.checked:el.value};return}
   if(el.id==="gen-culture"){S.genCulture=el.value;return}
+  if(el.dataset&&el.dataset.ini!==undefined){iniChange(el);return}
   if(el.dataset&&el.dataset.mw!==undefined&&S.mw){const k=el.dataset.mw;S.mw[k]=el.type==="checkbox"?el.checked:["npcHit","npcDmg","bonusPM"].includes(k)?num(el.value):el.value;render();return}
   if(el.dataset&&el.dataset.mechowner){if(!(S.isGM||S.offline))return;const mp=el.dataset.mechowner;setField(mp,"ownerSheet",el.value||"");setField(mp,"assigned",!!el.value);toastMsg(el.value?"Added to "+(S.docs["sheets/"+el.value]?.name||"that character")+"'s inventory.":"Removed from inventories.");render();return}
   if(el.dataset&&el.dataset.shiprole){const sp=el.dataset.shiprole;if(!shipCanAny(sp))return;const s=S.docs[sp];setField(sp,"roles",{...(s.roles||{}),[el.dataset.dept]:el.value||""});render();return}
@@ -1981,13 +2007,14 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["mech-del","mech-maint","gen-clear","torch","torch-undo","ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  const keepConfirm=["mech-del","mech-maint","gen-clear","torch","torch-undo","ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset","ini-reset","ini-clear"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
   if(act.startsWith("npc-")&&npcAct(act,t))return;
   if(act.startsWith("ship-")&&shipAct(act,t))return;
   if(act.startsWith("gen-")&&genAct(act,t))return;
+  if(act.startsWith("ini-")&&iniAct(act,t))return;
   if((act.startsWith("mech-")||act.startsWith("mw-"))&&mechAct(act,t))return;
   if(act.startsWith("sw-")&&swAct(act,t))return;
   const edit=fn=>{if(!cur||!canEdit(cur.path))return;fn(cur.c,cur.path);render()};
@@ -2139,6 +2166,7 @@ function addHb(c,p,id){
 /*@@GENDATA@@*/
 /*@@GEN@@*/
 /*@@MECHS@@*/
+/*@@INIT@@*/
 /*@@FX@@*/
 /* ================= BOOT ================= */
 async function gmSubmit(){
@@ -2199,6 +2227,7 @@ render();
     watchQ("sheets",db.collection("sheets").where("hidden","==",false),"sheets-visible",once);
     watchQ("sheets",db.collection("sheets").where("owners","array-contains",S.me),"sheets-mine")}
   watch("homebrew");watch("foci");
+  if(S.isGM)try{db.doc(INI_P).onSnapshot(d=>{if(d.exists){S.docs[INI_P]=d.data()}render()},err=>console.warn("initiative",err))}catch(e){console.warn(e)}
   if(S.isGM)watchQ("mechs",db.collection("mechs"));else watchQ("mechs",db.collection("mechs").where("assigned","==",true),"mechs-assigned");
   if(S.isGM)watchQ("ships",db.collection("ships"));else watchQ("ships",db.collection("ships").where("shared","==",true),"ships-shared");
   if(S.isGM){watchQ("npcs",db.collection("npcs"));db.collection("npcrolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{S.npcRolls=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>console.warn("npcrolls",err))}
