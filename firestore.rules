@@ -88,13 +88,15 @@ service cloud.firestore {
 
     // Character sheets.
     match /sheets/{id} {
-      allow read: if signedIn();
+      // Players see every sheet the GM hasn't hidden, plus any sheet they've claimed.
+      allow read: if isGM() || (signedIn() && (resource.data.hidden == false || request.auth.uid in resource.data.owners));
 
       // Players can create a sheet that belongs only to them.
       allow create: if isGM() || (signedIn()
         && request.resource.data.owners == [request.auth.uid]
         && request.resource.data.locked == false
-        && request.resource.data.get('npc', false) == false);
+        && request.resource.data.get('npc', false) == false
+        && request.resource.data.get('hidden', false) == false);
 
       allow delete: if isGM()
         || (signedIn() && request.auth.uid in resource.data.owners && resource.data.get('locked', false) != true);
@@ -104,7 +106,7 @@ service cloud.firestore {
         (request.auth.uid in resource.data.owners
           && resource.data.get('locked', false) != true
           && !request.resource.data.diff(resource.data).affectedKeys()
-               .hasAny(['locked', 'overrides', 'effects', 'owners', 'npc']))
+               .hasAny(['locked', 'overrides', 'effects', 'owners', 'npc', 'hidden']))
         ||
         // Anyone can claim an unlocked, non-NPC sheet that nobody has claimed yet.
         (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['owners'])
