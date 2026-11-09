@@ -658,6 +658,27 @@ table.mini td:first-child{color:var(--muted);width:45%}
   .gline{grid-template-columns:auto minmax(0,1fr) 30px}.gline .glbl{grid-column:1/-1}.gdie:empty{display:none}.gline .gdie:empty+.gtext{grid-column:1/3}
   .tagitems{max-height:240px}}
 
+/* ---------- mechs ---------- */
+.mechblock{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.mechblock.down{border-color:var(--bad)}
+.mhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.mtitle{font-family:var(--display);font-weight:700;font-size:20px}
+.mstats{display:grid;grid-template-columns:minmax(150px,1.5fr) repeat(4,minmax(0,1fr));gap:10px;align-items:center}
+.mstats>div{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1px}
+.mstats b{font-family:var(--display);font-size:24px}.mstats b.bad{color:var(--bad)}
+.mstats .lbl{font-size:10px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+.mstats .hint{font-size:10px}
+.mhp{align-items:stretch!important}.mhp .hpnums{font-family:var(--display);font-size:16px;text-align:center}
+.mstyle .btn.pri .hint{color:#fff;opacity:.85}.mhp .hpnums b{font-size:26px}
+.mpen{display:flex;gap:2px}
+.mstyle{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mguns{width:100%;border-collapse:collapse}.mguns td,.mguns th{padding:5px 4px;border-top:1px solid var(--line-soft);text-align:left}.mguns tr.dead{opacity:.55}
+.mfits summary{cursor:pointer}
+.mtpls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.massign{display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap}.massign .inp{width:auto}
+.msec{font-family:var(--display);margin:22px 0 10px}
+@media (max-width:640px){.mstats{grid-template-columns:repeat(4,minmax(0,1fr))}.mstats .mhp{grid-column:1/-1}}
+
 /* ---------- phones ---------- */
 .menubtn,.mvitals,.mshow{display:none}
 .navrest{display:contents}
@@ -1414,7 +1435,7 @@ function renderTop(){
     <button class="navbtn ${S.view==="party"?"on":""}" data-act="view" data-v="party">Party</button>
     <button class="navbtn ${S.view==="compendium"?"on":""}" data-act="view" data-v="compendium">Compendium</button>
     ${S.me||S.offline?`<button class="btn pri sm" data-act="wiz-open">+ New character</button>`:""}
-    ${S.isGM||S.offline?`<button class="navbtn ${S.view==="generators"?"on":""}" data-act="view" data-v="generators">Generators</button>`:""}
+    ${S.isGM||S.offline?`<button class="navbtn ${S.view==="generators"?"on":""}" data-act="view" data-v="generators">Generators</button><button class="navbtn ${S.view==="mechs"||S.view==="mechwiz"?"on":""}" data-act="view" data-v="mechs">Mechs</button>`:""}
     ${shipNav()?`<button class="navbtn ${S.view==="ships"||S.view==="shipwiz"?"on":""}" data-act="view" data-v="ships">Ships</button>`:""}
     ${S.isGM||S.offline||npcPaths().some(p=>S.docs[p].shared)?`<button class="navbtn ${S.view==="npcs"?"on":""}" data-act="view" data-v="npcs">NPCs</button>`:""}
     ${S.isGM||S.offline?`<span class="role gm">${S.offline?"Preview":"GM"}</span>`:`<button class="role" style="background:none;cursor:pointer" data-act="gm-login">${S.setupDone===false?"Set up GM":"GM login"}</button>`}
@@ -1610,7 +1631,7 @@ function renderInventory(path,c,R,can){
     ${cyber.length?sect("Cyberware","installed, always active, no encumbrance",cyber,""):""}
     ${stored.length?sect("Stored","left on the ship or at home, not carried",stored,""):""}
     ${S.confirm&&S.confirm.startsWith("inv")?`<p class="hint" style="color:var(--bad)">Click the ! again to remove that item.</p>`:""}
-    <p class="hint">Check the box to ready an item; uncheck it to stow it. <button class="hint rword" data-act="rule" data-key="enc">Encumbrance rules</button> · <button class="hint rword" data-act="rule" data-key="mods">How bonuses apply</button></p>${renderCompanions(path)}`;
+    <p class="hint">Check the box to ready an item; uncheck it to stow it. <button class="hint rword" data-act="rule" data-key="enc">Encumbrance rules</button> · <button class="hint rword" data-act="rule" data-key="mods">How bonuses apply</button></p>${renderCompanions(path)}${renderMechsInSheet(path)}`;
 }
 
 function focusSelectOpts(){
@@ -1853,7 +1874,7 @@ function render(){
   if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
   if(S.slow&&!S.offline)notes.push(`<div class="notice"><b>Can't reach the saved sheets yet.</b> What you see may be out of date. The page keeps trying on its own.</div>`);
   if(S.view==="create"&&!S.wiz)S.wiz=loadWiz();
-  const main=S.view==="home"?renderHome():S.view==="generators"?renderGenerators():S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
+  const main=S.view==="home"?renderHome():S.view==="mechs"?renderMechs():S.view==="mechwiz"?renderMechWizard():S.view==="generators"?renderGenerators():S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
   $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
   if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
@@ -1893,6 +1914,7 @@ function renderHome(){
       <button class="btn" data-act="view" data-v="npcs">NPCs <span class="tag">${npcPaths().length}</span></button>
       <button class="btn" data-act="ship-home-npc">NPC ships <span class="tag">${shipPaths().filter(p=>S.docs[p].npc).length}</span></button>
       <button class="btn" data-act="view" data-v="generators">Generators</button>
+      <button class="btn" data-act="view" data-v="mechs">Mechs <span class="tag">${mechPaths().length}</span></button>
       <button class="btn" data-act="view" data-v="compendium">Compendium & house rules</button>
       <button class="btn" data-act="view" data-v="party">Party overview</button>
       <button class="btn" data-act="wiz-open">New character</button></div></div>`:"";
@@ -1917,6 +1939,8 @@ document.addEventListener("change",e=>{
   const el=e.target;
   if(el.id&&/^(ab-|cr-|sup-pick|er-pick|sen-|nsh-tpl)/.test(el.id)){S.uiSel={...(S.uiSel||{}),[el.id]:el.type==="checkbox"?el.checked:el.value};return}
   if(el.id==="gen-culture"){S.genCulture=el.value;return}
+  if(el.dataset&&el.dataset.mw!==undefined&&S.mw){const k=el.dataset.mw;S.mw[k]=el.type==="checkbox"?el.checked:["npcHit","npcDmg","bonusPM"].includes(k)?num(el.value):el.value;render();return}
+  if(el.dataset&&el.dataset.mechowner){if(!(S.isGM||S.offline))return;const mp=el.dataset.mechowner;setField(mp,"ownerSheet",el.value||"");setField(mp,"assigned",!!el.value);toastMsg(el.value?"Added to "+(S.docs["sheets/"+el.value]?.name||"that character")+"'s inventory.":"Removed from inventories.");render();return}
   if(el.dataset&&el.dataset.shiprole){const sp=el.dataset.shiprole;if(!shipCanAny(sp))return;const s=S.docs[sp];setField(sp,"roles",{...(s.roles||{}),[el.dataset.dept]:el.value||""});render();return}
   if(el.dataset&&el.dataset.shiptrip){const sp=el.dataset.shiptrip;if(!shipCanAny(sp))return;const s=S.docs[sp];const k=el.dataset.k;const v=el.type==="checkbox"?el.checked:k==="hexes"?Math.max(1,num(el.value,1)):el.value;setField(sp,"trip",{...(s.trip||{}),[k]:v});render();return}
   if(el.dataset&&el.dataset.sw!==undefined&&S.sw){const k=el.dataset.sw;S.sw[k]=el.type==="checkbox"?el.checked:["drive","crew","crewSkill","npcCP","npcHit"].includes(k)?num(el.value):el.value;render();return}
@@ -1955,13 +1979,14 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["gen-clear","torch","torch-undo","ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
+  const keepConfirm=["mech-del","mech-maint","gen-clear","torch","torch-undo","ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
   if(act.startsWith("npc-")&&npcAct(act,t))return;
   if(act.startsWith("ship-")&&shipAct(act,t))return;
   if(act.startsWith("gen-")&&genAct(act,t))return;
+  if((act.startsWith("mech-")||act.startsWith("mw-"))&&mechAct(act,t))return;
   if(act.startsWith("sw-")&&swAct(act,t))return;
   const edit=fn=>{if(!cur||!canEdit(cur.path))return;fn(cur.c,cur.path);render()};
   if(["roll-skill","roll-save","roll-init","attack","damage","snap","missdmg"].includes(act)&&!(cur&&canUse(cur.path))){toastMsg("You can only roll for your own character.",true);return}
@@ -2111,6 +2136,7 @@ function addHb(c,p,id){
 /*@@SHIPS@@*/
 /*@@GENDATA@@*/
 /*@@GEN@@*/
+/*@@MECHS@@*/
 /*@@FX@@*/
 /* ================= BOOT ================= */
 async function gmSubmit(){
@@ -2166,6 +2192,7 @@ render();
   const watchQ=(coll,q,key=coll)=>q.onSnapshot(snap=>{const seen=new Set();snap.docs.forEach(d=>{const p=coll+"/"+d.id;seen.add(p);mergeRemote(p,d.data())});qSeen[key]=seen;
     const all=new Set();Object.values(qSeen).forEach(x=>x.forEach(p=>all.add(p)));
     Object.keys(S.docs).forEach(p=>{if(p.startsWith(coll+"/")&&!all.has(p)&&S.exists[p]&&!(Q[p]&&Q[p].inflight)){delete S.docs[p];delete S.exists[p]}});render()},err=>console.warn(key,err));
+  if(S.isGM)watchQ("mechs",db.collection("mechs"));else watchQ("mechs",db.collection("mechs").where("assigned","==",true),"mechs-assigned");
   if(S.isGM)watchQ("ships",db.collection("ships"));else watchQ("ships",db.collection("ships").where("shared","==",true),"ships-shared");
   if(S.isGM){watchQ("npcs",db.collection("npcs"));db.collection("npcrolls").orderBy("ts","desc").limit(60).onSnapshot(snap=>{S.npcRolls=snap.docs.map(d=>({id:d.id,...d.data()}));render()},err=>console.warn("npcrolls",err))}
   else{watchQ("npcs",db.collection("npcs").where("shared","==",true),"npcs-shared");watchQ("npcs",db.collection("npcs").where("companion","==",true),"npcs-comp")}

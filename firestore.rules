@@ -57,6 +57,17 @@ service cloud.firestore {
         && resource.data.get('npc', false) != true
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hp', 'cp', 'crises', 'roles', 'tmp', 'fuel', 'ammo', 'sys', 'escape', 'dcUses', 'round', 'ecmUsed', 'trip', 'scanQ', 'mishap', 'updatedAt']));
     }
+    // Mechs: the GM builds them. A mech assigned to a character is visible to everyone (like the sheet);
+    // that character's player can change its combat state but not its design.
+    match /mechs/{id} {
+      allow read: if isGM() || (signedIn() && resource.data.get('assigned', false) == true);
+      allow create, delete: if isGM();
+      allow update: if isGM() || (signedIn()
+        && resource.data.get('assigned', false) == true
+        && resource.data.get('ownerSheet', '') is string && resource.data.get('ownerSheet', '') != ''
+        && request.auth.uid in get(/databases/$(database)/documents/sheets/$(resource.data.ownerSheet)).data.get('owners', [])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hp', 'ammoOut', 'fights', 'penalty', 'cellsUsed', 'style', 'updatedAt']));
+    }
     // NPCs: only the GM sees them, unless the GM shares one or makes it a character's companion.
     // A companion's player can change its hit points.
     match /npcs/{id} {
