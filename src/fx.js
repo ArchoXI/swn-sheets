@@ -45,64 +45,55 @@ function showRoll(rec){
 }
 
 /* ================= SPIKE DRILL ANIMATION ================= */
+function dfxType(el,text,dur=600){if(!el)return;const G="▮▯/\\<>[]#*+=-_01";const t0=performance.now();const n=text.length;
+  const step=now=>{const k=Math.min(1,(now-t0)/dur);const shown=Math.floor(k*n);let out=text.slice(0,shown);for(let i=shown;i<n;i++)out+=text[i]===" "?" ":G[(Math.random()*G.length)|0];el.textContent=out;if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
 function drillFx(rec,after){
   const line=(rec.lines||[]).find(l=>l.verdict)||{};const ok=(line.verdict||[])[0]!=="no";
   const ship=(S.docs["ships/"+rec.ship]||{}).name||String(rec.label||"").split(" · ")[0]||"Ship";
   const m=String(rec.label||"").match(/Spike drill(?: to ([^(]+?))?\s*(?:\(|$)/);const dest=m&&m[1]?m[1].trim():"";
-  const time=String(line.note||"").split(" · ").pop()||"";
+  const time=(String(line.note||"").split(" · ").pop()||"").replace(/^Transit\s*/i,"");
   const reduce=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
   if(document.hidden){after&&after();return}
   const ov=document.createElement("div");ov.className="drillfx"+(reduce?" calm":"");ov.setAttribute("role","status");
-  ov.innerHTML=`<canvas></canvas><div class="drilltxt"><div class="drillk">Spike drill</div><div class="drillship">${esc(ship)}</div><div class="drilldest">${dest?"Course: "+esc(dest):"Drilling into metadimensional space"}</div></div><div class="dfxres"></div><div class="drillskip">Click to skip</div>`;
+  ov.innerHTML=`<canvas></canvas><div class="dfxhud"><div class="dfxk"></div><div class="dfxn"></div><div class="dfxs"></div></div><div class="drillskip">esc</div>`;
   document.body.appendChild(ov);
+  const K=ov.querySelector(".dfxk"),Nm=ov.querySelector(".dfxn"),Sb=ov.querySelector(".dfxs");
+  dfxType(K,"SPIKE DRILL // ENGAGED",500);setTimeout(()=>dfxType(Nm,ship.toUpperCase(),700),180);setTimeout(()=>dfxType(Sb,dest?"COURSE  ›  "+dest.toUpperCase():"COURSE  ›  UNCHARTED",600),380);
   const cv=ov.querySelector("canvas"),ctx=cv.getContext("2d");let W,H,DPR;
   const size=()=>{DPR=Math.min(2,window.devicePixelRatio||1);W=window.innerWidth;H=window.innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0)};size();
-  const N=Math.round(Math.min(900,W*H/1800));const stars=Array.from({length:N},()=>({a:Math.random()*Math.PI*2,r:Math.random()**.6*Math.hypot(W,H)*.6+4,z:Math.random()*.8+.2,h:Math.random()<.15?280:Math.random()<.3?190:220}));
+  const N=Math.round(Math.min(1400,W*H/1100));const maxR=()=>Math.hypot(W,H)*.75;
+  const stars=Array.from({length:N},()=>({a:Math.random()*Math.PI*2,r:Math.random()**.7*Math.hypot(W,H)*.6+2,z:Math.random()*.85+.15,h:Math.random()<.12?265:Math.random()<.35?195:215}));
   const T0=performance.now();let raf,ended=false;const TOTAL=reduce?2400:4600;
-  // rift: jagged vertical tear
-  const tear=Array.from({length:28},(_,i)=>({y:i/27,x:(Math.random()-.5)*(i===0||i===27?0:1)}));
   const end=()=>{if(ended)return;ended=true;cancelAnimationFrame(raf);ov.classList.add("out");setTimeout(()=>{ov.remove();after&&after()},450);window.removeEventListener("keydown",key)};
   const key=e=>{if(e.key==="Escape"||e.key===" ")end()};window.addEventListener("keydown",key);ov.addEventListener("click",end);
-  const res=ov.querySelector(".dfxres");
+  let resDone=false;
   const frame=now=>{const t=now-T0;const cx=W/2,cy=H/2;
-    // phases (ms): 0-700 calm stars, 700-2300 streak, 1500-2700 rift opens, 2700-3000 flash, 3000+ result
-    const sp=reduce?0:Math.min(1,Math.max(0,(t-700)/1600));const accel=sp*sp;
-    const build=!reduce&&t>1800&&t<2900?10*Math.min(1,(t-1800)/900):0;const kick=!reduce&&t>=2900&&t<3700?26*Math.pow(1-(t-2900)/800,2):0;
-    const shake=(Math.random()-.5)*(build+kick),shakeY=(Math.random()-.5)*(build+kick)*.7;
-    ov.style.setProperty("--dfxblur",(t<3000?2+accel*5:2)+(kick?kick*.35:0)+"px");
-    ctx.clearRect(0,0,W,H);
-    ctx.save();ctx.translate(shake,shakeY);
-    ctx.fillStyle=`rgba(4,6,14,${t<3000?(.66+accel*.26):.7})`;ctx.fillRect(-40,-40,W+80,H+80);
-    // vignette that tightens as the drive spools
-    const vg=ctx.createRadialGradient(cx,cy,Math.min(W,H)*(.55-accel*.25),cx,cy,Math.hypot(W,H)*.62);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,`rgba(0,0,0,${.35+accel*.45})`);ctx.fillStyle=vg;ctx.fillRect(-40,-40,W+80,H+80);
-    const post=t>=3000;
+    // 0-600 drift · 600-2800 accelerate to full speed · 2800-3050 snap · 3050+ arrival
+    const sp=reduce?0:Math.min(1,Math.max(0,(t-600)/2200));const accel=sp*sp*sp;const post=t>=3050;
+    const snap=!reduce&&t>2800&&t<3050?(t-2800)/250:0;
+    const kick=!reduce&&t>=3050&&t<3600?14*Math.pow(1-(t-3050)/550,2):0;const buzz=!reduce&&!post?accel*3:0;
+    const sx=(Math.random()-.5)*(kick+buzz),sy=(Math.random()-.5)*(kick+buzz)*.7;
+    ov.style.setProperty("--dfxblur",(2+accel*4)+"px");
+    ctx.clearRect(0,0,W,H);ctx.save();ctx.translate(sx,sy);
+    ctx.fillStyle=`rgba(3,5,12,${post?.72:.66+accel*.26})`;ctx.fillRect(-30,-30,W+60,H+60);
+    const vg=ctx.createRadialGradient(cx,cy,Math.min(W,H)*(.5-accel*.3),cx,cy,Math.hypot(W,H)*.62);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,`rgba(0,0,0,${.3+accel*.55})`);ctx.fillStyle=vg;ctx.fillRect(-30,-30,W+60,H+60);
+    // soft core glow at the vanishing point
+    if(!reduce&&!post){const gr=ctx.createRadialGradient(cx,cy,0,cx,cy,60+accel*140);gr.addColorStop(0,`rgba(200,225,255,${accel*.55})`);gr.addColorStop(1,"rgba(120,160,255,0)");ctx.fillStyle=gr;ctx.fillRect(cx-220,cy-220,440,440)}
+    ctx.globalCompositeOperation="lighter";
     stars.forEach(s=>{
-      let v=post?(ok?.4:1.6):.3+accel*38*s.z;s.r+=v;if(s.r>Math.hypot(W,H)*.75){s.r=Math.random()*40+4;s.a=Math.random()*Math.PI*2}
-      const x=cx+Math.cos(s.a)*s.r,y=cy+Math.sin(s.a)*s.r;const len=post?(ok?1:6):1+accel*90*s.z;
-      const x0=cx+Math.cos(s.a)*(s.r-len),y0=cy+Math.sin(s.a)*(s.r-len);
-      const col=post&&!ok?`hsla(${Math.random()<.5?0:350},90%,${60+Math.random()*20}%,.9)`:`hsla(${s.h},${40+accel*50}%,${80-accel*10}%,${.5+s.z*.5})`;
-      ctx.strokeStyle=col;ctx.lineWidth=Math.max(.6,s.z*(1.4+accel*1.6));ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke()});
-    // rift
-    if(!reduce&&t>1500&&t<3050){const o=Math.min(1,(t-1500)/1100);const wid=o*o*Math.min(W*.42,320)*(1+.08*Math.sin(t/40));
-      ctx.save();ctx.globalCompositeOperation="lighter";
-      for(let pass=3;pass>=0;pass--){const ww=wid*(1+pass*.9)+2;const g=ctx.createLinearGradient(cx-ww,0,cx+ww,0);
-        const hue=pass===0?190:pass===1?265:pass===2?300:220;g.addColorStop(0,`hsla(${hue},100%,60%,0)`);g.addColorStop(.5,`hsla(${hue},100%,${pass===0?92:70}%,${.55-pass*.1})`);g.addColorStop(1,`hsla(${hue},100%,60%,0)`);
-        ctx.fillStyle=g;ctx.beginPath();tear.forEach((p,i)=>{const jit=(Math.random()-.5)*6*o;const x=cx+p.x*wid*.6+jit-(ww*.5),y=p.y*H;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
-        [...tear].reverse().forEach(p=>{const jit=(Math.random()-.5)*6*o;ctx.lineTo(cx+p.x*wid*.6+jit+(ww*.5),p.y*H)});ctx.closePath();ctx.fill()}
-      // arcs of energy
-      for(let i=0;i<4;i++){ctx.strokeStyle=`hsla(${190+Math.random()*90},100%,80%,${.6*o})`;ctx.lineWidth=1.2;ctx.beginPath();let y=Math.random()*H,x=cx;ctx.moveTo(x,y);for(let k=0;k<6;k++){x+=(Math.random()-.5)*wid*1.4;y+=(Math.random()-.5)*60;ctx.lineTo(x,y)}ctx.stroke()}
-      ctx.restore()}
-    // shockwave and debris on punch-through
-    if(!reduce&&t>2880&&t<3900){const k=(t-2880)/1020;const rad=Math.hypot(W,H)*.75*(1-Math.pow(1-k,3));ctx.save();ctx.globalCompositeOperation="lighter";
-      [[0,ok?195:5,14],[.06,ok?280:350,6],[.12,ok?210:20,3]].forEach(([lag,hue,lw])=>{const r=Math.max(0,rad*(1-lag));ctx.strokeStyle=`hsla(${hue},100%,75%,${(1-k)*.9})`;ctx.lineWidth=lw*(1-k)+1;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke()});
-      if(!ov._deb)ov._deb=Array.from({length:140},()=>({a:Math.random()*Math.PI*2,v:.4+Math.random()*1.6,l:6+Math.random()*30}));
-      ov._deb.forEach(d=>{const r=rad*d.v*.7;const x=cx+Math.cos(d.a)*r,y=cy+Math.sin(d.a)*r;ctx.strokeStyle=ok?`hsla(${190+Math.random()*60},100%,85%,${1-k})`:`hsla(${Math.random()*20},100%,70%,${1-k})`;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-Math.cos(d.a)*d.l,y-Math.sin(d.a)*d.l);ctx.stroke()});
-      ctx.restore()}
-    ctx.restore();
-    // flash
-    if(!reduce&&t>2700&&t<3300){const f=t<2900?(t-2700)/200:1-(t-2900)/400;ctx.fillStyle=ok?`rgba(235,245,255,${Math.max(0,f)})`:`rgba(255,80,60,${Math.max(0,f)*.85})`;ctx.fillRect(0,0,W,H);if(t>2890&&!ov._punched){ov._punched=1;ov.classList.add("punch")}}
-    if((reduce?t>900:t>3000)&&!res.dataset.on){res.dataset.on=1;ov.classList.add(ok?"ok":"bad");
-      res.innerHTML=ok?`<div class="drillk">Drill complete</div><div class="drillship">${dest?esc(dest):"Arrived"}</div><div class="drilldest">${esc(time)}</div>`:`<div class="drillk">Drill failure</div><div class="drillship">Something went wrong</div><div class="drilldest">The GM is rolling a mishap…</div>`}
+      const v=post?(ok?.25+s.z*.4:1.4):.25+accel*70*s.z+snap*120*s.z;s.r+=v;
+      if(s.r>maxR()){s.r=Math.random()*30+2;s.a=Math.random()*Math.PI*2}
+      const len=post?(ok?1.2:5):1.2+accel*220*s.z+snap*260*s.z;
+      const x=cx+Math.cos(s.a)*s.r,y=cy+Math.sin(s.a)*s.r,r0=Math.max(0,s.r-len),x0=cx+Math.cos(s.a)*r0,y0=cy+Math.sin(s.a)*r0;
+      const lum=post&&!ok?60:82+accel*10;const col=post&&!ok?`hsla(${Math.random()*15},90%,${lum}%,.85)`:`hsla(${s.h},${30+accel*60}%,${lum}%,${.35+s.z*.6})`;
+      const g=ctx.createLinearGradient(x0,y0,x,y);g.addColorStop(0,"rgba(0,0,0,0)");g.addColorStop(1,col);
+      ctx.strokeStyle=len>4?g:col;ctx.lineWidth=Math.max(.5,s.z*(1.1+accel*1.4));ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x,y);ctx.stroke()});
+    ctx.globalCompositeOperation="source-over";ctx.restore();
+    // brief exit flash
+    if(!reduce&&t>2950&&t<3400){const f=t<3050?(t-2950)/100:1-(t-3050)/350;ctx.fillStyle=ok?`rgba(225,238,255,${Math.max(0,f)*.85})`:`rgba(255,70,50,${Math.max(0,f)*.7})`;ctx.fillRect(0,0,W,H)}
+    if(!resDone&&(reduce?t>900:t>3050)){resDone=true;ov.classList.add(ok?"ok":"bad");
+      if(ok){dfxType(K,"DRILL COMPLETE",400);dfxType(Nm,dest?dest.toUpperCase():"ARRIVED",500);dfxType(Sb,time?"TRANSIT  ›  "+time.toUpperCase():"",400)}
+      else{dfxType(K,"DRILL FAILURE",300);dfxType(Nm,"TRANSLATION ERROR",400);dfxType(Sb,"MISHAP PENDING  ›  GM ROLLING",400)}}
     if(t>TOTAL){end();return}
     raf=requestAnimationFrame(frame)};
   raf=requestAnimationFrame(frame);
