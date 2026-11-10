@@ -56,6 +56,7 @@ body.tbhide .topbar{transform:translateY(-100%)}
 .notice{margin:12px 18px 0;padding:10px 14px;border:1px solid var(--line);border-left:4px solid var(--warn);background:var(--card);border-radius:4px;color:var(--muted)}
 .notice b{color:var(--text)}
 main{padding:0 18px 120px;max-width:1400px;margin:0 auto}
+main.wide{max-width:none;padding-bottom:24px}
 
 /* framed box */
 .frame{position:relative;background:var(--panel);border:2px solid var(--accent);border-radius:10px;box-shadow:inset 0 0 0 3px var(--card),inset 0 0 0 4px var(--ring),0 1px 2px rgba(0,0,0,.08)}
@@ -917,24 +918,40 @@ button,a,input,select,label{touch-action:manipulation}
 .inihp{grid-column:1/2;grid-row:2;flex-direction:row;min-width:0;align-items:center}.inihp .lbl{display:none}.inihp .hint{display:none}.inihpc input{width:42px}
 .inictl{grid-column:1/3;grid-row:3;max-width:none;justify-content:flex-start}
 .inibar{gap:10px;padding:10px 12px}}
-.secgrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start}
-.secmapf{padding:0;overflow:auto;background:#070b16;border-radius:10px}
-.secsvg{display:block;width:100%;height:auto;max-height:calc(100vh - 150px);min-width:520px;margin:0 auto;user-select:none}
+.sechead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.secwrap{position:relative}
+.secmapf{position:relative;height:calc(100vh - 175px);min-height:420px;border-radius:10px;overflow:hidden;background:#070b16;border:1px solid var(--line)}
+.secsvg{display:block;width:100%;height:100%;touch-action:none;user-select:none;cursor:grab}
+.secsvg.dragging{cursor:grabbing}
 .secbg{fill:#070b16}
-.sechex{fill:rgba(120,150,220,.03);stroke:rgba(150,175,235,.28);stroke-width:1;cursor:pointer;transition:fill .12s}
+.sechex{fill:rgba(120,150,220,.03);stroke:rgba(150,175,235,.26);stroke-width:1;cursor:pointer;transition:fill .12s;vector-effect:non-scaling-stroke}
 .sechex:hover{fill:rgba(150,175,235,.12)}
 .sechex.full{fill:rgba(120,150,220,.07)}
-.sechex.on{fill:rgba(220,60,60,.22);stroke:#ff6b6b;stroke-width:2}
+.sechex.on{fill:rgba(220,60,60,.18);stroke:#ff6b6b;stroke-width:2}
 .seccoord{fill:rgba(190,205,240,.42);font:600 8px/1 ui-monospace,monospace;text-anchor:middle}
 .secname{fill:#e8eeff;font:600 10px/1 system-ui,sans-serif;text-anchor:middle}
-.secpl{fill:#9fc4ff}
+.secsvg .lodnear{display:none}.secsvg.near .lodnear{display:inline}.secsvg.near .lodfar{display:none}
+.secsvg.near .seccoord{font-size:4px}
+.secsvg .ppnear{display:none}.secsvg.near .ppnear{display:inline}.secsvg.near .ppfar{display:none}
+.secorbit{fill:none;stroke:rgba(200,215,255,.18);stroke-width:.3;stroke-dasharray:1 1.2}
+.secpname{fill:#e8eeff;font:600 2.6px/1 system-ui,sans-serif;text-anchor:middle;paint-order:stroke;stroke:#070b16;stroke-width:.6}
+.secnname{fill:#fff;font:700 4.2px/1 system-ui,sans-serif;text-anchor:middle;letter-spacing:.05em}
 .secpring{fill:#c62828;stroke:#fff;stroke-width:1.5}
+.secpartyname{display:none}.ppnear .secpartyname{display:inline;fill:#fff;font:700 2.4px/1 system-ui,sans-serif;text-anchor:middle;paint-order:stroke;stroke:#070b16;stroke-width:.5}
+.seczoom{position:absolute;left:12px;bottom:12px;display:flex;gap:6px;align-items:center}
+.seczoom .iconbtn{width:36px;height:36px;font-size:18px;background:rgba(20,26,44,.85);color:#fff;border:1px solid rgba(150,175,235,.35);border-radius:8px}
+.seczl{color:rgba(220,230,255,.7);font-size:12px;margin-left:6px}
+.secside{position:absolute;top:12px;right:12px;width:330px;max-height:calc(100% - 24px);overflow:auto;display:flex;flex-direction:column;gap:10px;z-index:2}
+.secside .frame{box-shadow:0 8px 24px rgba(0,0,0,.35)}
 .secform{display:flex;flex-direction:column;gap:8px}.secform label{display:flex;flex-direction:column;gap:3px}
 .secrow{display:flex;gap:8px;flex-wrap:wrap}.secrow>label{flex:1;min-width:110px}
-.secplrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:6px;align-items:center}
-.secpls{margin:4px 0 8px;padding-left:18px}.secpls li{margin:2px 0}
+.secplrow{display:grid;grid-template-columns:30px minmax(0,1fr) minmax(0,1.3fr) auto;gap:6px;align-items:center}
+.secclr{width:30px;height:30px;padding:0;border:1px solid var(--line);border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.secclr::-webkit-color-swatch-wrapper{padding:0}.secclr::-webkit-color-swatch{border:none;border-radius:50%}.secclr::-moz-color-swatch{border:none;border-radius:50%}
+.secdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.secpls{margin:4px 0 8px;padding-left:4px;list-style:none}.secpls li{margin:3px 0}
 .secicon{display:inline-flex;width:38px;height:38px;border-radius:50%;background:#c62828;align-items:center;justify-content:center;overflow:hidden;border:2px solid #fff}.secicon img{width:100%;height:100%;object-fit:cover}
-@media (max-width:900px){.secgrid{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){.secmapf{height:68vh;min-height:360px}.secside{position:static;width:auto;max-height:none;margin-top:10px}}
 </style>
 </head>
 <body>
@@ -1923,7 +1940,7 @@ function render(){
   if(S.slow&&!S.offline)notes.push(`<div class="notice"><b>Can't reach the saved sheets yet.</b> What you see may be out of date. The page keeps trying on its own.</div>`);
   if(S.view==="create"&&!S.wiz)S.wiz=loadWiz();
   const main=S.view==="home"?renderHome():S.view==="mechs"?renderMechs():S.view==="mechwiz"?renderMechWizard():S.view==="generators"?renderGenerators():S.view==="initiative"?renderInitiative():S.view==="sector"?renderSector():S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
-  $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
+  $("#app").innerHTML=renderTop()+notes.join("")+`<main class="${S.view==="sector"?"wide":""}">${main}</main>`+renderDrawer()+renderLog();
   if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
   Object.entries(S.uiSel||{}).forEach(([id,v])=>{const el=document.getElementById(id);if(!el)return;if(el.type==="checkbox")el.checked=!!v;else if(el.tagName!=="SELECT"||[...el.options].some(o=>o.value===String(v)))el.value=v});
