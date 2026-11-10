@@ -8,6 +8,12 @@ service cloud.firestore {
     }
 
     // One-time GM setup marker. Created together with the first GM passcode.
+    // Sector map: everyone can look, only the GM can change it.
+    match /sector/{id} {
+      allow read: if signedIn();
+      allow write: if isGM();
+    }
+
     // GM-only private notes (initiative tracker).
     match /gmprivate/{id} {
       allow read, write: if isGM();

@@ -913,6 +913,24 @@ button,a,input,select,label{touch-action:manipulation}
 .inihp{grid-column:1/2;grid-row:2;flex-direction:row;min-width:0;align-items:center}.inihp .lbl{display:none}.inihp .hint{display:none}.inihpc input{width:42px}
 .inictl{grid-column:1/3;grid-row:3;max-width:none;justify-content:flex-start}
 .inibar{gap:10px;padding:10px 12px}}
+.secgrid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:12px;align-items:start}
+.secmapf{padding:0;overflow:auto;background:#070b16;border-radius:10px}
+.secsvg{display:block;width:100%;height:auto;max-height:calc(100vh - 150px);min-width:520px;margin:0 auto;user-select:none}
+.secbg{fill:#070b16}
+.sechex{fill:rgba(120,150,220,.03);stroke:rgba(150,175,235,.28);stroke-width:1;cursor:pointer;transition:fill .12s}
+.sechex:hover{fill:rgba(150,175,235,.12)}
+.sechex.full{fill:rgba(120,150,220,.07)}
+.sechex.on{fill:rgba(220,60,60,.22);stroke:#ff6b6b;stroke-width:2}
+.seccoord{fill:rgba(190,205,240,.42);font:600 8px/1 ui-monospace,monospace;text-anchor:middle}
+.secname{fill:#e8eeff;font:600 10px/1 system-ui,sans-serif;text-anchor:middle}
+.secpl{fill:#9fc4ff}
+.secpring{fill:#c62828;stroke:#fff;stroke-width:1.5}
+.secform{display:flex;flex-direction:column;gap:8px}.secform label{display:flex;flex-direction:column;gap:3px}
+.secrow{display:flex;gap:8px;flex-wrap:wrap}.secrow>label{flex:1;min-width:110px}
+.secplrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto;gap:6px;align-items:center}
+.secpls{margin:4px 0 8px;padding-left:18px}.secpls li{margin:2px 0}
+.secicon{display:inline-flex;width:38px;height:38px;border-radius:50%;background:#c62828;align-items:center;justify-content:center;overflow:hidden;border:2px solid #fff}.secicon img{width:100%;height:100%;object-fit:cover}
+@media (max-width:900px){.secgrid{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -1462,7 +1480,7 @@ function renderTop(){
     <button class="navbtn ${S.view==="compendium"?"on":""}" data-act="view" data-v="compendium">Compendium</button>
     ${S.me||S.offline?`<button class="btn pri sm" data-act="wiz-open">+ New character</button>`:""}
     ${S.isGM||S.offline?`<button class="navbtn ${S.view==="generators"?"on":""}" data-act="view" data-v="generators">Generators</button><button class="navbtn ${S.view==="initiative"?"on":""}" data-act="view" data-v="initiative">Initiative</button><button class="navbtn ${S.view==="mechs"||S.view==="mechwiz"?"on":""}" data-act="view" data-v="mechs">Mechs</button>`:""}
-    ${shipNav()?`<button class="navbtn ${S.view==="ships"||S.view==="shipwiz"?"on":""}" data-act="view" data-v="ships">Ships</button>`:""}
+    ${shipNav()?`<button class="navbtn ${S.view==="ships"||S.view==="shipwiz"?"on":""}" data-act="view" data-v="ships">Ships</button>`:""}<button class="navbtn ${S.view==="sector"?"on":""}" data-act="view" data-v="sector">Sector</button>
     ${S.isGM||S.offline||npcPaths().some(p=>S.docs[p].shared)?`<button class="navbtn ${S.view==="npcs"?"on":""}" data-act="view" data-v="npcs">NPCs</button>`:""}
     ${S.isGM||S.offline?`<span class="role gm">${S.offline?"Preview":"GM"}</span>`:`<button class="role" style="background:none;cursor:pointer" data-act="gm-login">${S.setupDone===false?"Set up GM":"GM login"}</button>`}
     </div>
@@ -1900,7 +1918,7 @@ function render(){
   if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
   if(S.slow&&!S.offline)notes.push(`<div class="notice"><b>Can't reach the saved sheets yet.</b> What you see may be out of date. The page keeps trying on its own.</div>`);
   if(S.view==="create"&&!S.wiz)S.wiz=loadWiz();
-  const main=S.view==="home"?renderHome():S.view==="mechs"?renderMechs():S.view==="mechwiz"?renderMechWizard():S.view==="generators"?renderGenerators():S.view==="initiative"?renderInitiative():S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
+  const main=S.view==="home"?renderHome():S.view==="mechs"?renderMechs():S.view==="mechwiz"?renderMechWizard():S.view==="generators"?renderGenerators():S.view==="initiative"?renderInitiative():S.view==="sector"?renderSector():S.view==="party"?renderParty():S.view==="compendium"?renderCompendium():S.view==="npcs"?renderNPCs():S.view==="ships"?renderShips():S.view==="shipwiz"?renderShipWizard():S.view==="create"?renderWizard():S.view==="levelup"&&S.lu?renderLevelUp():renderSheet();
   $("#app").innerHTML=renderTop()+notes.join("")+`<main>${main}</main>`+renderDrawer()+renderLog();
   if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   const db2=document.querySelector(".drawer-body");if(db2)db2.scrollTop=dScroll;
@@ -1967,6 +1985,7 @@ document.addEventListener("change",e=>{
   if(el.id&&/^(ab-|cr-|sup-pick|er-pick|sen-|nsh-tpl)/.test(el.id)){S.uiSel={...(S.uiSel||{}),[el.id]:el.type==="checkbox"?el.checked:el.value};return}
   if(el.id==="gen-culture"){S.genCulture=el.value;return}
   if(el.dataset&&el.dataset.ini!==undefined){iniChange(el);return}
+  if(el.id==="sec-iconfile"){secIconUpload(el.files&&el.files[0]);el.value="";return}
   if(el.dataset&&el.dataset.mw!==undefined&&S.mw){const k=el.dataset.mw;S.mw[k]=el.type==="checkbox"?el.checked:["npcHit","npcDmg","bonusPM"].includes(k)?num(el.value):el.value;render();return}
   if(el.dataset&&el.dataset.mechowner){if(!(S.isGM||S.offline))return;const mp=el.dataset.mechowner;setField(mp,"ownerSheet",el.value||"");setField(mp,"assigned",!!el.value);toastMsg(el.value?"Added to "+(S.docs["sheets/"+el.value]?.name||"that character")+"'s inventory.":"Removed from inventories.");render();return}
   if(el.dataset&&el.dataset.shiprole){const sp=el.dataset.shiprole;if(!shipCanAny(sp))return;const s=S.docs[sp];setField(sp,"roles",{...(s.roles||{}),[el.dataset.dept]:el.value||""});render();return}
@@ -2015,6 +2034,8 @@ document.addEventListener("click",e=>{
   if(act.startsWith("ship-")&&shipAct(act,t))return;
   if(act.startsWith("gen-")&&genAct(act,t))return;
   if(act.startsWith("ini-")&&iniAct(act,t))return;
+  if(act==="sec-set-tog"){const det=t.closest("details");setTimeout(()=>{S.secSet=!!(det&&det.open)},0);return}
+  if(act.startsWith("sec-")&&secAct(act,t))return;
   if((act.startsWith("mech-")||act.startsWith("mw-"))&&mechAct(act,t))return;
   if(act.startsWith("sw-")&&swAct(act,t))return;
   const edit=fn=>{if(!cur||!canEdit(cur.path))return;fn(cur.c,cur.path);render()};
@@ -2167,6 +2188,7 @@ function addHb(c,p,id){
 /*@@GEN@@*/
 /*@@MECHS@@*/
 /*@@INIT@@*/
+/*@@SECTOR@@*/
 /*@@FX@@*/
 /* ================= BOOT ================= */
 async function gmSubmit(){
@@ -2227,6 +2249,8 @@ render();
     watchQ("sheets",db.collection("sheets").where("hidden","==",false),"sheets-visible",once);
     watchQ("sheets",db.collection("sheets").where("owners","array-contains",S.me),"sheets-mine")}
   watch("homebrew");watch("foci");
+  try{db.doc(SEC_P).onSnapshot(d=>{if(d.exists){mergeRemote(SEC_P,d.data());S.exists[SEC_P]=true}else if(S.isGM&&!S.docs[SEC_P])createDoc(SEC_P,secDefault());render()},err=>console.warn("sector",err));
+    if(S.isGM)db.doc(SEC_G).onSnapshot(d=>{if(d.exists){mergeRemote(SEC_G,d.data());S.exists[SEC_G]=true}else if(!S.docs[SEC_G])createDoc(SEC_G,{notes:{}});render()},err=>console.warn("sector notes",err))}catch(e){console.warn(e)}
   if(S.isGM)try{db.doc(INI_P).onSnapshot(d=>{if(d.exists){S.docs[INI_P]=d.data()}render()},err=>console.warn("initiative",err))}catch(e){console.warn(e)}
   if(S.isGM)watchQ("mechs",db.collection("mechs"));else watchQ("mechs",db.collection("mechs").where("assigned","==",true),"mechs-assigned");
   if(S.isGM)watchQ("ships",db.collection("ships"));else watchQ("ships",db.collection("ships").where("shared","==",true),"ships-shared");
