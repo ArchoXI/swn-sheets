@@ -1964,6 +1964,7 @@ function renderHome(){
 document.addEventListener("input",e=>{const el=e.target;if(el.id==="gen-tagq"){S.genTagQ=el.value;render();return}if(el.id==="del-confirm"){S.delText=el.value;render();return}if(el.id==="npc-q"){S.npcQ=el.value;render();return}if(el.dataset&&el.dataset.lu&&el.dataset.lulive!==undefined){luInput(el,true);return}if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
 document.addEventListener("change",e=>{
   const el=e.target;
+  if(el.id==="gd-pick"){S.uiSel={...(S.uiSel||{}),[el.id]:el.value,"ab-skill-gen":undefined};render();return}
   if(el.id&&/^(ab-|cr-|sup-pick|er-pick|sen-|nsh-tpl)/.test(el.id)){S.uiSel={...(S.uiSel||{}),[el.id]:el.type==="checkbox"?el.checked:el.value};return}
   if(el.id==="gen-culture"){S.genCulture=el.value;return}
   if(el.dataset&&el.dataset.ini!==undefined){iniChange(el);return}

@@ -270,7 +270,7 @@ function shipDmg(sp,wid){
 /* ---------- actions ---------- */
 function shipAct(act,t){
   const sp=t.dataset.doc;const s=sp?S.docs[sp]:null;const gm=S.isGM||S.offline;
-  const D=t.dataset.dept;
+  let D=t.dataset.dept;if(D==="gen")D=$("#gd-pick")?.value||"";
   const need=(dept)=>{if(!shipCanAct(sp,dept)){toastMsg("Only the GM or the character in that department can do that.",true);return false}return true};
   switch(act){
     case "ship-sel":S.shipSel=sp;S.shipTab=S.shipTab||"combat";render();return true;
@@ -308,13 +308,13 @@ function shipAct(act,t){
 
     // ---- department actions
     case "ship-duty":{if(!need(D))return true;setField(sp,"cp",num(s.cp)+1);shipEmit(sp,shipRoller(s,D),"Do Your Duty",[{name:"Command Points",dice:[],parts:[],total:"+1",note:"Now "+(num(s.cp))+" CP"}]);render();return true}
-    case "ship-above":{if(!need(D))return true;const a=$("#ab-attr-"+D)?.value||"int";const sk=$("#ab-skill-"+D)?.value||"fix";
+    case "ship-above":{if(!need(D))return true;const a=$("#ab-attr-gen")?.value||"int";const sk=$("#ab-skill-gen")?.value||"fix";
       const lv=shipSkillLv(s,D,sk);const before=num(s.cp);const skName=shipRoller(s,D).pc?(SKILL[sk]?.name||sk)+"-"+lv:"Crew skill "+lv;
       shipCheck(sp,D,{attrs:[a],skill:sk,diff:9,label:"Above and Beyond",result:ok=>{const g=ok?lv+1:-1;setField(sp,"cp",before+g);
         return {name:"Command Points",total:g,note:(ok?skName+" + 1 = +"+g+" CP":"Failed: the ship loses 1 CP")+" · ship now has "+(before+g)+" CP"}}});
       render();return true}
-    case "ship-crisis-deal":{if(!need(D))return true;const id=$("#cr-pick-"+D)?.value;const cr=(s.crises||[]).find(c=>c.id===id);if(!cr){toastMsg("No crisis selected.",true);return true}
-      const a=$("#cr-attr-"+D)?.value||"int";const sk=$("#cr-skill-"+D)?.value||"fix";const diff=num($("#cr-diff-"+D)?.value,10);
+    case "ship-crisis-deal":{if(!need(D))return true;const id=$("#cr-pick-gen")?.value;const cr=(s.crises||[]).find(c=>c.id===id);if(!cr){toastMsg("No crisis selected.",true);return true}
+      const a=$("#cr-attr-gen")?.value||"int";const sk=$("#cr-skill-gen")?.value||"fix";const diff=num($("#cr-diff-gen")?.value,10);
       const res=shipCheck(sp,D,{attrs:[a],skill:sk,diff,label:"Deal With a Crisis: "+cr.type});
       if(res.ok){setField(sp,"crises",(s.crises||[]).filter(c=>c.id!==id));toastMsg(cr.type+" resolved.")}render();return true}
     case "ship-escape":{if(!need("bridge"))return true;const C=shipCompute(s);if(C.engineLock){toastMsg("Engine Lock: no bridge actions until it's resolved.",true);return true}if(!shipSpend(sp,4,"bridge"))return true;
@@ -512,22 +512,27 @@ function renderShipSheet(sp){
   const body=tab==="systems"?shipSystemsTab(sp,s,C):tab==="travel"?shipTravelTab(sp,s,C):tab==="notes"?`<div class="frame-b">${gm?`<textarea class="inp" rows="10" data-doc="${esc(sp)}" data-path="notes" data-live placeholder="Ship notes, cargo manifest, debts…">${esc(s.notes||"")}</textarea>`:`<p style="white-space:pre-wrap">${esc(s.notes||"No notes.")}</p>`}</div>`:shipCombatTab(sp,s,C);
   return `${head}${top}<section class="shipbody"><div class="stack">${s.npc?"":shipCheatSheet()+roles}${shipCrisesBox(sp,s,C)}${s.npc?`<div class="frame"><div class="frame-b"><p class="hint" style="margin:0">NPC ships use a fixed ${num(s.npcCP,4)} Command Points each turn and roll with crew skill ${sgn(num(s.crewSkill,1))} (guns ${sgn(num(s.npcHit,num(s.crewSkill,1)+2))}). Per the book, they don't earn extra points or take captain actions. Change these with Refit / edit.</p></div></div>`:""}</div><div class="frame col-panel">${tabs}${body}</div></section>`;
 }
-function actBtn(sp,s,act,dept,cost,label,desc,extra=""){
-  const ec=effCost(s,cost,dept);const can=shipCanAct(sp,dept);const short=num(s.cp)<ec;
-  return `<div class="sact"><button class="btn ${can&&!short?"":"off"}" data-act="${act}" data-doc="${esc(sp)}" data-dept="${dept}" ${can&&!short?"":"disabled"} title="${can?short?"Not enough Command Points":"":"Only the GM or this department's character"}">${label}<span class="cpcost ${ec<cost?"disc":""}">${ec} CP</span></button><span class="hint">${desc}</span>${extra}</div>`;
+function actBtn(sp,s,act,dept,cost,label,desc,extra="",o={}){
+  const cd=o.as||dept;const ec=effCost(s,cost,cd);const can=shipCanAct(sp,cd);const short=num(s.cp)<ec;
+  return `<div class="sact"><button class="btn ${can&&!short?"":"off"}" data-act="${act}" data-doc="${esc(sp)}" data-dept="${dept}" ${can&&!short?"":"disabled"} title="${can?short?"Not enough Command Points":"":"Only the GM or this department's character"}">${label}<span class="cpcost ${ec<cost||o.cpTxt?"disc":""}">${o.cpTxt||ec+" CP"}</span></button><span class="hint">${desc}</span>${extra}</div>`;
 }
 const ATTR_OPTS=["str","dex","con","int","wis","cha"].map(a=>`<option value="${a}" ${a==="int"?"selected":""}>${a.toUpperCase()}</option>`).join("");
 const shipSkillOpts=sel=>Object.keys(SKILL).filter(k=>!/^(biopsionics|metapsionics|precognition|telekinesis|telepathy|teleportation)$/.test(k)||true).map(k=>`<option value="${k}" ${k===sel?"selected":""}>${esc(SKILL[k].name)}</option>`).join("");
 function shipCombatTab(sp,s,C){
   const tmp=s.tmp||{};const tgt=S.shipTgt||{};const can=shipCanAny(sp);
   const who=d=>`<span class="hint deptby">${esc(shipRoller(s,d).name)}</span>`;
-  const sect=(d,title,inner,note="")=>`<div class="sect deptsect"><div class="deptttl"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_${d}">${title}</button></span>${who(d)}<span style="flex:1"></span>${s.npc?"":`<button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="${d}" ${shipCanAct(sp,d)?"":"disabled"} title="General action: +1 Command Point">Do Your Duty <span class="cpcost disc">+1</span></button>`}</div>${note}<div class="actgrid2">${inner}</div>${genFor(d)}</div>`;
+  const sect=(d,title,inner,note="")=>`<div class="sect deptsect"><div class="deptttl"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_${d}">${title}</button></span>${who(d)}<span style="flex:1"></span></div>${note}<div class="actgrid2">${inner}</div></div>`;
   const counter=(f,val,lbl,post="")=>`<span class="ctr"><span class="lbl">${lbl}</span>${can?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="${f}" data-d="-1">−</button>`:""}<b>${val}</b>${post}${can?`<button class="iconbtn" data-act="ship-step" data-doc="${esc(sp)}" data-f="${f}" data-d="1">+</button>`:""}</span>`;
   const crises=(s.crises||[]);
-  function genFor(d){if(s.npc)return "";return `<details class="gen" ${(S.shipGen||{})[d]?"open":""}><summary class="hint" data-act="ship-gen" data-dept="${d}">Other general actions</summary><p class="hint" style="margin:4px 0"><button class="rword" data-act="rule" data-key="ship_general">Taking a general action means no other action this turn.</button></p>
-    ${actBtn(sp,s,"ship-above",d,0,"Above and Beyond","Explain how you help, roll vs 9. Success: skill + 1 CP. Failure: −1 CP.",`<span class="pick"><select class="inp" id="ab-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="ab-skill-${d}">${shipSkillOpts({bridge:"pilot",gunnery:"shoot",engineering:"fix",comms:"program",captain:"lead"}[d])}</select></span>`)}
-    ${crises.filter(c=>!c.pending).length?actBtn(sp,s,"ship-crisis-deal",d,0,"Deal With a Crisis","Explain your plan, roll vs 10 (GM can shift it ±2).",`<span class="pick"><select class="inp" id="cr-pick-${d}">${crises.filter(c=>!c.pending).map(c=>`<option value="${esc(c.id)}">${esc(c.type)}</option>`).join("")}</select><select class="inp" id="cr-attr-${d}">${ATTR_OPTS}</select><select class="inp" id="cr-skill-${d}">${shipSkillOpts("fix")}</select><input class="inp" id="cr-diff-${d}" type="number" value="10" min="6" max="14" style="width:56px" title="Difficulty"></span>`):""}
-  </details>`}
+  const mine=DEPTS.map(x=>x[0]).filter(d=>shipCanAct(sp,d)&&(!S.isGM||shipRoller(s,d).pc));
+  const gsel=(S.uiSel||{})["gd-pick"]||mine[0]||"bridge";const live=crises.filter(c=>!c.pending);
+  const general=s.npc?"":`<div class="sect deptsect genact"><div class="deptttl"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_general">General actions</button></span><span class="hint">Taking one uses up that person's whole turn.</span></div>
+    <div class="sact"><span class="lbl" style="margin-right:6px">Who</span><span class="pick"><select class="inp" id="gd-pick">${DEPTS.map(([k,l])=>`<option value="${k}" ${k===gsel?"selected":""}>${l} · ${esc(shipRoller(s,k).name)}</option>`).join("")}</select></span></div>
+    <div class="actgrid2">
+    ${actBtn(sp,s,"ship-duty","gen",0,"Do Your Duty","+1 CP. No roll.","",{as:gsel,cpTxt:"+1"})}
+    ${actBtn(sp,s,"ship-above","gen",0,"Above and Beyond","Explain how you help, roll vs 9. Success: skill + 1 CP. Failure: −1 CP.",`<span class="pick"><select class="inp" id="ab-attr-gen">${ATTR_OPTS}</select><select class="inp" id="ab-skill-gen">${shipSkillOpts({bridge:"pilot",gunnery:"shoot",engineering:"fix",comms:"program",captain:"lead"}[gsel])}</select></span>`,{as:gsel,cpTxt:"roll"})}
+    ${actBtn(sp,s,"ship-crisis-deal","gen",0,"Deal With a Crisis",live.length?"Explain your plan, roll vs 10 (GM can shift it ±2). Also covers other things aboard, like fighting boarders.":"No active crises right now.",live.length?`<span class="pick"><select class="inp" id="cr-pick-gen">${live.map(c=>`<option value="${esc(c.id)}">${esc(c.type)}</option>`).join("")}</select><select class="inp" id="cr-attr-gen">${ATTR_OPTS}</select><select class="inp" id="cr-skill-gen">${shipSkillOpts("fix")}</select><input class="inp" id="cr-diff-gen" type="number" value="10" min="6" max="14" style="width:56px" title="Difficulty"></span>`:"",{as:gsel,cpTxt:"roll"})}
+    </div></div>`;
   // weapons table, like a character's attacks
   const H=shipHitParts(s,C);const gunOk=shipCanAct(sp,"gunnery");
   const weapRows=(s.weapons||[]).map(w=>{const W=SHIP_WEAPONS.find(x=>x[0]===w.name)||[];const st=C.sysOf(w.id);const mx=weapAmmoMax(w.name,C.ci,w.extraAmmo);const am=(s.ammo||{})[w.id];const cur=am==null?mx:num(am);
@@ -546,7 +551,8 @@ function shipCombatTab(sp,s,C){
   const disabled=[...(s.weapons||[]).map(w=>[w.id,w.name]),...(s.defenses||[]).map(x=>[x.id,x.name]),...(s.fittings||[]).map(x=>[x.id,x.name])].filter(([id])=>C.sysOf(id)==="disabled");
   return `<div class="frame-b shipcombat">
     ${C.pen?`<div class="notice">Missed maintenance: ${C.pen} to all ship checks and hit rolls.</div>`:""}
-    <div class="sect deptsect"><div class="deptttl"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_gunnery">Gunnery</button></span>${who("gunnery")}<span style="flex:1"></span>${s.npc?"":`<button class="btn sm duty" data-act="ship-duty" data-doc="${esc(sp)}" data-dept="gunnery" ${shipCanAct(sp,"gunnery")?"":"disabled"}>Do Your Duty <span class="cpcost disc">+1</span></button>`}</div>${gun}${genFor("gunnery")}</div>
+    ${general}
+    <div class="sect deptsect"><div class="deptttl"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_gunnery">Gunnery</button></span>${who("gunnery")}<span style="flex:1"></span></div>${gun}</div>
     ${sect("bridge","Bridge",`
       ${actBtn(sp,s,"ship-evasive","bridge",2,"Evasive Maneuvers",tmp.evasive!=null?"Used this round.":"Pilot vs 9: +Pilot to AC until your next turn.")}
       ${actBtn(sp,s,"ship-escape","bridge",4,"Escape Combat","Opposed Pilot. Each win is 1 Escape point; 3 and you're out.")}
