@@ -375,8 +375,8 @@ function shipAct(act,t){
       if(T.hexes>C.drive){toastMsg("Out of range: drive-"+C.drive+" reaches "+C.drive+" hex"+(C.drive>1?"es":"")+".",true);return true}
       if(num(s.fuel,C.fuelMax)<=0){toastMsg("No fuel left for a drill.",true);return true}
       setField(sp,"fuel",Math.max(0,num(s.fuel,C.fuelMax)-1));
-      if(T.auto){shipEmit(sp,shipRoller(s,"bridge"),"Spike drill",[{name:"Drill",dice:[],parts:[],total:"Auto",verdict:["ok","Success"],note:"Difficulty "+T.diff+" (6 or less is automatic) · "+T.time}]);render();return true}
-      const res=shipCheck(sp,"bridge",{attrs:["int"],skill:"pilot",diff:T.diff,label:"Spike drill ("+T.hexes+" hex"+(T.hexes>1?"es":"")+")",extra:[...(C.speed?[{l:"Speed",v:C.speed}]:[]),...(T.nav?[{l:"Adv. nav computer",v:2}]:[])],note:T.time});
+      if(T.auto){shipEmit(sp,shipRoller(s,"bridge"),"Spike drill"+((s.trip||{}).dest?" to "+(s.trip||{}).dest:""),[{name:"Drill",dice:[],parts:[],total:"Auto",verdict:["ok","Success"],note:"Difficulty "+T.diff+" (6 or less is automatic) · "+T.time}]);render();return true}
+      const res=shipCheck(sp,"bridge",{attrs:["int"],skill:"pilot",diff:T.diff,label:"Spike drill"+((s.trip||{}).dest?" to "+(s.trip||{}).dest:"")+" ("+T.hexes+" hex"+(T.hexes>1?"es":"")+")",extra:[...(C.speed?[{l:"Speed",v:C.speed}]:[]),...(T.nav?[{l:"Adv. nav computer",v:2}]:[])],note:T.time});
       if(!res.ok){setField(sp,"mishap",{pending:true,ts:Date.now()});toastMsg("The drill failed. Your GM rolls the mishap.",true)}
       render();return true}
     case "ship-trim":{if(!need("bridge"))return true;const C=shipCompute(s);shipCheck(sp,"bridge",{attrs:["int"],skill:"pilot",diff:9,label:"Trim the course (in-system)",extra:C.speed?[{l:"Speed",v:C.speed}]:[],note:"success: count the drive as "+(C.drive+1)+" · failure: the trip takes twice as long"});render();return true}
@@ -618,6 +618,7 @@ function shipTravelTab(sp,s,C){
     <div class="sect"><span class="lbl"><button class="rword" data-act="rule" data-key="ship_drill">Spike drill</button></span>
       ${C.sysDrive?`<p class="hint">This ship has a system drive and can't drill between stars.</p>`:`
       <div class="drill">
+<label>Destination <input class="inp" type="text" value="${esc((s.trip||{}).dest||"")}" placeholder="Optional, e.g. Brannock" ${tin("dest")}></label>
         <label>Hexes <input class="inp" type="number" min="1" max="${Math.max(1,C.drive)}" value="${D.hexes}" ${tin("hexes")}></label>
         <label>Rutter <select class="inp" ${tin("rutter")}>${[["month","Less than a month old (−2)"],["year","Less than a year old (+0)"],["mid","1 to 5 years old (+1)"],["old","Over 5 years old (+2)"],["uncharted","No rutter: uncharted (+6)"]].map(([k,l])=>`<option value="${k}" ${(T.rutter||"year")===k?"selected":""}>${l}</option>`).join("")}</select></label>
         <label class="chk"><input type="checkbox" ${tin("trim")} ${T.trim?"checked":""}> Trim the course (+2, faster)</label>
