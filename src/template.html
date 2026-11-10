@@ -38,6 +38,9 @@ h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance}
 .brand{display:flex;align-items:center;gap:8px;font-family:var(--display);font-weight:700;font-size:18px;letter-spacing:.04em;text-transform:uppercase;color:#fff}
 .brand .mark{width:24px;height:24px}
 .nav{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.topbar{transition:transform .22s ease}
+body.tbhide .topbar{transform:translateY(-100%)}
+@media (min-width:641px){.topbar .nav{order:3;flex:1 0 100%;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin;padding-bottom:2px}.topbar .nav .chip{flex:0 0 auto}.navrest{margin-left:auto}}
 .chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border:1px solid var(--dark-line);background:var(--dark-2);color:#eee;border-radius:4px;font-family:var(--display);font-weight:700;white-space:nowrap}
 .chip:hover{border-color:#777}
 .chip.on{border-color:var(--accent);box-shadow:inset 0 -2px 0 var(--accent)}
@@ -682,6 +685,7 @@ table.mini td:first-child{color:var(--muted);width:45%}
 /* ---------- phones ---------- */
 .menubtn,.mvitals,.mshow{display:none}
 .navrest{display:contents}
+@media (min-width:641px){.topbar .navrest{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:flex-end;flex:1}}
 button,a,input,select,label{touch-action:manipulation}
 @media (max-width:640px){
   .topbar{position:relative;padding:8px 12px;gap:8px;row-gap:6px}
@@ -1979,6 +1983,10 @@ function renderHome(){
 }
 
 /* ================= EVENTS ================= */
+(()=>{let last=window.scrollY,acc=0;window.addEventListener("scroll",()=>{const y=window.scrollY,dy=y-last;last=y;
+  if(y<60||S.menuOpen){document.body.classList.remove("tbhide");acc=0;return}
+  acc=(Math.sign(dy)===Math.sign(acc))?acc+dy:dy;
+  if(acc>24)document.body.classList.add("tbhide");else if(acc<-24)document.body.classList.remove("tbhide")},{passive:true})})();
 document.addEventListener("input",e=>{const el=e.target;if(el.id==="gen-tagq"){S.genTagQ=el.value;render();return}if(el.id==="del-confirm"){S.delText=el.value;render();return}if(el.id==="npc-q"){S.npcQ=el.value;render();return}if(el.dataset&&el.dataset.lu&&el.dataset.lulive!==undefined){luInput(el,true);return}if(el.dataset&&el.dataset.w&&el.dataset.wlive!==undefined){wizInput(el,true);return}if(el.dataset&&el.dataset.path&&el.dataset.live!==undefined)applyInput(el)});
 document.addEventListener("change",e=>{
   const el=e.target;
