@@ -955,7 +955,10 @@ button,a,input,select,label{touch-action:manipulation}
 .secpls{margin:4px 0 8px;padding-left:4px;list-style:none}.secpls li{margin:3px 0}
 .secicon{display:inline-flex;width:38px;height:38px;border-radius:50%;background:#c62828;align-items:center;justify-content:center;overflow:hidden;border:2px solid #fff}.secicon img{width:100%;height:100%;object-fit:cover}
 @media (max-width:900px){.secmapf{height:68vh;min-height:360px}.secside{position:static;width:auto;max-height:none;margin-top:10px}}
-.drillfx{position:fixed;inset:0;z-index:9999;background:#04060e;cursor:pointer;animation:drillin .35s ease}
+.drillfx{position:fixed;inset:0;z-index:9999;background:transparent;cursor:pointer;animation:drillin .35s ease;--dfxblur:2px;-webkit-backdrop-filter:blur(var(--dfxblur)) saturate(.6) brightness(.6);backdrop-filter:blur(var(--dfxblur)) saturate(.6) brightness(.6)}
+.drillfx.punch .dfxres .drillship{animation:dfxslam .5s cubic-bezier(.2,1.6,.4,1) both}
+.drillfx.punch.bad .dfxres .drillship{animation:dfxslam .5s cubic-bezier(.2,1.6,.4,1) both,drillglitch .25s steps(2) .5s infinite}
+@keyframes dfxslam{0%{transform:scale(2.4);opacity:0;filter:blur(8px)}60%{opacity:1;filter:blur(0)}100%{transform:scale(1)}}
 .drillfx canvas{position:absolute;inset:0;width:100%;height:100%}
 .drillfx.out{animation:drillout .45s ease forwards}
 @keyframes drillin{from{opacity:0}to{opacity:1}}@keyframes drillout{to{opacity:0}}
