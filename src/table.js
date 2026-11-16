@@ -270,9 +270,12 @@ function ttInspector(id){
 /* ---------- ruler ---------- */
 function ttDrawRuler(){const g=document.querySelector(".tt-rul");if(!g)return;const sc=ttScene();const z=TT.view?.z||1;const R=TT.ruler||(TT.drag&&TT.drag.moved?{a:TT.drag.start,b:TT.drag.pos,mv:true}:null);
   if(!R||!sc){g.innerHTML="";return}const [ax,ay]=R.a,[bx,by]=R.b;const m=ttRound(ttM(sc,Math.hypot(bx-ax,by-ay)));const sq=m/(num(sc.scale,1)||1);
-  const lx=bx+14/z,ly=by-14/z;const label=`${m} m${R.mv?"":" · "+(Math.round(sq*10)/10)+" sq"}`;
-  g.innerHTML=`<line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#000" stroke-opacity=".5" stroke-width="${6/z}" stroke-linecap="round"/><line x1="${ax}" y1="${ay}" x2="${bx}" y2="${by}" stroke="#ffd36b" stroke-width="${3/z}" stroke-dasharray="${10/z} ${6/z}" stroke-linecap="round"/><circle cx="${ax}" cy="${ay}" r="${5/z}" fill="#ffd36b"/>
-    <g transform="translate(${lx} ${ly}) scale(${1/z})"><rect x="-4" y="-20" width="${label.length*8.4+12}" height="28" rx="6" fill="rgba(10,12,22,.9)" stroke="#ffd36b"/><text x="4" y="0" fill="#fff4d2" font-family="ui-monospace,monospace" font-size="15" font-weight="600">${label}</text></g>`}
+  let lx=bx+14/z,ly=by-14/z;const label=`${m} m${R.mv?"":" · "+(Math.round(sq*10)/10)+" sq"}`;
+  let ex=bx,ey=by;
+  if(R.mv&&TT.drag){const t=S.docs["tokens/"+TT.drag.id];const tr=Math.max(.25,num(t?.size,1))*num(sc.gridPx,70)/2;lx=bx+tr+10/z;ly=by-tr-6/z;
+    const L=Math.hypot(bx-ax,by-ay);if(L>tr){ex=bx-(bx-ax)/L*tr;ey=by-(by-ay)/L*tr}else{ex=ax;ey=ay}}
+  g.innerHTML=`<line x1="${ax}" y1="${ay}" x2="${ex}" y2="${ey}" stroke="#000" stroke-opacity=".5" stroke-width="${6/z}" stroke-linecap="round"/><line x1="${ax}" y1="${ay}" x2="${ex}" y2="${ey}" stroke="#ffd36b" stroke-width="${3/z}" stroke-dasharray="${10/z} ${6/z}" stroke-linecap="round"/><circle cx="${ax}" cy="${ay}" r="${5/z}" fill="#ffd36b"/>
+    <g transform="translate(${lx} ${ly}) scale(${1/z})"><rect x="-6" y="-21" width="${label.length*9.6+16}" height="30" rx="6" fill="rgba(10,12,22,.9)" stroke="#ffd36b"/><text x="4" y="0" fill="#fff4d2" font-family="ui-monospace,monospace" font-size="15" font-weight="600">${label}</text></g>`}
 
 /* ---------- input ---------- */
 function ttBindStage(st){
