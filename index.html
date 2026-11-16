@@ -4890,16 +4890,18 @@ async function ttLoadBg(sid,sc){
   delete TT.bgLoading[key];render();
 }
 function ttCompress(file){return new Promise((res,rej)=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(u);
-  let max=4096,q=.86,url,w,h;for(let tries=0;tries<10;tries++){const sc=Math.min(1,max/Math.max(img.width,img.height));w=Math.round(img.width*sc);h=Math.round(img.height*sc);
+  let max=4400,q=.86,url,w,h;for(let tries=0;tries<10;tries++){const sc=Math.min(1,max/Math.max(img.width,img.height));w=Math.round(img.width*sc);h=Math.round(img.height*sc);
     const c=document.createElement("canvas");c.width=w;c.height=h;const x=c.getContext("2d");x.fillStyle="#000";x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);url=c.toDataURL("image/jpeg",q);
     if(url.length<=5.3e6)break;if(q>.6)q-=.08;else max=Math.round(max*.85)}
-  res({url,w,h})};img.onerror=()=>{URL.revokeObjectURL(u);rej()};img.src=u})}
+  res({url,w,h,ow:img.width,oh:img.height})};img.onerror=()=>{URL.revokeObjectURL(u);rej()};img.src=u})}
 async function ttUploadBg(sid,file){
   toastMsg("Compressing the map…");let r;try{r=await ttCompress(file)}catch(e){toastMsg("Couldn't read that image.",true);return}
   const CH=900000;const n=Math.ceil(r.url.length/CH);const ver=rid();const p="scenes/"+sid;
   if(S.db&&!S.offline){try{const b=S.db.batch();for(let i=0;i<n;i++)b.set(S.db.doc(p+"/bg/"+i),{d:r.url.slice(i*CH,(i+1)*CH)});await b.commit()}catch(e){console.warn(e);toastMsg("Couldn't save the map image. Try a smaller picture.",true);return}}
   else S.docs[p]._localBg=r.url;
-  const sc=S.docs[p];const g=num(sc.gridPx,70);
+  const sc=S.docs[p];const sz=r.w/r.ow;let g=num(sc.gridPx,70);
+  for(const cand of [100,70,50,140,200]){if(r.ow%cand===0&&r.oh%cand===0&&(r.ow/cand)<=80){g=Math.round(cand*sz*1000)/1000;break}}
+  setField(p,"gridPx",g);
   ["bgChunks","bgVer","bgW","bgH","bgUrl","cols","rows"].forEach(()=>{});
   setField(p,"bgUrl",null);setField(p,"bgChunks",n);setField(p,"bgVer",ver);setField(p,"bgW",r.w);setField(p,"bgH",r.h);setField(p,"cols",Math.round(r.w/g));setField(p,"rows",Math.round(r.h/g));
   TT.bg[sid]={key:sid+":"+ver,url:r.url};TT.fitPending=true;toastMsg("Map image saved ("+Math.round(r.url.length/1024)+" KB).");render();

@@ -145,10 +145,8 @@ def secret_hold():
         D.d.line([D.pt(x, 3.1), D.pt(x, 4.9)], fill=(200, 160, 40), width=4 * SS)
     # hatch up to the ship's locker
     D.d.rectangle([D.p(4) + 14 * SS, D.p(3) + 14 * SS, D.p(5) - 14 * SS, D.p(4) - 14 * SS], fill=(60, 64, 72), outline=(230, 180, 40), width=5 * SS)
-    f = D.font(13); D.d.text((D.p(4) + 22 * SS, D.p(3) + 36 * SS), "HATCH", font=f, fill=(230, 180, 40))
     D.d.line([D.pt(3.15, 4.6), D.pt(5.85, 4.6)], fill=(70, 200, 190), width=4 * SS)
     walls, doors = D.draw_walls()
-    f = D.font(16); D.d.text((D.p(3) - 10 * SS, D.p(5) + 40 * SS), "CRAWLSPACE · 1 M CLEARANCE", font=f, fill=(150, 160, 175))
     D.glow([(4.5, 4.6, 1.6, (8, 40, 38))])
     D.save("silverfish-hold")
     return D, scale_walls(walls + doors)

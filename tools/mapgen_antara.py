@@ -12,6 +12,8 @@ SKIFF = (214, 218, 222)
 
 
 def tag(D, x, y, text, size=14):
+    """Labels are left off the art so places can be renamed later."""
+    return
     f = D.font(size); X, Y = D.p(x), D.p(y); tw = D.d.textlength(text, font=f)
     D.d.rounded_rectangle([X - D.u(6), Y - D.u(4), X + tw + D.u(6), Y + D.u(size + 5)], radius=D.u(4), fill=(238, 238, 242), outline=INK, width=D.u(2))
     D.d.text((X, Y), text, font=f, fill=INK)
@@ -31,6 +33,9 @@ def stool(D, x, y, col=(90, 96, 108)):
 
 def counter(D, x1, y1, x2, y2, col=(120, 128, 140)):
     D.inked([D.p(x1) + D.u(4), D.p(y1) + D.u(4), D.p(x2) - D.u(4), D.p(y2) - D.u(4)], col, radius=4)
+    D.d.rounded_rectangle([D.p(x1) + D.u(12), D.p(y1) + D.u(12), D.p(x2) - D.u(12), D.p(y2) - D.u(12)], radius=D.u(3), outline=shade(col, 1.2), width=D.u(2))
+    for k in range(int(max(x2 - x1, y2 - y1) * 1.5)):
+        if x2 - x1 >= y2 - y1: xx = D.p(x1) + D.u(18) + k * D.S * .66; D.d.ellipse([xx, D.p(y1) + D.u(14), xx + D.u(5), D.p(y1) + D.u(19)], fill=shade(col, .7)) if xx < D.p(x2) - D.u(20) else None
 
 
 def plank(D, poly):
@@ -59,7 +64,7 @@ def lamp(D, x, y):
 
 # ======================= 1. LANDING BAY =======================
 def landing_bay():
-    D = Deck(42, 30, seed=101, px=80); D.ocean()
+    D = Deck(42, 30, seed=101, px=100); D.ocean()
     D.platform([(2.5, 3.5), (8, 1.2), (42, 1.2), (42, 29), (8, 29), (2.5, 26.5), (1.6, 15)], base=CITY)
     D.rail([(2.5, 3.5), (8, 1.2), (42, 1.2)]); D.rail([(42, 29), (8, 29), (2.5, 26.5), (1.6, 15), (2.5, 3.5)])
     D.pad(4, 5, 27, 19, "7")
@@ -99,7 +104,7 @@ def landing_bay():
 
 # ======================= 2. HARBOR =======================
 def harbor():
-    D = Deck(40, 28, seed=202, px=80); D.ocean()
+    D = Deck(40, 28, seed=202, px=100); D.ocean()
     D.platform([(0, 0), (40, 0), (40, 11.5), (0, 11.5)], base=CITY)
     piers = [(4, 7), (13, 16), (22, 25), (31, 34)]
     for x1, x2 in piers:
@@ -139,7 +144,7 @@ def harbor():
 
 # ======================= 3. HARVESTER RIG =======================
 def harvester():
-    D = Deck(40, 30, seed=303, px=80); D.ocean(1.3)
+    D = Deck(40, 30, seed=303, px=100); D.ocean(1.3)
     D.platform([(2, 3), (4, 1.5), (36, 1.5), (38, 3), (38, 24), (36, 25.5), (4, 25.5), (2, 24)], base=HARV, rust=.12)
     D.rail([(2, 3), (4, 1.5), (36, 1.5), (38, 3), (38, 24), (36, 25.5), (4, 25.5), (2, 24), (2, 3)])
     D.water([(4, 4), (14, 4), (14, 11.5), (4, 11.5)], glow=1.9); D.water([(4, 15.5), (14, 15.5), (14, 23), (4, 23)], glow=1.9)
@@ -176,7 +181,7 @@ def harvester():
 
 # ======================= 4. SCRAP CITY MARKET =======================
 def scrap_city():
-    D = Deck(40, 28, seed=404, px=80); D.ocean(.8)
+    D = Deck(40, 28, seed=404, px=100); D.ocean(.8)
     hulls = {
         "A": [(1, 3), (6, 1.5), (16.5, 2.2), (17, 12.6), (3, 13), (1.2, 9)],
         "B": [(19.5, 1), (38.6, 1.2), (39, 10.6), (19.2, 11)],
@@ -226,7 +231,7 @@ def scrap_city():
 
 # ======================= 5. HOVERCRAFT SKIFF =======================
 def skiff():
-    D = Deck(32, 14, seed=505, px=90); D.ocean()
+    D = Deck(32, 14, seed=505, px=100); D.ocean()
     # spray wake behind the skiff
     from PIL import Image, ImageDraw, ImageFilter
     wk = Image.new("L", D.img.size, 0); wd = ImageDraw.Draw(wk)

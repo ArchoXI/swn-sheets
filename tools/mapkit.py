@@ -72,10 +72,16 @@ class Deck:
         return out
 
     def inked(self, box, fill, radius=8, ink=3, shadow=True):
+        """Filled shape with a sketchy double ink line."""
         x1, y1, x2, y2 = box
         if shadow:
             self.soft_shadow([(x1, y1, x2, y2, radius)])
         self.d.rounded_rectangle(box, radius=self.u(radius), fill=fill, outline=INK, width=self.u(ink))
+        j = lambda: random.uniform(-1.6, 1.6) * SS
+        self.d.rounded_rectangle([x1 + j(), y1 + j(), x2 + j(), y2 + j()], radius=self.u(radius), outline=INK, width=max(1, self.u(1)))
+        # light edge on the top-left for a bit of volume
+        self.d.line([(x1 + self.u(ink + 2), y1 + self.u(ink + 2) + self.u(radius) // 2), (x1 + self.u(ink + 2), y2 - self.u(radius))], fill=shade(fill, 1.18), width=self.u(2))
+        self.d.line([(x1 + self.u(radius), y1 + self.u(ink + 2)), (x2 - self.u(radius), y1 + self.u(ink + 2))], fill=shade(fill, 1.18), width=self.u(2))
 
     def soft_shadow(self, boxes, off=(5, 7), blur=7, alpha=95):
         sh = Image.new("L", self.img.size, 0); sd = ImageDraw.Draw(sh)
@@ -101,27 +107,12 @@ class Deck:
         P = [self.pt(x, y) for x, y in poly]
         sh = Image.new("L", self.img.size, 0); ImageDraw.Draw(sh).polygon([(x + self.u(16), y + self.u(22)) for x, y in P], fill=150)
         self.img.paste((0, 0, 0), (0, 0), sh.filter(ImageFilter.GaussianBlur(self.u(16)))); self.d = ImageDraw.Draw(self.img)
-        mask = Image.new("L", self.img.size, 0); ImageDraw.Draw(mask).polygon(P, fill=255)
-        tex = Image.new("RGB", self.img.size, HULL); td = ImageDraw.Draw(tex)
-        # hand-drawn hull panels
-        for _ in range(int(self.cols * self.rows / 2.2)):
-            x, y = random.uniform(0, self.cols), random.uniform(0, self.rows)
-            w, h = random.choice([(1, .5), (1.5, .7), (2, 1), (.7, 1.4), (1.2, 1.2)])
-            fill = random.choice([HULL_L, HULL, HULL_D, shade(HULL, 1.04)])
-            td.rounded_rectangle([self.p(x), self.p(y), self.p(x + w), self.p(y + h)], radius=self.u(6), fill=fill, outline=shade(HULL_D, .78), width=self.u(2))
-        for _ in range(int(self.cols * self.rows / 6)):
-            x, y = random.uniform(0, self.cols), random.uniform(0, self.rows)
-            td.line([self.pt(x, y), self.pt(x + random.uniform(.8, 3), y)], fill=shade(HULL_D, .85), width=self.u(2))
-        # cel shading: darker toward the lower edge of the hull
-        grad = Image.linear_gradient("L").resize(self.img.size).point(lambda v: int(v * .28))
-        tex = Image.composite(Image.new("RGB", self.img.size, shade(HULL, .62)), tex, grad)
-        self.img.paste(tex, (0, 0), mask); self.d = ImageDraw.Draw(self.img)
+        mask = self.plates(poly, HULL, seam=shade(HULL_D, .85))
+        grad = Image.linear_gradient("L").resize(self.img.size).point(lambda v: int(v * .22))
+        self.img.paste(shade(HULL, .55), (0, 0), ImageChops.multiply(grad, mask)); self.d = ImageDraw.Draw(self.img)
         W = self.wobble(P + [P[0]], amp=1.2)
         self.d.line(W, fill=INK, width=self.u(7), joint="curve")
-        inner = Image.new("L", self.img.size, 0); ImageDraw.Draw(inner).line(P + [P[0]], fill=255, width=self.u(22))
-        inner = ImageChops.multiply(inner.filter(ImageFilter.GaussianBlur(self.u(4))), mask)
-        self.img.paste(HULL_L, (0, 0), inner.point(lambda v: v // 3)); self.d = ImageDraw.Draw(self.img)
-        self.d.line(W, fill=INK, width=self.u(6), joint="curve")
+        self.d.line(self.wobble(P + [P[0]], amp=1.8), fill=INK, width=self.u(2), joint="curve")
         for x, y in lights:
             X, Y = self.pt(x, y)
             self.d.ellipse([X - self.u(15), Y - self.u(15), X + self.u(15), Y + self.u(15)], fill=TEAL, outline=INK, width=self.u(3))
@@ -129,57 +120,76 @@ class Deck:
 
     # ---------- ocean worlds ----------
     def ocean(self, seed_glow=1.0):
-        """Deep night ocean full of glowing plankton. Kept so water() can reuse it inside platforms."""
+        """Bright teal ocean with glowing plankton. Kept so water() can reuse it inside platforms."""
         w, h = self.img.size
-        base = Image.new("RGB", (w, h), (6, 22, 34))
-        n = Image.effect_noise((w // 16, h // 16), 40).resize((w, h), Image.BICUBIC)
-        base = Image.composite(Image.new("RGB", (w, h), (10, 40, 58)), base, n.point(lambda v: max(0, min(255, (v - 100) * 2))))
+        base = Image.new("RGB", (w, h), (12, 84, 96))
+        n = Image.effect_noise((w // 16, h // 16), 46).resize((w, h), Image.BICUBIC)
+        base = Image.composite(Image.new("RGB", (w, h), (22, 122, 128)), base, n.point(lambda v: max(0, min(255, (v - 96) * 2))))
+        n2 = Image.effect_noise((w // 60, h // 60), 60).resize((w, h), Image.BICUBIC)
+        base = Image.composite(Image.new("RGB", (w, h), (8, 64, 82)), base, n2.point(lambda v: max(0, min(200, (v - 120) * 3))))
         g = Image.new("RGB", (w, h), (0, 0, 0)); gd = ImageDraw.Draw(g)
-        for _ in range(int(self.cols * self.rows / 14 * seed_glow)):   # drifting plankton blooms
+        for _ in range(int(self.cols * self.rows / 12 * seed_glow)):   # drifting plankton blooms
             x, y = random.uniform(0, w), random.uniform(0, h); r = random.uniform(.8, 3.5) * self.S
-            gd.ellipse([x - r, y - r * .6, x + r, y + r * .6], fill=random.choice([(0, 90, 90), (0, 70, 110), (20, 110, 80), (40, 40, 120)]))
+            gd.ellipse([x - r, y - r * .6, x + r, y + r * .6], fill=random.choice([(0, 80, 70), (10, 90, 80), (30, 100, 60), (0, 60, 90)]))
         g = g.filter(ImageFilter.GaussianBlur(self.u(70)))
         s2 = Image.new("RGB", (w, h), (0, 0, 0)); sd = ImageDraw.Draw(s2)
         for _ in range(int(self.cols * self.rows / 10 * seed_glow)):   # long, lazy current lines
             x, y = random.uniform(-w * .1, w), random.uniform(0, h); pts = [(x, y)]; a = random.uniform(-.25, .25); da = random.uniform(-.06, .06)
             for _k in range(random.randint(10, 26)):
                 da += random.uniform(-.03, .03); a += da; x += math_cos(a) * self.u(46); y += math_sin(a) * self.u(46); pts.append((x, y))
-            sd.line(pts, fill=random.choice([(40, 200, 190), (70, 230, 170), (60, 150, 240)]), width=self.u(random.choice([2, 3, 3, 5])), joint="curve")
+            sd.line(pts, fill=random.choice([(60, 200, 170), (90, 230, 160), (70, 170, 210)]), width=self.u(random.choice([2, 3, 3, 5])), joint="curve")
         s2 = Image.blend(s2.filter(ImageFilter.GaussianBlur(self.u(7))), s2.filter(ImageFilter.GaussianBlur(self.u(1.5))), .45)
         rp = Image.new("RGB", (w, h), (0, 0, 0)); rd = ImageDraw.Draw(rp)
-        for _ in range(int(self.cols * self.rows * 1.6)):                # small surface ripples
+        for _ in range(int(self.cols * self.rows * 1.8)):                # small surface ripples
             x, y = random.uniform(0, w), random.uniform(0, h); r = self.u(random.uniform(14, 40))
-            rd.arc([x - r, y - r * .35, x + r, y + r * .35], 200, 340, fill=(30, 70, 86), width=self.u(2))
+            rd.arc([x - r, y - r * .35, x + r, y + r * .35], 200, 340, fill=(40, 90, 90), width=self.u(2))
         s2 = ImageChops.add(s2, rp.filter(ImageFilter.GaussianBlur(self.u(1))))
-        img = ImageChops.add(ImageChops.add(base, g), s2.point(lambda v: int(v * .7)))
+        img = ImageChops.add(ImageChops.add(base, g), s2.point(lambda v: int(v * .6)))
         d = ImageDraw.Draw(img)
         for _ in range(int(self.cols * self.rows * 1.4 * seed_glow)):  # sparkles
             x, y = random.uniform(0, w), random.uniform(0, h); r = random.choice([1, 2, 2, 3]) * SS // 2 + 1
-            d.ellipse([x, y, x + r, y + r], fill=random.choice([(140, 255, 240), (180, 255, 200), (150, 210, 255)]))
+            d.ellipse([x, y, x + r, y + r], fill=random.choice([(170, 255, 240), (200, 255, 220), (170, 230, 255)]))
         self.ocean_img = img; self.img = img.copy(); self.d = ImageDraw.Draw(self.img)
 
-    def platform(self, poly, base=(150, 158, 164), seam=None, rust=0.0, shadow=True, plates=1.0):
-        """A floating deck: plated metal with an inked rim and a dark waterline shadow."""
-        P = [self.pt(x, y) for x, y in poly]; seam = seam or shade(base, .8)
-        if shadow:
-            sh = Image.new("L", self.img.size, 0); ImageDraw.Draw(sh).polygon([(x + self.u(14), y + self.u(20)) for x, y in P], fill=170)
-            self.img.paste((0, 6, 10), (0, 0), sh.filter(ImageFilter.GaussianBlur(self.u(14)))); self.d = ImageDraw.Draw(self.img)
+    def plates(self, poly, base, seam=None, rust=0.0, big=True):
+        """Grid-aligned deck plates (exactly one square each) clipped to a polygon; returns the mask."""
+        P = [self.pt(x, y) for x, y in poly]; seam = seam or shade(base, .78)
         mask = Image.new("L", self.img.size, 0); ImageDraw.Draw(mask).polygon(P, fill=255)
         tex = Image.new("RGB", self.img.size, base); td = ImageDraw.Draw(tex)
-        step = 2 if plates >= 1 else 4
-        for gx in range(0, self.cols * 2, step // 2 * 2 or 2):
-            for gy in range(0, self.rows):
-                off = (gy % 2) * .5
-                x1 = gx / 2 + off; c = shade(base, random.uniform(.95, 1.05))
-                if rust and random.random() < rust: c = shade(random.choice([(150, 96, 62), (124, 84, 58), (160, 116, 72), (98, 106, 100), (112, 102, 88), (88, 96, 104)]), random.uniform(.85, 1.05))
-                td.rectangle([self.p(x1), self.p(gy), self.p(x1 + 1) - 1, self.p(gy + 1) - 1], fill=c, outline=seam, width=self.u(2))
-                for rx in (x1 + .1, x1 + .9):
-                    for ry in (gy + .1, gy + .9):
-                        td.ellipse([self.p(rx) - self.u(2), self.p(ry) - self.u(2), self.p(rx) + self.u(2), self.p(ry) + self.u(2)], fill=shade(c, .7))
+        tones = {}
+        for gx in range(self.cols):
+            for gy in range(self.rows):
+                key = (gx // 2, gy // 2) if big else (gx, gy)
+                if key not in tones:
+                    c = shade(base, random.uniform(.93, 1.06))
+                    if rust and random.random() < rust: c = shade(random.choice([(150, 96, 62), (124, 84, 58), (160, 116, 72), (98, 106, 100), (112, 102, 88), (88, 96, 104)]), random.uniform(.85, 1.05))
+                    tones[key] = c
+                c = shade(tones[key], random.uniform(.985, 1.015))
+                X, Y, S_ = self.p(gx), self.p(gy), self.S
+                td.rectangle([X, Y, X + S_ - 1, Y + S_ - 1], fill=c, outline=seam, width=self.u(2))
+                td.line([(X + self.u(3), Y + self.u(3)), (X + S_ - self.u(4), Y + self.u(3))], fill=shade(c, 1.1), width=self.u(2))
+                td.line([(X + self.u(3), Y + self.u(3)), (X + self.u(3), Y + S_ - self.u(4))], fill=shade(c, 1.1), width=self.u(2))
+                for rx, ry in ((.1, .1), (.9, .1), (.1, .9), (.9, .9)):
+                    cx, cy = X + int(S_ * rx), Y + int(S_ * ry)
+                    td.ellipse([cx - self.u(2.5), cy - self.u(2.5), cx + self.u(2.5), cy + self.u(2.5)], fill=shade(c, .68))
+                if random.random() < .06:   # a vent or access hatch here and there
+                    m = int(S_ * .22); td.rectangle([X + m, Y + m, X + S_ - m, Y + S_ - m], outline=shade(c, .7), width=self.u(2))
+                    for k in range(1, 5): td.line([(X + m + self.u(4), Y + m + (S_ - 2 * m) * k // 5), (X + S_ - m - self.u(4), Y + m + (S_ - 2 * m) * k // 5)], fill=shade(c, .72), width=self.u(2))
         self.img.paste(tex, (0, 0), mask); self.d = ImageDraw.Draw(self.img)
+        self.surface = ImageChops.lighter(self.surface, mask) if getattr(self, "surface", None) else mask.copy()
+        return mask
+
+    def platform(self, poly, base=(150, 158, 164), seam=None, rust=0.0, shadow=True, plates=1.0):
+        """A floating deck: grid-aligned plates with an inked rim and a waterline shadow."""
+        P = [self.pt(x, y) for x, y in poly]
+        if shadow:
+            sh = Image.new("L", self.img.size, 0); ImageDraw.Draw(sh).polygon([(x + self.u(16), y + self.u(22)) for x, y in P], fill=150)
+            self.img.paste((4, 40, 46), (0, 0), sh.filter(ImageFilter.GaussianBlur(self.u(16)))); self.d = ImageDraw.Draw(self.img)
+        mask = self.plates(poly, base, seam, rust)
         W = self.wobble(P + [P[0]], amp=1.0)
         self.d.line(W, fill=INK, width=self.u(8), joint="curve")
-        self.d.line([(x, y + self.u(5)) for x, y in W], fill=shade(base, .55), width=self.u(3), joint="curve")
+        self.d.line(self.wobble(P + [P[0]], amp=1.6), fill=INK, width=self.u(2), joint="curve")
+        self.d.line([(x, y + self.u(6)) for x, y in W], fill=shade(base, .5), width=self.u(4), joint="curve")
         return mask
 
     def water(self, poly, glow=1.0, rim=(110, 116, 122)):
@@ -207,16 +217,19 @@ class Deck:
         X, Y, R = self.p(x), self.p(y), int(r * self.S)
         self.d.ellipse([X - R * .72, Y - R * .72, X + R * .72, Y + R * .72], outline=shade(col, .78), width=self.u(4))
         self.d.arc([X - R + self.u(6), Y - R + self.u(6), X + R - self.u(6), Y + R - self.u(6)], 200, 340, fill=band, width=self.u(8))
-        self.d.ellipse([X - self.u(10), Y - self.u(10), X + self.u(10), Y + self.u(10)], fill=shade(col, .7), outline=INK, width=self.u(3))
-        if label:
-            f = self.font(max(12, int(r * 14))); tw = self.d.textlength(label, font=f)
-            self.d.text((X - tw / 2, Y + R * .25), label, font=f, fill=INK)
+        for k in range(8):   # bolts around the cap
+            a = k / 8 * 6.283; bx, by = X + math_cos(a) * R * .86, Y + math_sin(a) * R * .86
+            self.d.ellipse([bx - self.u(4), by - self.u(4), bx + self.u(4), by + self.u(4)], fill=shade(col, .6))
+        self.d.rounded_rectangle([X - R * .5, Y - self.u(6), X + R * .5, Y + self.u(6)], radius=self.u(3), fill=shade(col, .85), outline=INK, width=self.u(2))
+        self.d.ellipse([X - self.u(12), Y - self.u(12), X + self.u(12), Y + self.u(12)], fill=shade(col, .7), outline=INK, width=self.u(3))
 
     def barrel(self, x, y, col=(60, 120, 170)):
         X, Y, R = self.p(x), self.p(y), int(.22 * self.S)
         self.d.ellipse([X - R + self.u(3), Y - R + self.u(5), X + R + self.u(3), Y + R + self.u(5)], fill=(0, 0, 0))
         self.d.ellipse([X - R, Y - R, X + R, Y + R], fill=col, outline=INK, width=self.u(3))
-        self.d.ellipse([X - R * .55, Y - R * .55, X + R * .55, Y + R * .55], outline=shade(col, .7), width=self.u(2))
+        self.d.ellipse([X - R * .72, Y - R * .72, X + R * .72, Y + R * .72], outline=shade(col, .65), width=self.u(2))
+        self.d.ellipse([X - R * .2 - self.u(3), Y - R * .4, X - R * .2 + self.u(3), Y - R * .4 + self.u(6)], fill=shade(col, .5))
+        self.d.arc([X - R + self.u(3), Y - R + self.u(3), X + R - self.u(3), Y + R - self.u(3)], 200, 260, fill=shade(col, 1.3), width=self.u(2))
 
     def stall(self, x, y, w, h, awning=((214, 70, 70), (238, 228, 210)), counter=True):
         X1, Y1, X2, Y2 = self.p(x) + self.u(6), self.p(y) + self.u(6), self.p(x + w) - self.u(6), self.p(y + h) - self.u(6)
@@ -242,6 +255,14 @@ class Deck:
             td.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(70, 74, 82), outline=INK, width=self.u(3))
             td.line([(cx - r * .8, cy), (cx + r * .8, cy)], fill=(160, 166, 174), width=self.u(3)); td.line([(cx, cy - r * .8), (cx, cy + r * .8)], fill=(160, 166, 174), width=self.u(3))
         td.rounded_rectangle([ox + L * .64, oy + Wd * .34, ox + L * .76, oy + Wd * .66], radius=self.u(5), fill=(120, 196, 226), outline=INK, width=self.u(3))
+        for k in range(1, 6): td.line([(ox + L * (.12 + k * .1), oy + Wd * .28), (ox + L * (.12 + k * .1), oy + Wd * .72)], fill=shade(col, .74), width=self.u(2))
+        td.line([(ox + L * .08, oy + Wd * .5), (ox + L * .12, oy + Wd * .5)], fill=INK, width=self.u(3))
+        for bx_ in (.2, .45, .66):
+            for by_ in (.14, .86):
+                cx_, cy_ = ox + L * bx_, oy + Wd * (by_ if bx_ < .6 else (.2 if by_ < .5 else .8))
+                td.ellipse([cx_ - self.u(6), cy_ - self.u(6), cx_ + self.u(6), cy_ + self.u(6)], fill=(70, 74, 82), outline=INK, width=self.u(2))
+        for k in range(3):
+            hx = ox + L * (.18 + k * .14); td.rounded_rectangle([hx, oy + Wd * .34, hx + L * .08, oy + Wd * .48], radius=self.u(3), fill=shade(col, .7), outline=INK, width=self.u(2))
         tile = tile.rotate(-angle, expand=True, resample=Image.BICUBIC)
         X, Y = self.p(x) - tile.width // 2, self.p(y) - tile.height // 2
         if wake:
@@ -261,18 +282,25 @@ class Deck:
         t = ImageChops.multiply(t, wear)
         self.img.paste(col, (self.p(x) - t.width // 2, self.p(y) - t.height // 2), t); self.d = ImageDraw.Draw(self.img)
 
-    def pad(self, x, y, w, h, number="7"):
+    def pad(self, x, y, w, h, number=None):
         X1, Y1, X2, Y2 = self.p(x), self.p(y), self.p(x + w), self.p(y + h)
         self.d.rectangle([X1, Y1, X2, Y2], fill=(84, 90, 98), outline=INK, width=self.u(6))
-        for k in range(0, int(w * 2)):
-            for j in range(0, int(h * 2)):
-                c = shade((84, 90, 98), random.uniform(.94, 1.06)); self.d.rectangle([X1 + k * self.S // 2, Y1 + j * self.S // 2, X1 + (k + 1) * self.S // 2, Y1 + (j + 1) * self.S // 2], fill=c, outline=(70, 76, 84), width=self.u(1))
+        for k in range(int(w)):
+            for j in range(int(h)):
+                c = shade((84, 90, 98), random.uniform(.94, 1.06)); self.d.rectangle([X1 + k * self.S, Y1 + j * self.S, X1 + (k + 1) * self.S, Y1 + (j + 1) * self.S], fill=c, outline=(66, 72, 80), width=self.u(2))
+        # scorch marks from landings
+        sc = Image.new("L", self.img.size, 0); scd = ImageDraw.Draw(sc)
+        for _ in range(10):
+            cx_, cy_ = random.uniform(X1 + (X2 - X1) * .25, X2 - (X2 - X1) * .25), random.uniform(Y1 + (Y2 - Y1) * .25, Y2 - (Y2 - Y1) * .25); r_ = random.uniform(1, 3) * self.S
+            scd.ellipse([cx_ - r_, cy_ - r_, cx_ + r_, cy_ + r_], fill=random.randint(40, 90))
+        self.img.paste((20, 20, 24), (0, 0), sc.filter(ImageFilter.GaussianBlur(self.u(40)))); self.d = ImageDraw.Draw(self.img)
         self.hazard(x, y, x + w, y + .35); self.hazard(x, y + h - .35, x + w, y + h); self.hazard(x, y, x + .35, y + h); self.hazard(x + w - .35, y, x + w, y + h)
         cx, cy, r = (X1 + X2) / 2, (Y1 + Y2) / 2, min(X2 - X1, Y2 - Y1) * .36
         self.d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(236, 220, 120), width=self.u(10))
+        self.d.ellipse([cx - r * .5, cy - r * .5, cx + r * .5, cy + r * .5], outline=(236, 220, 120), width=self.u(6))
+        self.d.line([(cx - r * .5, cy), (cx + r * .5, cy)], fill=(236, 220, 120), width=self.u(6)); self.d.line([(cx, cy - r * .5), (cx, cy + r * .5)], fill=(236, 220, 120), width=self.u(6))
         for k in range(16):
             a = k / 16 * 6.283; self.d.ellipse([cx + math_cos(a) * (r + self.u(36)) - self.u(9), cy + math_sin(a) * (r + self.u(36)) - self.u(9), cx + math_cos(a) * (r + self.u(36)) + self.u(9), cy + math_sin(a) * (r + self.u(36)) + self.u(9)], fill=(120, 255, 230), outline=INK, width=self.u(2))
-        self.paint(x + w / 2, y + h / 2, number, size=int(min(w, h) * self.px * .16), col=(236, 220, 120))
 
     def crane(self, x, y, length, angle=0):
         a = math_rad(angle); X, Y = self.p(x), self.p(y); L = length * self.S
@@ -344,71 +372,148 @@ class Deck:
         doors = [dict(x1=a, y1=b, x2=c, y2=d, door=True, open=False) for a, b, c, d in self.merge(e & self.doors)]
         return walls, doors
 
+    def cable(self, pts, col):
+        P = [self.pt(x, y) for x, y in pts]
+        self.d.line(P, fill=INK, width=self.u(8), joint="curve"); self.d.line(P, fill=col, width=self.u(5), joint="curve")
+        self.d.line([(x - self.u(1), y - self.u(1)) for x, y in P], fill=shade(col, 1.35), width=self.u(1), joint="curve")
+
+    def auto_cables(self):
+        """Loose cable runs hugging a wall in some rooms, like a lived-in ship."""
+        for rm in self.rooms:
+            if not rm.get("walls", True) or rm["floor"] in ("cabin", "warm", "med") or random.random() < .45: continue
+            x1, y1, x2, y2 = rm["r"]
+            if (x2 - x1) < 3 or (y2 - y1) < 3: continue
+            side = random.choice("tblr"); off = .22
+            L = random.uniform(1.5, min(4.5, max(x2 - x1, y2 - y1) - 1))
+            cols = random.sample([(60, 140, 200), (200, 80, 60), (226, 176, 52), (90, 90, 96), (70, 170, 120)], 2)
+            for n, col in enumerate(cols):
+                o = off + n * .09
+                if side in "tb":
+                    yy = y1 + o if side == "t" else y2 - o; s0 = random.uniform(x1 + .4, x2 - L - .2)
+                    pts = [(s0 + t * L / 10, yy + (math_sin(t / 10 * 3.1) * .08)) for t in range(11)]
+                    pts.append((s0 + L + .2, yy + (.5 if side == "t" else -.5)))
+                else:
+                    xx = x1 + o if side == "l" else x2 - o; s0 = random.uniform(y1 + .4, y2 - L - .2)
+                    pts = [(xx + (math_sin(t / 10 * 3.1) * .08), s0 + t * L / 10) for t in range(11)]
+                    pts.append((xx + (.5 if side == "l" else -.5), s0 + L + .2))
+                self.cable(pts, col)
+
+    def grime(self):
+        """Scuffs, stains and scratches on every walkable surface."""
+        surf = self.floor_mask if not getattr(self, "surface", None) else ImageChops.lighter(self.floor_mask, self.surface)
+        g = Image.new("L", self.img.size, 0); gd = ImageDraw.Draw(g)
+        for _ in range(int(self.cols * self.rows * .18)):
+            x, y = random.uniform(0, self.img.size[0]), random.uniform(0, self.img.size[1]); r = random.uniform(.1, .45) * self.S
+            gd.ellipse([x - r, y - r * random.uniform(.4, 1), x + r, y + r * random.uniform(.4, 1)], fill=random.randint(10, 26))
+        g = g.filter(ImageFilter.GaussianBlur(self.u(6)))
+        sc = Image.new("L", self.img.size, 0); sd = ImageDraw.Draw(sc)
+        for _ in range(int(self.cols * self.rows * .6)):
+            x, y = random.uniform(0, self.img.size[0]), random.uniform(0, self.img.size[1]); a = random.uniform(0, 6.28); L = self.u(random.uniform(8, 40))
+            sd.line([(x, y), (x + math_cos(a) * L, y + math_sin(a) * L)], fill=random.randint(30, 70), width=self.u(1))
+        self.img.paste((30, 28, 26), (0, 0), ImageChops.multiply(g, surf))
+        self.img.paste((40, 40, 44), (0, 0), ImageChops.multiply(sc, surf).point(lambda v: v // 2))
+        self.d = ImageDraw.Draw(self.img)
+
     def draw_walls(self):
         walls, doors = self.wall_segments()
         segs = [(w["x1"], w["y1"], w["x2"], w["y2"]) for w in walls] + self.extra_walls
-        # soft shadow cast onto the floor along every wall (the "printed" look)
+        self.auto_cables(); self.grime()
+        # soft shadow cast onto the floor along every wall
         ao = Image.new("L", self.img.size, 0); ad = ImageDraw.Draw(ao)
         for x1, y1, x2, y2 in segs + [(d["x1"], d["y1"], d["x2"], d["y2"]) for d in doors] + self.windows:
-            ad.line([self.pt(x1, y1), self.pt(x2, y2)], fill=255, width=self.u(46))
-        ao = ImageChops.multiply(ao.filter(ImageFilter.GaussianBlur(self.u(24))).point(lambda v: int(v * .78)), self.floor_mask)
-        self.img.paste((96, 98, 112), (0, 0), ao); self.d = ImageDraw.Draw(self.img)
-        # walls: ink outline, charcoal body, thin highlight, rounded joints
-        joints = set()
+            ad.line([self.pt(x1, y1), self.pt(x2, y2)], fill=255, width=self.u(50))
+        ao = ImageChops.multiply(ao.filter(ImageFilter.GaussianBlur(self.u(26))).point(lambda v: int(v * .8)), self.floor_mask)
+        self.img.paste((92, 96, 110), (0, 0), ao); self.d = ImageDraw.Draw(self.img)
+        # walls: ink body, hatched charcoal top, sketchy edge lines
+        joints = set(); wm = Image.new("L", self.img.size, 0); wmd = ImageDraw.Draw(wm)
         for x1, y1, x2, y2 in segs:
             A, B = self.pt(x1, y1), self.pt(x2, y2); joints |= {A, B}
             self.d.line(self.wobble([A, B], .9), fill=INK, width=self.u(30))
-        for J in joints: self.d.ellipse([J[0] - self.u(15), J[1] - self.u(15), J[0] + self.u(15), J[1] + self.u(15)], fill=INK)
+            wmd.line([A, B], fill=255, width=self.u(22))
+        for J in joints:
+            self.d.ellipse([J[0] - self.u(15), J[1] - self.u(15), J[0] + self.u(15), J[1] + self.u(15)], fill=INK)
+            wmd.ellipse([J[0] - self.u(11), J[1] - self.u(11), J[0] + self.u(11), J[1] + self.u(11)], fill=255)
+        hatch = Image.new("RGB", self.img.size, WALL); hd = ImageDraw.Draw(hatch)
+        step = self.u(9); Wd, Hd = self.img.size
+        for k in range(-Hd, Wd, step): hd.line([(k, 0), (k + Hd, Hd)], fill=shade(WALL, .82), width=self.u(2))
+        self.img.paste(hatch, (0, 0), wm); self.d = ImageDraw.Draw(self.img)
         for x1, y1, x2, y2 in segs:
             A, B = self.pt(x1, y1), self.pt(x2, y2)
-            self.d.line([A, B], fill=WALL, width=self.u(22))
-            self.d.line([(A[0] - self.u(3), A[1] - self.u(3)), (B[0] - self.u(3), B[1] - self.u(3))], fill=WALL_HI, width=self.u(4))
-        for J in joints: self.d.ellipse([J[0] - self.u(11), J[1] - self.u(11), J[0] + self.u(11), J[1] + self.u(11)], fill=WALL)
+            self.d.line([(A[0] - self.u(3), A[1] - self.u(3)), (B[0] - self.u(3), B[1] - self.u(3))], fill=WALL_HI, width=self.u(3))
+            horiz = A[1] == B[1]
+            for s_ in (-1, 1):   # second, sketchier ink edge
+                o = s_ * self.u(11)
+                E = [(A[0], A[1] + o), (B[0], B[1] + o)] if horiz else [(A[0] + o, A[1]), (B[0] + o, B[1])]
+                self.d.line(self.wobble(E, 1.4, 18), fill=INK, width=self.u(2))
         # windows
         for x1, y1, x2, y2 in self.windows:
             A, B = self.pt(x1, y1), self.pt(x2, y2)
             self.d.line([A, B], fill=INK, width=self.u(26)); self.d.line([A, B], fill=(120, 196, 226), width=self.u(16))
             self.d.line([(A[0] - self.u(2), A[1] - self.u(2)), (B[0] - self.u(2), B[1] - self.u(2))], fill=(230, 250, 255), width=self.u(4))
+            for t in (.33, .66):
+                mx, my = A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t
+                self.d.rectangle([mx - self.u(5), my - self.u(5), mx + self.u(5), my + self.u(5)], fill=WALL, outline=INK, width=self.u(2))
         # doors: orange sliding panels with dark frame blocks at each end
         for dr in doors:
             A, B = self.pt(dr["x1"], dr["y1"]), self.pt(dr["x2"], dr["y2"]); horiz = A[1] == B[1]
             self.d.line([A, B], fill=INK, width=self.u(20)); self.d.line([A, B], fill=DOOR, width=self.u(12))
             mx, my = (A[0] + B[0]) // 2, (A[1] + B[1]) // 2
-            if horiz: self.d.line([(mx, my - self.u(7)), (mx, my + self.u(7))], fill=DOOR_D, width=self.u(3))
-            else: self.d.line([(mx - self.u(7), my), (mx + self.u(7), my)], fill=DOOR_D, width=self.u(3))
+            if horiz:
+                self.d.line([(mx, my - self.u(7)), (mx, my + self.u(7))], fill=DOOR_D, width=self.u(3))
+                for t in (.25, .75): self.d.line([(A[0] + (B[0] - A[0]) * t, my - self.u(3)), (A[0] + (B[0] - A[0]) * t, my + self.u(3))], fill=DOOR_D, width=self.u(2))
+            else:
+                self.d.line([(mx - self.u(7), my), (mx + self.u(7), my)], fill=DOOR_D, width=self.u(3))
+                for t in (.25, .75): self.d.line([(mx - self.u(3), A[1] + (B[1] - A[1]) * t), (mx + self.u(3), A[1] + (B[1] - A[1]) * t)], fill=DOOR_D, width=self.u(2))
             for P_ in (A, B):
                 self.d.rounded_rectangle([P_[0] - self.u(15), P_[1] - self.u(15), P_[0] + self.u(15), P_[1] + self.u(15)], radius=self.u(5), fill=WALL, outline=INK, width=self.u(4))
+                self.d.ellipse([P_[0] - self.u(4), P_[1] - self.u(4), P_[0] + self.u(4), P_[1] + self.u(4)], fill=(120, 255, 200))
         return walls, doors
 
     # ---------- props ----------
     def crate(self, x, y, w, h, col=(172, 132, 80)):
         X1, Y1, X2, Y2 = self.p(x) + self.u(7), self.p(y) + self.u(7), self.p(x + w) - self.u(7), self.p(y + h) - self.u(7)
         self.inked([X1, Y1, X2, Y2], col, radius=5)
-        dk = shade(col, .78); n = max(2, int(w * 3))
-        for k in range(1, n): self.d.line([(X1 + (X2 - X1) * k // n, Y1 + self.u(4)), (X1 + (X2 - X1) * k // n, Y2 - self.u(4))], fill=dk, width=self.u(2))
+        dk = shade(col, .74); n = max(2, int(w * 3))
+        for k in range(1, n): self.d.line([(X1 + (X2 - X1) * k // n, Y1 + self.u(5)), (X1 + (X2 - X1) * k // n, Y2 - self.u(5))], fill=dk, width=self.u(2))
         self.d.rectangle([X1 + self.u(10), Y1 + self.u(10), X2 - self.u(10), Y2 - self.u(10)], outline=INK, width=self.u(2))
+        self.d.line([(X1 + self.u(10), Y1 + self.u(10)), (X2 - self.u(10), Y2 - self.u(10))], fill=dk, width=self.u(3))
+        if random.random() < .5:   # stencil stripe
+            yy = Y1 + (Y2 - Y1) * random.choice([.25, .7])
+            self.d.rectangle([X1 + self.u(14), yy - self.u(4), X1 + self.u(14) + (X2 - X1) * .35, yy + self.u(4)], fill=random.choice([(226, 142, 52), (236, 236, 230), (70, 190, 172)]))
 
     def console(self, x, y, w, h, screen=(110, 210, 150)):
         X1, Y1, X2, Y2 = self.p(x) + self.u(8), self.p(y) + self.u(8), self.p(x + w) - self.u(8), self.p(y + h) - self.u(8)
         self.inked([X1, Y1, X2, Y2], (96, 100, 108), radius=8)
-        sx2 = X1 + int((X2 - X1) * .58)
-        self.d.rounded_rectangle([X1 + self.u(10), Y1 + self.u(10), sx2, Y2 - self.u(10)], radius=self.u(4), fill=shade(screen, .35), outline=INK, width=self.u(2))
-        for k in range(3):
-            yy = Y1 + self.u(18) + k * self.u(10)
-            if yy < Y2 - self.u(16): self.d.line([(X1 + self.u(16), yy), (sx2 - self.u(8) - random.randint(0, 20) * SS, yy)], fill=screen, width=self.u(3))
-        for k in range(4):
-            bx = sx2 + self.u(10) + (k % 2) * self.u(14); by = Y1 + self.u(14) + (k // 2) * self.u(14)
-            if bx < X2 - self.u(6) and by < Y2 - self.u(6):
-                self.d.ellipse([bx, by, bx + self.u(8), by + self.u(8)], fill=random.choice([(220, 80, 70), (240, 200, 80), screen]), outline=INK, width=self.u(1))
+        horiz = (X2 - X1) >= (Y2 - Y1)
+        if horiz: sx1, sy1, sx2, sy2 = X1 + self.u(10), Y1 + self.u(10), X1 + int((X2 - X1) * .55), Y2 - self.u(10)
+        else: sx1, sy1, sx2, sy2 = X1 + self.u(10), Y1 + self.u(10), X2 - self.u(10), Y1 + int((Y2 - Y1) * .5)
+        self.d.rounded_rectangle([sx1, sy1, sx2, sy2], radius=self.u(4), fill=shade(screen, .3), outline=INK, width=self.u(2))
+        for k in range(5):
+            yy = sy1 + self.u(8) + k * self.u(8)
+            if yy < sy2 - self.u(6): self.d.line([(sx1 + self.u(6), yy), (sx2 - self.u(6) - random.randint(0, 16) * SS, yy)], fill=screen, width=self.u(2))
+        bx0, by0 = (sx2 + self.u(8), Y1 + self.u(10)) if horiz else (X1 + self.u(10), sy2 + self.u(8))
+        for k in range(12):
+            bx = bx0 + (k % 3) * self.u(12); by = by0 + (k // 3) * self.u(11)
+            if bx < X2 - self.u(8) and by < Y2 - self.u(8):
+                self.d.rounded_rectangle([bx, by, bx + self.u(8), by + self.u(7)], radius=self.u(2), fill=random.choice([(220, 80, 70), (240, 200, 80), screen, (180, 186, 196)]), outline=INK, width=self.u(1))
+        # cable trailing off the back
+        cx = (X1 + X2) // 2 + random.randint(-12, 12) * SS
+        self.d.line([(cx, Y2), (cx + random.randint(-20, 20) * SS, Y2 + self.u(16))], fill=INK, width=self.u(5)); self.d.line([(cx, Y2), (cx + random.randint(-6, 6) * SS, Y2 + self.u(14))], fill=random.choice([(60, 140, 200), (200, 80, 60), (90, 90, 96)]), width=self.u(3))
 
     def seat(self, x, y, face="right", col=(70, 168, 154)):
         cx, cy = self.p(x + .5), self.p(y + .5); r = int(.3 * self.S)
-        self.inked([cx - r, cy - r, cx + r, cy + r], col, radius=12)
         dx, dy = {"right": (-1, 0), "left": (1, 0), "up": (0, 1), "down": (0, -1)}[face]
+        # armrests
+        for s_ in (-1, 1):
+            if dx: box = [cx - r + self.u(4), cy + s_ * r - self.u(6), cx + r - self.u(4), cy + s_ * r + self.u(6)]
+            else: box = [cx + s_ * r - self.u(6), cy - r + self.u(4), cx + s_ * r + self.u(6), cy + r - self.u(4)]
+            self.d.rounded_rectangle(box, radius=self.u(4), fill=(70, 74, 82), outline=INK, width=self.u(2))
+        self.inked([cx - r + self.u(6), cy - r + self.u(6), cx + r - self.u(6), cy + r - self.u(6)], col, radius=12)
         bw = self.u(9)
         if dx: box = [cx + dx * r - bw, cy - r + self.u(4), cx + dx * r + bw, cy + r - self.u(4)]
         else: box = [cx - r + self.u(4), cy + dy * r - bw, cx + r - self.u(4), cy + dy * r + bw]
         self.d.rounded_rectangle(box, radius=self.u(5), fill=shade(col, .7), outline=INK, width=self.u(3))
+        self.d.line([(cx - r * .3, cy - r * .3), (cx + r * .2, cy + r * .2)], fill=shade(col, .82), width=self.u(2))
 
     def bed(self, x, y, w=1, h=2, vertical=True, blanket=(64, 176, 192)):
         X1, Y1, X2, Y2 = self.p(x) + self.u(8), self.p(y) + self.u(8), self.p(x + w) - self.u(8), self.p(y + h) - self.u(8)
@@ -435,19 +540,17 @@ class Deck:
         for k in range(-(Y2 - Y1), X2 - X1, self.u(36)): td.polygon([(k, Y2 - Y1), (k + self.u(18), Y2 - Y1), (k + self.u(18) + (Y2 - Y1), 0), (k + (Y2 - Y1), 0)], fill=INK)
         self.img.paste(tile, (X1, Y1)); self.d.rectangle([X1, Y1, X2, Y2], outline=INK, width=self.u(3))
 
-    def lift(self, x, y, w, h, label="CARGO LIFT"):
+    def lift(self, x, y, w, h, label=None):
         X1, Y1, X2, Y2 = self.p(x), self.p(y), self.p(x + w), self.p(y + h)
         m = self.u(12)
         self.hazard(x + .06, y + .06, x + w - .06, y + h - .06)
         X1i, Y1i, X2i, Y2i = X1 + m + self.u(6), Y1 + m + self.u(6), X2 - m - self.u(6), Y2 - m - self.u(6)
         self.d.rectangle([X1i, Y1i, X2i, Y2i], fill=(176, 180, 186), outline=INK, width=self.u(4))
-        for k in range(-(Y2i - Y1i), X2i - X1i, self.u(14)):   # cross-hatched platform
+        for k in range(-(Y2i - Y1i), X2i - X1i, self.u(14)):
             self.d.line([(X1i + max(0, k), Y1i + max(0, -k)), (X1i + min(X2i - X1i, k + Y2i - Y1i), Y1i + min(Y2i - Y1i, Y2i - Y1i - k))], fill=(150, 154, 160), width=self.u(2))
         cx, cy = (X1 + X2) // 2, (Y1 + Y2) // 2; a = self.u(20)
         for dy in (-1, 1):
             self.d.polygon([(cx - a, cy + dy * self.u(8)), (cx + a, cy + dy * self.u(8)), (cx, cy + dy * (self.u(8) + a))], fill=(232, 186, 52), outline=INK)
-        f = self.font(14); tw = self.d.textlength(label, font=f)
-        self.d.text((cx - tw / 2, Y2i - self.u(26)), label, font=f, fill=INK)
 
     def light_strip(self, x1, y1, x2, y2):
         self.d.line([self.pt(x1, y1), self.pt(x2, y2)], fill=(90, 190, 180), width=self.u(6))
@@ -465,14 +568,8 @@ class Deck:
         if ring: self.d.ellipse([X - R + self.u(10), Y - R + self.u(10), X + R - self.u(10), Y + R - self.u(10)], outline=ring, width=self.u(4))
 
     def labels(self):
-        """Small inked name tags in each room's top-left corner, drawn over the furniture."""
-        f = self.font(14)
-        for rm in self.rooms:
-            if not rm["label"]: continue
-            x1, y1 = rm["r"][:2]; t = rm["name"].upper()
-            X, Y = self.p(x1) + self.u(20), self.p(y1) + self.u(18); tw = self.d.textlength(t, font=f)
-            self.d.rounded_rectangle([X - self.u(6), Y - self.u(4), X + tw + self.u(6), Y + self.u(19)], radius=self.u(4), fill=(238, 238, 242), outline=INK, width=self.u(2))
-            self.d.text((X, Y), t, font=f, fill=INK)
+        """Room names are left off the art on purpose so rooms can be renamed or repurposed."""
+        return
 
     def glow(self, spots):
         g = Image.new("RGB", self.img.size, (0, 0, 0)); gd = ImageDraw.Draw(g)
@@ -484,7 +581,7 @@ class Deck:
         """Light paper grain over everything, for the printed feel."""
         w, h = self.img.size
         n = Image.effect_noise((w // 2, h // 2), 18).resize((w, h)).convert("RGB")
-        self.img = Image.blend(self.img, ImageChops.multiply(self.img, n.point(lambda v: 200 + v // 4)), .35)
+        self.img = Image.blend(self.img, ImageChops.multiply(self.img, n.point(lambda v: 190 + v // 4)), .45)
         self.d = ImageDraw.Draw(self.img)
 
     def save(self, name):
