@@ -14,6 +14,41 @@ service cloud.firestore {
       allow write: if isGM();
     }
 
+    // Tabletop: which map is live, and the bring-everyone signal.
+    match /config/table {
+      allow read: if signedIn();
+      allow write: if isGM();
+    }
+    function liveScene() {
+      return get(/databases/$(database)/documents/config/table).data.get('active', null);
+    }
+    // Maps: the GM sees all of them; players only the live one.
+    match /scenes/{id} {
+      allow read: if isGM() || (signedIn() && exists(/databases/$(database)/documents/config/table) && liveScene() == id);
+      allow write: if isGM();
+      match /bg/{n} {
+        allow read: if isGM() || (signedIn() && exists(/databases/$(database)/documents/config/table) && liveScene() == id);
+        allow write: if isGM();
+      }
+    }
+    // Tokens: players see the ones that aren't hidden and can move tokens linked to their own sheet.
+    match /tokens/{id} {
+      allow read: if isGM() || (signedIn() && resource.data.hidden == false);
+      allow create, delete: if isGM();
+      allow update: if isGM() || (signedIn()
+        && resource.data.get('sheetId', null) is string
+        && request.auth.uid in get(/databases/$(database)/documents/sheets/$(resource.data.sheetId)).data.owners
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['x', 'y']));
+    }
+    // Map pings. Only the GM can pull everyone's view.
+    match /pings/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['scene', 'x', 'y', 'by', 'ts', 'color', 'pull'])
+        && (request.resource.data.get('pull', false) == false || isGM());
+      allow delete: if isGM();
+    }
+
     // GM-only private notes (initiative tracker).
     match /gmprivate/{id} {
       allow read, write: if isGM();

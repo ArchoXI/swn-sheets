@@ -981,6 +981,97 @@ button,a,input,select,label{touch-action:manipulation}
 .critfx.calm .critring,.critfx.calm i{display:none}
 .toast.crit{border-color:#e6b84a;box-shadow:0 0 0 1px #e6b84a,0 0 22px rgba(230,184,74,.55);animation:critglow 1.4s ease-out}
 @keyframes critglow{0%{box-shadow:0 0 0 2px #ffd36b,0 0 40px rgba(255,200,80,.9)}100%{box-shadow:0 0 0 1px #e6b84a,0 0 22px rgba(230,184,74,.55)}}
+
+/* ===== Tabletop ===== */
+.ttenter{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:999px;border:1px solid #c53131;background:linear-gradient(135deg,#1b1f2e,#2a1416);color:#fff;font-family:var(--display);font-size:13px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;position:relative;box-shadow:0 0 0 1px rgba(197,49,49,.25),0 0 18px rgba(197,49,49,.25);white-space:nowrap}
+.ttenter svg{width:16px;height:16px}.ttenter:hover{box-shadow:0 0 0 1px #c53131,0 0 24px rgba(197,49,49,.5)}
+.ttenter .ttlive{position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:50%;background:#38d26b;box-shadow:0 0 8px #38d26b;border:2px solid #111}
+body.tablemode{overflow:hidden}
+body.tablemode #app{position:fixed;inset:0;pointer-events:none;z-index:40}
+body.tablemode #app>*{pointer-events:auto}
+.tt{position:fixed;inset:0;z-index:30;background:#05070d;color:#e6ebf7;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;--tt-line:rgba(150,170,220,.18);--tt-panel:rgba(14,17,28,.94)}
+.tt-stage{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;background:radial-gradient(ellipse at center,#0c1020 0%,#05070d 70%)}
+.tt-stage:active{cursor:grabbing}
+.tt-world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+.tt-bgwrap{position:absolute;left:0;top:0;box-shadow:0 0 0 1px rgba(150,170,220,.25),0 20px 80px rgba(0,0,0,.7)}
+.tt-bgwrap.blank{background:#151a28}
+.tt-bg{display:block;width:100%;height:100%;user-select:none;-webkit-user-drag:none;image-rendering:auto}
+.tt-grid,.tt-walls,.tt-over{position:absolute;left:0;top:0;pointer-events:none;overflow:visible}
+.tt-over{width:1px;height:1px}
+.tt-walls.editing{pointer-events:auto}
+.tt-walls .tt-wall{stroke:#38bdf8;stroke-linecap:round;pointer-events:stroke}
+.tt-walls .tt-wall.door{stroke:#f59e0b}.tt-walls .tt-wall.door.open{stroke-dasharray:6 6;opacity:.7}
+.tt-walls .tt-wall.draft{stroke:#7dd3fc;stroke-dasharray:6 4}
+.tt-walls.editing .tt-wall:hover{stroke:#ff6b6b}
+.tt-door{pointer-events:auto;cursor:pointer}.tt-door circle{fill:#1f2433;stroke:#f59e0b;stroke-width:2}.tt-door path{fill:none;stroke:#f59e0b;stroke-width:1.6}
+.tt-door.open circle{stroke:#38d26b}.tt-door.open path{stroke:#38d26b}
+.tt-fog{position:absolute;left:0;top:0;pointer-events:none}
+.tt-tokens{position:absolute;left:0;top:0}
+.tt-tok{position:absolute;transition:left .25s ease,top .25s ease;cursor:pointer}
+.tt-tok.dragging{transition:none;z-index:5;filter:drop-shadow(0 10px 14px rgba(0,0,0,.6))}
+.tt-tok.movable{cursor:grab}
+.tt-tokimg{position:absolute;inset:4%;border-radius:50%;overflow:hidden;background:#2a2f40;border:3px solid var(--ring);box-shadow:0 3px 10px rgba(0,0,0,.6);display:grid;place-items:center}
+.tt-tokimg img{width:100%;height:100%;object-fit:cover;pointer-events:none}
+.tt-tokimg span{font-weight:700;color:#fff;font-size:clamp(10px,1.1em,40px)}
+.tt-tok .tt-tokimg span{font-size:22px}
+.tt-tok.sel .tt-tokimg{box-shadow:0 0 0 3px #fff,0 0 18px 4px rgba(255,211,107,.8)}
+.tt-tok.mine .tt-tokimg{border-style:solid}
+.tt-tok.hidden{opacity:.5}.tt-tok.hidden .tt-tokimg{border-style:dashed}
+.tt-hid{position:absolute;right:-2px;top:-2px;width:20px;height:20px;border-radius:50%;background:#111;color:#fff;font-size:13px;display:grid;place-items:center;border:1px solid #888}
+.tt-name{position:absolute;left:50%;top:100%;transform:translate(-50%,-2px);white-space:nowrap;font-size:12px;font-weight:600;color:#fff;background:rgba(5,7,13,.8);padding:1px 7px;border-radius:9px;pointer-events:none;display:none}
+.tt-tok.showname:hover .tt-name,.tt-tok.showname.sel .tt-name,.tt-tok.showname.dragging .tt-name{display:block}
+.tt-empty{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center}
+.tt-empty h2{font-family:var(--display);letter-spacing:.08em;margin:0 0 8px}.tt-empty p{color:#9aa6c4;max-width:420px}
+.tt-ui{position:absolute;inset:0;pointer-events:none}.tt-ui>*{pointer-events:auto}
+.tt-top{position:absolute;left:0;right:0;top:0;height:52px;display:flex;align-items:center;gap:14px;padding:0 12px;background:linear-gradient(180deg,rgba(5,7,13,.96),rgba(5,7,13,.82));border-bottom:1px solid var(--tt-line);backdrop-filter:blur(6px)}
+.tt-title{display:flex;align-items:center;gap:10px;min-width:0}.tt-title b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+.tt-mark{font-family:var(--display);letter-spacing:.3em;font-size:11px;color:#c53131;font-weight:700}
+.tt-live{color:#38d26b;font-size:12px;white-space:nowrap}.tt-live.sm{font-size:11px}
+.tt-prep{color:#f59e0b;font-size:12px;white-space:nowrap}
+.tt-tools{display:flex;gap:4px;align-items:center;margin:0 auto;flex-wrap:nowrap}
+.tt-tool{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;border:1px solid transparent;background:transparent;color:#c9d2ea;font-size:13px;cursor:pointer}
+.tt-tool:hover{background:rgba(150,170,220,.1)}.tt-tool.on{background:#c53131;color:#fff}
+kbd{font:10px ui-monospace,monospace;padding:1px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.25);opacity:.7}
+.tt-right{display:flex;gap:8px;align-items:center}
+.tt-zoomlbl{font:12px ui-monospace,monospace;color:#8b96b5;min-width:42px}
+.ttbtn{display:inline-flex;align-items:center;gap:6px;justify-content:center;padding:7px 12px;border-radius:7px;border:1px solid var(--tt-line);background:rgba(30,36,54,.9);color:#e6ebf7;font-size:13px;cursor:pointer;white-space:nowrap}
+.ttbtn:hover{border-color:rgba(150,170,220,.45)}.ttbtn.pri{background:#c53131;border-color:#c53131;color:#fff}.ttbtn.on{background:#e6ebf7;color:#111}
+.ttbtn.ghost{background:transparent}.ttbtn.sm{padding:4px 9px;font-size:12px}.ttbtn.wide{width:100%}
+.tt-chk{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#c9d2ea;cursor:pointer;margin:2px 0}
+.tt-panel{position:absolute;left:12px;top:64px;bottom:12px;width:300px;background:var(--tt-panel);border:1px solid var(--tt-line);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.tt-panel.min{bottom:auto;width:auto}
+.tt-ptabs{display:flex;border-bottom:1px solid var(--tt-line)}.tt-ptabs button{flex:1;padding:10px 6px;background:none;border:none;color:#8b96b5;font-size:13px;cursor:pointer;border-bottom:2px solid transparent}
+.tt-ptabs button.on{color:#fff;border-bottom-color:#c53131}.tt-ptabs .tt-pmin{flex:0 0 36px}
+.tt-panel.min .tt-ptabs button:not(.tt-pmin){display:none}
+.tt-pbody{overflow:auto;padding:10px 12px;flex:1}
+.tt-sec{padding:8px 0 12px;border-bottom:1px solid var(--tt-line);display:flex;flex-direction:column;gap:7px}.tt-sec:last-child{border-bottom:none}
+.tt-sech{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8b96b5;font-weight:700}
+.tt-muted{color:#8b96b5;font-size:12px;margin:0}
+.tt-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tt-grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tt-lbl{display:flex;flex-direction:column;gap:3px;font-size:12px;color:#8b96b5}
+.ttin{background:#0b0e18;border:1px solid var(--tt-line);border-radius:6px;color:#e6ebf7;padding:6px 8px;font:inherit;font-size:13px;width:100%;box-sizing:border-box}
+.ttin:focus{outline:none;border-color:#c53131}
+.ttclr{width:100%;height:32px;border:1px solid var(--tt-line);border-radius:6px;background:#0b0e18;padding:2px;cursor:pointer}
+.tt-scrow{display:flex;gap:6px;align-items:center;padding:4px;border-radius:8px}.tt-scrow.on{background:rgba(197,49,49,.14);box-shadow:inset 0 0 0 1px rgba(197,49,49,.5)}
+.tt-scname{flex:1;text-align:left;background:none;border:none;color:#e6ebf7;font-size:13px;cursor:pointer;padding:5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tt-lib{display:grid;grid-template-columns:84px 1fr;gap:10px;align-items:start}.tt-lib img{width:84px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--tt-line)}
+.tt-lib>div{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.tt-toklist{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:none;color:#e6ebf7;padding:5px 6px;border-radius:6px;cursor:pointer;font-size:13px}.tt-toklist:hover,.tt-toklist.on{background:rgba(150,170,220,.1)}
+.tt-dot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+.tt-insp{position:absolute;right:12px;bottom:70px;width:290px;background:var(--tt-panel);border:1px solid var(--tt-line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.tt-insph{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tt-x{background:none;border:none;color:#8b96b5;font-size:16px;cursor:pointer;padding:2px 6px}
+.tt-hintbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(10,12,22,.9);border:1px solid var(--tt-line);border-radius:999px;padding:7px 16px;font-size:12px;color:#c9d2ea}
+.tt-scale{position:absolute;left:50%;top:60px;transform:translateX(-50%);font:11px ui-monospace,monospace;color:#8b96b5;background:rgba(5,7,13,.7);padding:2px 10px;border-radius:999px;pointer-events:none}
+.tsheet{position:fixed;top:52px;right:0;bottom:0;width:min(1080px,78vw);background:linear-gradient(180deg,var(--sky) 0,var(--ink) 420px) no-repeat,var(--ink);color:var(--text);border-left:1px solid var(--line);box-shadow:-20px 0 60px rgba(0,0,0,.5);display:flex;flex-direction:column;animation:tshin .22s ease}
+@keyframes tshin{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+.tsh-top{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line);background:#0b0e18;color:#e6ebf7}.tsh-top .tt-x{margin-left:auto}
+.tsh-body{overflow:auto;padding:12px 18px 80px;flex:1;zoom:.8}
+@media (max-width:1100px){.tsheet{width:96vw}}
+.tsh-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tsh-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+body.tablemode .logbtn{bottom:16px;right:16px}
 </style>
 </head>
 <body>
@@ -1530,6 +1621,7 @@ function renderTop(){
     return `<button class="chip ${S.view==="sheet"&&S.current===p?"on":""}" data-act="open" data-doc="${esc(p)}">${portraitHtml(c,"av")}${esc(c.name||"Unnamed")}<span class="hpmini" title="HP"><i style="width:${pct}%;background:${pct<34?"var(--bad)":pct<67?"var(--warn)":"var(--good)"}"></i></span></button>`}).join("");
   return `<div class="topbar">
     <div class="brand" data-act="view" data-v="home" role="button" tabindex="0" title="Home" style="cursor:pointer"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" fill="none" stroke="#c53131" stroke-width="2"/><path d="M16 5 L19 13 L27 16 L19 19 L16 27 L13 19 L5 16 L13 13 Z" fill="#e7eaf0"/></svg>SWN Sheets</div>
+    <button class="ttenter" data-act="tt-enter" title="Open the online map"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 5l5-2 6 2 5-2v12l-5 2-6-2-5 2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 3v12M13 5v12" stroke="currentColor" stroke-width="1.6"/></svg>Tabletop${ttCfg().active?'<i class="ttlive" title="A map is live"></i>':""}</button>
     <button class="menubtn" data-act="menu-toggle" aria-label="Menu" aria-expanded="${!!S.menuOpen}">${S.menuOpen?"✕":"☰"}</button>
     <nav class="nav">${chips}</nav>
     <div class="navrest ${S.menuOpen?"open":""}">
@@ -1971,6 +2063,12 @@ function render(){
   const a=document.activeElement;const fidA=a&&a.id;let ss=null,se=null;try{if(a&&a.selectionStart!=null){ss=a.selectionStart;se=a.selectionEnd}}catch(e){}
   const db=document.querySelector(".drawer-body");const dScroll=db?db.scrollTop:0;
   const ll=document.querySelector(".log-list");const lScroll=ll?ll.scrollTop:0;const lBottom=!ll||ll.scrollHeight-ll.scrollTop-ll.clientHeight<40;
+  if(S.view==="table"){const tb=document.querySelector(".tsh-body");const tbs=tb?tb.scrollTop:0;
+    $("#app").innerHTML=renderTableApp();ttSync();
+    if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement&&document.querySelector("#app").contains(el)){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
+    const tb2=document.querySelector(".tsh-body");if(tb2)tb2.scrollTop=tbs;
+    const ll3=document.querySelector(".log-list");if(ll3)ll3.scrollTop=lBottom?ll3.scrollHeight:lScroll;return}
+  else if(document.body.classList.contains("tablemode")){document.body.classList.remove("tablemode");const r=document.getElementById("tt");if(r)r.style.display="none"}
   if(S.view==="sheet"&&(!S.current||!S.docs[S.current])){const ps=sheetPaths();S.current=myPath()||ps[0]||null}
   const notes=[];
   if(S.offline)notes.push(`<div class="notice"><b>Preview mode.</b> Nothing here is saved. The live party database didn't load.</div>`);
@@ -2048,6 +2146,7 @@ document.addEventListener("change",e=>{
   if(el.id==="gen-culture"){S.genCulture=el.value;return}
   if(el.dataset&&el.dataset.ini!==undefined){iniChange(el);return}
   if(el.id==="sec-iconfile"){secIconUpload(el.files&&el.files[0]);el.value="";return}
+  if(ttChange(el))return;
   if(el.dataset&&el.dataset.mw!==undefined&&S.mw){const k=el.dataset.mw;S.mw[k]=el.type==="checkbox"?el.checked:["npcHit","npcDmg","bonusPM"].includes(k)?num(el.value):el.value;render();return}
   if(el.dataset&&el.dataset.mechowner){if(!(S.isGM||S.offline))return;const mp=el.dataset.mechowner;setField(mp,"ownerSheet",el.value||"");setField(mp,"assigned",!!el.value);toastMsg(el.value?"Added to "+(S.docs["sheets/"+el.value]?.name||"that character")+"'s inventory.":"Removed from inventories.");render();return}
   if(el.dataset&&el.dataset.shiprole){const sp=el.dataset.shiprole;if(!shipCanAny(sp))return;const s=S.docs[sp];setField(sp,"roles",{...(s.roles||{}),[el.dataset.dept]:el.value||""});render();return}
@@ -2088,7 +2187,7 @@ function applyInput(el){
 document.addEventListener("click",e=>{
   const t=e.target.closest("[data-act]");if(!t)return;
   const act=t.dataset.act;const cur=currentChar();
-  const keepConfirm=["mech-del","mech-maint","gen-clear","torch","torch-undo","ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset","ini-reset","ini-clear"].includes(act);
+  const keepConfirm=["mech-del","mech-maint","gen-clear","torch","torch-undo","ship-del","ship-mishap-roll","ship-endfight","npc-del","release-mine","inv-remove","del-sheet","hb-del","hbf-del","clear-log","wreset","ini-reset","ini-clear","tt-clearwalls","tt-delscene"].includes(act);
   if(!keepConfirm)S.confirm=null;
   if(act[0]==="w"&&act!=="wiz-open"&&S.wiz&&wizAction(act,t))return;
   if(act.startsWith("lu")&&act!=="lu-open"&&S.lu&&luAction(act,t))return;
@@ -2096,6 +2195,9 @@ document.addEventListener("click",e=>{
   if(act.startsWith("ship-")&&shipAct(act,t))return;
   if(act.startsWith("gen-")&&genAct(act,t))return;
   if(act.startsWith("ini-")&&iniAct(act,t))return;
+  if(act.startsWith("tt-")&&ttAct(act,t))return;
+  if(act==="tsh-pick"){S.current=t.dataset.doc;S.tnpc=null;render();return}
+  if(act==="tsh-pcs"){S.tnpc=null;render();return}
   if(act==="sec-set-tog"){const det=t.closest("details");setTimeout(()=>{S.secSet=!!(det&&det.open)},0);return}
   if(act.startsWith("sec-")&&secAct(act,t))return;
   if((act.startsWith("mech-")||act.startsWith("mw-"))&&mechAct(act,t))return;
@@ -2251,6 +2353,7 @@ function addHb(c,p,id){
 /*@@MECHS@@*/
 /*@@INIT@@*/
 /*@@SECTOR@@*/
+/*@@TABLE@@*/
 /*@@FX@@*/
 /* ================= BOOT ================= */
 async function gmSubmit(){
@@ -2313,6 +2416,7 @@ render();
   watch("homebrew");watch("foci");
   try{db.doc(SEC_P).onSnapshot(d=>{if(d.exists){mergeRemote(SEC_P,d.data());S.exists[SEC_P]=true}else if(S.isGM&&!S.docs[SEC_P])createDoc(SEC_P,secDefault());render()},err=>console.warn("sector",err));
     if(S.isGM)db.doc(SEC_G).onSnapshot(d=>{if(d.exists){mergeRemote(SEC_G,d.data());S.exists[SEC_G]=true}else if(!S.docs[SEC_G])createDoc(SEC_G,{notes:{}});render()},err=>console.warn("sector notes",err))}catch(e){console.warn(e)}
+  try{ttListen()}catch(e){console.warn(e)}
   if(S.isGM)try{db.doc(INI_P).onSnapshot(d=>{if(d.exists){S.docs[INI_P]=d.data()}render()},err=>console.warn("initiative",err))}catch(e){console.warn(e)}
   if(S.isGM)watchQ("mechs",db.collection("mechs"));else watchQ("mechs",db.collection("mechs").where("assigned","==",true),"mechs-assigned");
   if(S.isGM)watchQ("ships",db.collection("ships"));else watchQ("ships",db.collection("ships").where("shared","==",true),"ships-shared");
