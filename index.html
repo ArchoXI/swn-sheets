@@ -4871,7 +4871,9 @@ function ttExit(){S.view=TT.prev&&TT.prev!=="table"?TT.prev:"home";S.tsheet=fals
 /* ---------- background images ---------- */
 async function ttLoadBg(sid,sc){
   const key=sid+":"+(sc.bgVer||sc.bgUrl||"");if(TT.bg[sid]?.key===key||TT.bgLoading[key])return;
-  if(sc.bgUrl){TT.bg[sid]={key,url:sc.bgUrl};return}
+  if(sc.bgUrl){if(TT.lib===null)ttLibLoad();const lib=Array.isArray(TT.lib)?TT.lib:[];if(TT.lib==="loading")return;
+    const m=lib.find(e=>e.file===sc.bgUrl);const v=m&&m.ver?(sc.bgUrl.includes("?")?"&":"?")+"v="+m.ver:"";
+    TT.bg[sid]={key,url:sc.bgUrl+v};return}
   if(!sc.bgChunks){TT.bg[sid]={key,url:null};return}
   if(sc._localBg){TT.bg[sid]={key,url:sc._localBg};return}
   if(!S.db)return;TT.bgLoading[key]=true;
@@ -4894,7 +4896,8 @@ async function ttUploadBg(sid,file){
   setField(p,"bgUrl",null);setField(p,"bgChunks",n);setField(p,"bgVer",ver);setField(p,"bgW",r.w);setField(p,"bgH",r.h);setField(p,"cols",Math.round(r.w/g));setField(p,"rows",Math.round(r.h/g));
   TT.bg[sid]={key:sid+":"+ver,url:r.url};TT.fitPending=true;toastMsg("Map image saved ("+Math.round(r.url.length/1024)+" KB).");render();
 }
-async function ttLibLoad(){if(TT.lib)return;TT.lib="loading";try{const r=await fetch("maps/index.json",{cache:"no-cache"});TT.lib=r.ok?await r.json():[]}catch(e){TT.lib=[]}render()}
+async function ttLibLoad(){if(TT.lib)return;TT.lib="loading";try{const r=await fetch("maps/index.json",{cache:"no-cache"});TT.lib=r.ok?await r.json():[]}catch(e){TT.lib=[]}
+  Object.keys(TT.bg).forEach(k=>{if(TT.bg[k]&&TT.bg[k].url&&!String(TT.bg[k].url).startsWith("data:"))delete TT.bg[k]});render()}
 
 /* ---------- scenes ---------- */
 function ttNewScene(from){if(!ttGM())return;const id=rid();const d={name:"New map",gridPx:70,offX:0,offY:0,scale:1,cols:30,rows:20,lighting:"lit",fog:true,walls:[],created:Date.now(),expVer:1};
@@ -5040,7 +5043,7 @@ function ttPanelScenes(scs,cfg){
     <div class="tt-row"><button class="ttbtn" data-act="tt-new">+ Blank map</button><button class="ttbtn" data-act="tt-upnew">+ Upload image</button><input type="file" id="tt-upnew-f" accept="image/*" hidden></div>
     ${cfg.active?`<button class="ttbtn wide" data-act="tt-pull" title="Opens the map on every player's screen">Bring everyone to the live map</button>`:""}</div>
     <div class="tt-sec"><div class="tt-sech">Map library <span class="tt-muted">· made by Claude</span></div>
-    ${TT.lib==="loading"?`<p class="tt-muted">Loading…</p>`:lib.length?lib.map((m,i)=>`<div class="tt-lib"><img src="${esc(m.thumb||m.file)}" alt="" loading="lazy"><div><b>${esc(m.name)}</b><span class="tt-muted">${esc(m.desc||"")}</span><button class="ttbtn sm" data-act="tt-fromlib" data-i="${i}">Use this map</button></div></div>`).join(""):`<p class="tt-muted">Nothing here yet. Ask Claude in chat for a map and it'll show up here.</p>`}</div>`;
+    ${TT.lib==="loading"?`<p class="tt-muted">Loading…</p>`:lib.length?lib.map((m,i)=>`<div class="tt-lib"><img src="${esc((m.thumb||m.file)+(m.thumbVer||m.ver?"?v="+(m.thumbVer||m.ver):""))}" alt="" loading="lazy"><div><b>${esc(m.name)}</b><span class="tt-muted">${esc(m.desc||"")}</span><button class="ttbtn sm" data-act="tt-fromlib" data-i="${i}">Use this map</button></div></div>`).join(""):`<p class="tt-muted">Nothing here yet. Ask Claude in chat for a map and it'll show up here.</p>`}</div>`;
 }
 function ttPanelScene(sc,sid){
   if(!sc)return `<p class="tt-muted">Open or make a map first.</p>`;const P="scenes/"+sid;

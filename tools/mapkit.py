@@ -340,7 +340,16 @@ def scale_walls(ws):
     return [{**w, "x1": round(w["x1"] * PX), "y1": round(w["y1"] * PX), "x2": round(w["x2"] * PX), "y2": round(w["y2"] * PX)} for w in ws]
 
 
+def file_ver(rel):
+    """Short content hash, used as ?v= so browsers fetch a map again when its art changes."""
+    import hashlib
+    f = ROOT / rel
+    return hashlib.md5(f.read_bytes()).hexdigest()[:10] if f.exists() else ""
+
+
 def update_index(entries):
+    for e in entries:
+        e["ver"] = file_ver(e["file"]); e["thumbVer"] = file_ver(e.get("thumb", ""))
     idx_p = ROOT / "maps" / "index.json"
     idx = json.loads(idx_p.read_text()) if idx_p.exists() else []
     ids = {e["id"] for e in entries}

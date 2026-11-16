@@ -382,7 +382,9 @@
     "open": false
    }
   ],
-  "notes": "Cargo lift (3x3, beside the cargo bay) goes up to the command deck. Secret hold hatch: under the floor plate in the Ship's Locker, the square right inside the door (drawn as plain floor on purpose)."
+  "notes": "Cargo lift (3x3, beside the cargo bay) goes up to the command deck. Secret hold hatch: under the floor plate in the Ship's Locker, the square right inside the door (drawn as plain floor on purpose).",
+  "ver": "0dabfd9975",
+  "thumbVer": "9ebfeff1c9"
  },
  {
   "id": "silverfish-command",
@@ -473,7 +475,9 @@
     "open": false
    }
   ],
-  "notes": "Lift comes up in the middle of the lounge from the main deck corridor."
+  "notes": "Lift comes up in the middle of the lounge from the main deck corridor.",
+  "ver": "e184084e31",
+  "thumbVer": "8d56df0342"
  },
  {
   "id": "silverfish-hold",
@@ -512,7 +516,9 @@
     "y2": 500
    }
   ],
-  "notes": "Reached through the hatch in the Ship's Locker floor. Crawl height only."
+  "notes": "Reached through the hatch in the Ship's Locker floor. Crawl height only.",
+  "ver": "063282e340",
+  "thumbVer": "aa8ed49c41"
  },
  {
   "id": "free-merchant-deck",
@@ -774,6 +780,8 @@
     "x2": 2800,
     "y2": 1300
    }
-  ]
+  ],
+  "ver": "fe28557a20",
+  "thumbVer": "d4415b01f3"
  }
 ]
