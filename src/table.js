@@ -274,6 +274,8 @@ function ttDrawRuler(){const g=document.querySelector(".tt-rul");if(!g)return;co
 /* ---------- input ---------- */
 function ttBindStage(st){
   st.addEventListener("wheel",e=>{e.preventDefault();const r=st.getBoundingClientRect();ttZoomAt(Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015)),e.clientX-r.left,e.clientY-r.top);ttDrawRuler()},{passive:false});
+  st.addEventListener("dragstart",e=>e.preventDefault());
+  st.addEventListener("mousedown",e=>{if(!e.target.closest("input,select,textarea,button"))e.preventDefault()});
   st.addEventListener("contextmenu",e=>{if(TT.wallDraft){e.preventDefault();ttFinishWall()}else if(S.view==="table")e.preventDefault()});
   st.addEventListener("pointerdown",e=>{if(S.view!=="table"||!TT.view)return;const sc=ttScene();if(!sc)return;
     const panBtn=e.button===1||e.button===2||TT.space;
