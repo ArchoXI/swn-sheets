@@ -5080,7 +5080,7 @@ function ttPanelScene(sc,sid){
   <div class="tt-sec"><div class="tt-sech">Vision</div>
     <label class="tt-chk"><input type="checkbox" data-doc="${P}" data-path="fog" ${sc.fog?"checked":""}> Line-of-sight fog for players</label>
     <label class="tt-lbl">Lighting<select class="ttin" id="tts-light" data-doc="${P}" data-path="lighting"><option value="lit" ${sc.lighting!=="dark"?"selected":""}>Lit: tokens see as far as walls allow</option><option value="dark" ${sc.lighting==="dark"?"selected":""}>Dark: tokens see their vision range</option></select></label>
-    <div class="tt-row"><span class="tt-muted">${(sc.walls||[]).length} wall pieces</span>${(sc.walls||[]).length?(S.confirm==="tt-clearwalls"?`<button class="ttbtn sm" data-act="tt-clearwalls" style="color:#ff8a80">Sure? Delete all</button>`:`<button class="ttbtn sm" data-act="tt-clearwalls">Delete all walls</button>`):""}<button class="ttbtn sm" data-act="tt-expreset" title="Players forget what they've already explored">Reset explored</button></div></div>
+    <div class="tt-row"><span class="tt-muted">${(sc.walls||[]).length} wall pieces</span>${(sc.walls||[]).length?(S.confirm==="tt-clearwalls"?`<button class="ttbtn sm" data-act="tt-clearwalls" style="color:#ff8a80">Sure? Delete all</button>`:`<button class="ttbtn sm" data-act="tt-clearwalls">Delete all walls</button>`):""}<button class="ttbtn sm" data-act="tt-impwalls" title="Bring in the walls and doors file saved from Map Studio">Import walls file</button><input type="file" id="tt-impwalls-f" accept=".json,application/json" hidden><button class="ttbtn sm" data-act="tt-expreset" title="Players forget what they've already explored">Reset explored</button></div></div>
   <div class="tt-sec"><label class="tt-lbl">GM notes<textarea class="ttin" id="tts-notes" rows="3" data-doc="${P}" data-path="notes" placeholder="Only you see this">${esc(sc.notes||"")}</textarea></label>
     <div class="tt-row"><button class="ttbtn" data-act="tt-dup">Duplicate map</button>${S.confirm==="tt-delscene"?`<button class="ttbtn" data-act="tt-delscene" style="color:#ff8a80">Sure? Delete map and its tokens</button>`:`<button class="ttbtn" data-act="tt-delscene">Delete map</button>`}</div></div>`;
 }
@@ -5215,6 +5215,7 @@ function ttAct(act,t){
     case "tt-pmin":TT.ui.hide=!TT.ui.hide;ttSync();return true;
     case "tt-new":ttNewScene();return true;
     case "tt-upnew":$("#tt-upnew-f")?.click();return true;
+    case "tt-impwalls":$("#tt-impwalls-f")?.click();return true;
     case "tt-open":TT.sceneId=id;TT.fitPending=true;render();return true;
     case "tt-live":ttSetCfg({active:id||null});toastMsg(id?"Players can now see this map.":"Players no longer see a map.");render();return true;
     case "tt-pull":ttSetCfg({pull:rid()});toastMsg("Opening the map for everyone.");return true;
@@ -5242,6 +5243,11 @@ function ttAct(act,t){
   return false;
 }
 function ttChange(el){
+  if(el.id==="tt-impwalls-f"&&el.files[0]){const f=el.files[0];el.value="";const sid=ttSceneId();f.text().then(t=>{let o;try{o=JSON.parse(t)}catch(e){o=null}
+    if(!o||!Array.isArray(o.walls)){toastMsg("That isn't a walls file from Map Studio.");return}
+    const sc=ttScene();if(!sc||!sid)return;const g=num(o.gridPx)||100,k=(num(sc.gridPx)||g)/g;
+    const walls=o.walls.slice(0,3000).map(w=>{const x={x1:Math.round(num(w.x1)*k),y1:Math.round(num(w.y1)*k),x2:Math.round(num(w.x2)*k),y2:Math.round(num(w.y2)*k)};if(w.door)x.door=true;if(w.locked)x.locked=true;return x});
+    setField("scenes/"+sid,"walls",walls);setField("scenes/"+sid,"doors",{});render();toastMsg("Imported "+walls.filter(w=>!w.door).length+" walls and "+walls.filter(w=>w.door).length+" doors.")});return true}
   if(el.id==="tt-upnew-f"&&el.files[0]){const f=el.files[0];el.value="";const id=rid();createDoc("scenes/"+id,{name:f.name.replace(/\.[^.]+$/,"").slice(0,40)||"New map",gridPx:70,offX:0,offY:0,scale:1,cols:30,rows:20,lighting:"lit",fog:true,walls:[],created:Date.now(),expVer:1});TT.sceneId=id;TT.ui.panel="scene";render();setTimeout(()=>ttUploadBg(id,f),300);return true}
   if(el.id==="tt-upbg-f"&&el.files[0]){const f=el.files[0];el.value="";ttUploadBg(ttSceneId(),f);return true}
   if(el.id==="tt-tokimg-f"&&el.files[0]){const f=el.files[0];el.value="";if(TT.imgFor)ttTokenImgUpload(TT.imgFor,f);return true}
