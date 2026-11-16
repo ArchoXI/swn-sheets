@@ -1306,7 +1306,7 @@ async function flush(path){
     else if(S.exists[path]){const patch={};keys.forEach(k=>patch[k]=clone(d[k]===undefined?null:d[k]));patch.updatedAt=Date.now();await S.db.doc(path).update(patch)}
     else{await S.db.doc(path).set({...clone(d),updatedAt:Date.now()});S.exists[path]=true}
   }catch(err){
-    if(err&&err.code==="permission-denied"){S.denied[path]=true;toastMsg("Couldn't save that change. You don't have permission to edit this sheet. Ask your GM to check your share access.",true);render()}
+    if(err&&err.code==="permission-denied"){if(path.startsWith("tokens/")){toastMsg("Couldn't move that token. Only its player or the GM can.",true)}else{S.denied[path]=true;toastMsg("Couldn't save that change. You don't have permission to edit this sheet. Ask your GM to check your share access.",true)}render()}
     else if(err&&err.code==="resource-exhausted"){toastMsg("The free database limit for today was hit. Try again later.",true)}
     else{keys.forEach(k=>e.dirty.add(k));e.timer=setTimeout(()=>flush(path),1500+Math.random()*1000)}
   }finally{e.inflight=false;e.inflightKeys=new Set}

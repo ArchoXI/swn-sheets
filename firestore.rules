@@ -38,7 +38,7 @@ service cloud.firestore {
       allow update: if isGM() || (signedIn()
         && resource.data.get('sheetId', null) is string
         && request.auth.uid in get(/databases/$(database)/documents/sheets/$(resource.data.sheetId)).data.owners
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['x', 'y']));
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['x', 'y', 'updatedAt']));
     }
     // Map pings. Only the GM can pull everyone's view.
     match /pings/{id} {
