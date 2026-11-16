@@ -1505,5 +1505,43 @@
   "notes": "Good for travel scenes, boarding and chases. Edges are open water.",
   "ver": "ffc5ba55bc",
   "thumbVer": "9a4e945e19"
+ },
+ {
+  "id": "antara-ocean-chart",
+  "name": "Antara: Ocean Chart",
+  "desc": "Large-scale chart, 1 square = 1 km: raft city, scrap city, harvester rig, beacon, fish farm, reefs, bloom, wreck, whirlpool, storm.",
+  "file": "maps/antara-ocean-chart.jpg",
+  "thumb": "maps/antara-ocean-chart-thumb.jpg",
+  "w": 4000,
+  "h": 2800,
+  "gridPx": 100,
+  "offX": 0,
+  "offY": 0,
+  "scale": 1000,
+  "lighting": "lit",
+  "fog": false,
+  "walls": [],
+  "notes": "1 square = 1 km. Raft city centre-left, scrap city north-east, harvester rig south-east with its glowing wake, fish farm south, beacon in the middle of the lanes, reefs north-west, wreck south-west, whirlpool east, storm north-east, deep trench along the south.",
+  "ver": "c8d3f6a363",
+  "thumbVer": "e35bf661a1"
+ },
+ {
+  "id": "antara-raft-city",
+  "name": "Antara: Raft City",
+  "desc": "The main floating city, 1 square = 150 m: spaceport, industry, harbor, markets, towers, gardens, civic plaza, engine pods.",
+  "file": "maps/antara-raft-city.jpg",
+  "thumb": "maps/antara-raft-city-thumb.jpg",
+  "w": 4000,
+  "h": 3000,
+  "gridPx": 100,
+  "offX": 0,
+  "offY": 0,
+  "scale": 150,
+  "lighting": "lit",
+  "fog": false,
+  "walls": [],
+  "notes": "1 square = 150 m (the city is ~4.5 km across, matching the ocean chart). Clockwise from the top-right: spaceport pads, industrial tanks, harbor inlet (south), markets (south-west), residential towers (west), hydroponic gardens (north). Centre: council dome and the fuel authority tower.",
+  "ver": "4f3e7bf9f2",
+  "thumbVer": "fab63072e8"
  }
 ]

@@ -4911,7 +4911,7 @@ async function ttLibLoad(){if(TT.lib)return;TT.lib="loading";try{const r=await f
 
 /* ---------- scenes ---------- */
 function ttNewScene(from){if(!ttGM())return;const id=rid();const d={name:"New map",gridPx:70,offX:0,offY:0,scale:1,cols:30,rows:20,lighting:"lit",fog:true,walls:[],created:Date.now(),expVer:1};
-  if(from){Object.assign(d,{name:from.name,bgUrl:from.file,bgW:from.w,bgH:from.h,gridPx:from.gridPx||70,offX:from.offX||0,offY:from.offY||0,scale:from.scale||1,walls:clone(from.walls||[]),notes:from.notes||"",lighting:from.lighting||"lit",cols:Math.round(from.w/(from.gridPx||70)),rows:Math.round(from.h/(from.gridPx||70))})}
+  if(from){Object.assign(d,{name:from.name,bgUrl:from.file,bgW:from.w,bgH:from.h,gridPx:from.gridPx||70,offX:from.offX||0,offY:from.offY||0,scale:from.scale||1,walls:clone(from.walls||[]),notes:from.notes||"",lighting:from.lighting||"lit",fog:from.fog!==false,cols:Math.round(from.w/(from.gridPx||70)),rows:Math.round(from.h/(from.gridPx||70))})}
   createDoc("scenes/"+id,d);TT.sceneId=id;TT.fitPending=true;TT.ui.panel="scene";render()}
 async function ttDeleteScene(sid){ttTokens(sid).forEach(p=>deleteDoc(p));
   const sc=S.docs["scenes/"+sid];if(S.db&&!S.offline&&sc?.bgChunks){for(let i=0;i<num(sc.bgChunks);i++)S.db.doc("scenes/"+sid+"/bg/"+i).delete().catch(()=>{})}
