@@ -1033,6 +1033,9 @@ body.tablemode #app>*{pointer-events:auto}
 .tt-live{color:#38d26b;font-size:12px;white-space:nowrap}.tt-live.sm{font-size:11px}
 .tt-prep{color:#f59e0b;font-size:12px;white-space:nowrap}
 .tt-tools{display:flex;gap:4px;align-items:center;margin:0 auto;flex-wrap:nowrap}
+.tt-top{min-width:0}.tt-tools{min-width:0;overflow-x:auto;scrollbar-width:none}.tt-tools::-webkit-scrollbar{display:none}.tt-right{flex:0 0 auto}.tt-title{flex:0 1 auto;overflow:hidden}
+@media (max-width:1250px){.tt-tool kbd,.tt-top>.ttbtn kbd,.tt-right kbd,.tt-prep,.tt-live{display:none}.tt-tool{padding:6px 8px}}
+@media (max-width:900px){.tt-mark{display:none}.tt-title b{max-width:120px}.tt-zoomlbl,[data-act=tt-fit]{display:none}}
 .tt-tool{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;border:1px solid transparent;background:transparent;color:#c9d2ea;font-size:13px;cursor:pointer}
 .tt-tool:hover{background:rgba(150,170,220,.1)}.tt-tool.on{background:#c53131;color:#fff}
 kbd{font:10px ui-monospace,monospace;padding:1px 4px;border-radius:3px;border:1px solid rgba(255,255,255,.25);opacity:.7}
@@ -2068,7 +2071,9 @@ function render(){
   const db=document.querySelector(".drawer-body");const dScroll=db?db.scrollTop:0;
   const ll=document.querySelector(".log-list");const lScroll=ll?ll.scrollTop:0;const lBottom=!ll||ll.scrollHeight-ll.scrollTop-ll.clientHeight<40;
   if(S.view==="table"){const tb=document.querySelector(".tsh-body");const tbs=tb?tb.scrollTop:0;
-    $("#app").innerHTML=renderTableApp();ttSync();
+    let tapp;try{tapp=renderTableApp()}catch(err){console.error(err);
+      tapp=`<aside class="tsheet"><div class="tsh-top"><span class="tt-mark">CHARACTER</span><button class="tt-x" data-act="tt-sheet" title="Close (C)">✕</button></div><div class="tsh-body"><div class="notice"><b>The sheet couldn't open here.</b> Use <b>◂ Sheets</b> at the top left to see it on the normal page, and send your GM this message: <code>${esc(String(err&&err.message||err))}</code></div></div></aside>`+renderLog()}
+    $("#app").innerHTML=tapp;try{ttSync()}catch(err){console.error(err)}
     if(fidA){const el=document.getElementById(fidA);if(el&&el!==document.activeElement&&document.querySelector("#app").contains(el)){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
     const tb2=document.querySelector(".tsh-body");if(tb2)tb2.scrollTop=tbs;
     const ll3=document.querySelector(".log-list");if(ll3)ll3.scrollTop=lBottom?ll3.scrollHeight:lScroll;return}
