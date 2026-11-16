@@ -7,7 +7,8 @@ over a dark space backdrop with a sand-coloured hull.
 Units: 1 square = 1 m. Build a Deck, add rooms/doors/props in square
 coordinates, then call finish() and save(). Walls and doors for the
 tabletop's line-of-sight come from the room edges automatically."""
-import json, random
+import json, random, math
+math_cos, math_sin, math_rad = math.cos, math.sin, math.radians
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageChops
 
@@ -40,10 +41,11 @@ def shade(c, k):
 
 
 class Deck:
-    def __init__(self, cols, rows, seed=1):
-        self.cols, self.rows = cols, rows
-        self.W, self.H = cols * PX, rows * PX
-        self.S = PX * SS
+    def __init__(self, cols, rows, seed=1, px=PX):
+        self.cols, self.rows, self.px = cols, rows, px
+        self.W, self.H = cols * px, rows * px
+        self.S = px * SS
+        self.ocean_img = None
         random.seed(seed)
         self.img = Image.new("RGB", (self.W * SS, self.H * SS), (20, 23, 33))
         self.d = ImageDraw.Draw(self.img)
@@ -125,9 +127,166 @@ class Deck:
             self.d.ellipse([X - self.u(15), Y - self.u(15), X + self.u(15), Y + self.u(15)], fill=TEAL, outline=INK, width=self.u(3))
             self.d.ellipse([X - self.u(7), Y - self.u(7), X + self.u(7), Y + self.u(7)], fill=GLOW)
 
+    # ---------- ocean worlds ----------
+    def ocean(self, seed_glow=1.0):
+        """Deep night ocean full of glowing plankton. Kept so water() can reuse it inside platforms."""
+        w, h = self.img.size
+        base = Image.new("RGB", (w, h), (6, 22, 34))
+        n = Image.effect_noise((w // 16, h // 16), 40).resize((w, h), Image.BICUBIC)
+        base = Image.composite(Image.new("RGB", (w, h), (10, 40, 58)), base, n.point(lambda v: max(0, min(255, (v - 100) * 2))))
+        g = Image.new("RGB", (w, h), (0, 0, 0)); gd = ImageDraw.Draw(g)
+        for _ in range(int(self.cols * self.rows / 14 * seed_glow)):   # drifting plankton blooms
+            x, y = random.uniform(0, w), random.uniform(0, h); r = random.uniform(.8, 3.5) * self.S
+            gd.ellipse([x - r, y - r * .6, x + r, y + r * .6], fill=random.choice([(0, 90, 90), (0, 70, 110), (20, 110, 80), (40, 40, 120)]))
+        g = g.filter(ImageFilter.GaussianBlur(self.u(70)))
+        s2 = Image.new("RGB", (w, h), (0, 0, 0)); sd = ImageDraw.Draw(s2)
+        for _ in range(int(self.cols * self.rows / 10 * seed_glow)):   # long, lazy current lines
+            x, y = random.uniform(-w * .1, w), random.uniform(0, h); pts = [(x, y)]; a = random.uniform(-.25, .25); da = random.uniform(-.06, .06)
+            for _k in range(random.randint(10, 26)):
+                da += random.uniform(-.03, .03); a += da; x += math_cos(a) * self.u(46); y += math_sin(a) * self.u(46); pts.append((x, y))
+            sd.line(pts, fill=random.choice([(40, 200, 190), (70, 230, 170), (60, 150, 240)]), width=self.u(random.choice([2, 3, 3, 5])), joint="curve")
+        s2 = Image.blend(s2.filter(ImageFilter.GaussianBlur(self.u(7))), s2.filter(ImageFilter.GaussianBlur(self.u(1.5))), .45)
+        rp = Image.new("RGB", (w, h), (0, 0, 0)); rd = ImageDraw.Draw(rp)
+        for _ in range(int(self.cols * self.rows * 1.6)):                # small surface ripples
+            x, y = random.uniform(0, w), random.uniform(0, h); r = self.u(random.uniform(14, 40))
+            rd.arc([x - r, y - r * .35, x + r, y + r * .35], 200, 340, fill=(30, 70, 86), width=self.u(2))
+        s2 = ImageChops.add(s2, rp.filter(ImageFilter.GaussianBlur(self.u(1))))
+        img = ImageChops.add(ImageChops.add(base, g), s2.point(lambda v: int(v * .7)))
+        d = ImageDraw.Draw(img)
+        for _ in range(int(self.cols * self.rows * 1.4 * seed_glow)):  # sparkles
+            x, y = random.uniform(0, w), random.uniform(0, h); r = random.choice([1, 2, 2, 3]) * SS // 2 + 1
+            d.ellipse([x, y, x + r, y + r], fill=random.choice([(140, 255, 240), (180, 255, 200), (150, 210, 255)]))
+        self.ocean_img = img; self.img = img.copy(); self.d = ImageDraw.Draw(self.img)
+
+    def platform(self, poly, base=(150, 158, 164), seam=None, rust=0.0, shadow=True, plates=1.0):
+        """A floating deck: plated metal with an inked rim and a dark waterline shadow."""
+        P = [self.pt(x, y) for x, y in poly]; seam = seam or shade(base, .8)
+        if shadow:
+            sh = Image.new("L", self.img.size, 0); ImageDraw.Draw(sh).polygon([(x + self.u(14), y + self.u(20)) for x, y in P], fill=170)
+            self.img.paste((0, 6, 10), (0, 0), sh.filter(ImageFilter.GaussianBlur(self.u(14)))); self.d = ImageDraw.Draw(self.img)
+        mask = Image.new("L", self.img.size, 0); ImageDraw.Draw(mask).polygon(P, fill=255)
+        tex = Image.new("RGB", self.img.size, base); td = ImageDraw.Draw(tex)
+        step = 2 if plates >= 1 else 4
+        for gx in range(0, self.cols * 2, step // 2 * 2 or 2):
+            for gy in range(0, self.rows):
+                off = (gy % 2) * .5
+                x1 = gx / 2 + off; c = shade(base, random.uniform(.95, 1.05))
+                if rust and random.random() < rust: c = shade(random.choice([(150, 96, 62), (124, 84, 58), (160, 116, 72), (98, 106, 100), (112, 102, 88), (88, 96, 104)]), random.uniform(.85, 1.05))
+                td.rectangle([self.p(x1), self.p(gy), self.p(x1 + 1) - 1, self.p(gy + 1) - 1], fill=c, outline=seam, width=self.u(2))
+                for rx in (x1 + .1, x1 + .9):
+                    for ry in (gy + .1, gy + .9):
+                        td.ellipse([self.p(rx) - self.u(2), self.p(ry) - self.u(2), self.p(rx) + self.u(2), self.p(ry) + self.u(2)], fill=shade(c, .7))
+        self.img.paste(tex, (0, 0), mask); self.d = ImageDraw.Draw(self.img)
+        W = self.wobble(P + [P[0]], amp=1.0)
+        self.d.line(W, fill=INK, width=self.u(8), joint="curve")
+        self.d.line([(x, y + self.u(5)) for x, y in W], fill=shade(base, .55), width=self.u(3), joint="curve")
+        return mask
+
+    def water(self, poly, glow=1.0, rim=(110, 116, 122)):
+        """Cut a patch of ocean into a deck (channels, intake pools)."""
+        P = [self.pt(x, y) for x, y in poly]
+        mask = Image.new("L", self.img.size, 0); ImageDraw.Draw(mask).polygon(P, fill=255)
+        src = self.ocean_img if glow <= 1 else ImageChops.add(self.ocean_img, self.ocean_img.point(lambda v: int(v * (glow - 1))))
+        self.img.paste(src, (0, 0), mask)
+        sh = Image.new("L", self.img.size, 0); ImageDraw.Draw(sh).line(P + [P[0]], fill=200, width=self.u(30))
+        self.img.paste((0, 0, 0), (0, 0), ImageChops.multiply(sh.filter(ImageFilter.GaussianBlur(self.u(10))), mask)); self.d = ImageDraw.Draw(self.img)
+        self.d.line(P + [P[0]], fill=INK, width=self.u(10), joint="curve"); self.d.line(P + [P[0]], fill=rim, width=self.u(5), joint="curve")
+
+    def rail(self, pts, col=(196, 200, 206)):
+        """Low safety railing: blocks nothing for sight, just looks like an edge."""
+        P = [self.pt(x, y) for x, y in pts]
+        self.d.line(P, fill=INK, width=self.u(9), joint="curve"); self.d.line(P, fill=col, width=self.u(5), joint="curve")
+        for (x1, y1), (x2, y2) in zip(P, P[1:]):
+            L = max(1, ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** .5); n = int(L / (self.S * .5))
+            for k in range(n + 1):
+                x, y = x1 + (x2 - x1) * k / max(n, 1), y1 + (y2 - y1) * k / max(n, 1)
+                self.d.ellipse([x - self.u(5), y - self.u(5), x + self.u(5), y + self.u(5)], fill=col, outline=INK, width=self.u(2))
+
+    def tank(self, x, y, r, col=(200, 204, 210), band=(226, 142, 52), label=None):
+        self.circle(x, y, r, col)
+        X, Y, R = self.p(x), self.p(y), int(r * self.S)
+        self.d.ellipse([X - R * .72, Y - R * .72, X + R * .72, Y + R * .72], outline=shade(col, .78), width=self.u(4))
+        self.d.arc([X - R + self.u(6), Y - R + self.u(6), X + R - self.u(6), Y + R - self.u(6)], 200, 340, fill=band, width=self.u(8))
+        self.d.ellipse([X - self.u(10), Y - self.u(10), X + self.u(10), Y + self.u(10)], fill=shade(col, .7), outline=INK, width=self.u(3))
+        if label:
+            f = self.font(max(12, int(r * 14))); tw = self.d.textlength(label, font=f)
+            self.d.text((X - tw / 2, Y + R * .25), label, font=f, fill=INK)
+
+    def barrel(self, x, y, col=(60, 120, 170)):
+        X, Y, R = self.p(x), self.p(y), int(.22 * self.S)
+        self.d.ellipse([X - R + self.u(3), Y - R + self.u(5), X + R + self.u(3), Y + R + self.u(5)], fill=(0, 0, 0))
+        self.d.ellipse([X - R, Y - R, X + R, Y + R], fill=col, outline=INK, width=self.u(3))
+        self.d.ellipse([X - R * .55, Y - R * .55, X + R * .55, Y + R * .55], outline=shade(col, .7), width=self.u(2))
+
+    def stall(self, x, y, w, h, awning=((214, 70, 70), (238, 228, 210)), counter=True):
+        X1, Y1, X2, Y2 = self.p(x) + self.u(6), self.p(y) + self.u(6), self.p(x + w) - self.u(6), self.p(y + h) - self.u(6)
+        self.soft_shadow([(X1, Y1, X2, Y2, 6)], off=(8, 12), blur=10, alpha=120)
+        n = max(3, int(w * 3)); sw = (X2 - X1) / n
+        for k in range(n): self.d.rectangle([X1 + k * sw, Y1, X1 + (k + 1) * sw, Y2], fill=awning[k % 2])
+        self.d.rectangle([X1, Y1, X2, Y2], outline=INK, width=self.u(4))
+        self.d.line([(X1, Y2 - self.u(10)), (X2, Y2 - self.u(10))], fill=INK, width=self.u(3))
+
+    def boat(self, x, y, length, width, angle=0, col=(220, 222, 226), trim=(70, 190, 172), wake=False):
+        """Top-down hovercraft skiff centred on (x, y), pointing along angle (degrees)."""
+        L, Wd = length * self.S, width * self.S
+        tile = Image.new("RGBA", (int(L + 40 * SS), int(Wd + 40 * SS)), (0, 0, 0, 0)); td = ImageDraw.Draw(tile)
+        ox, oy = 20 * SS, 20 * SS
+        hull = [(ox, oy + Wd * .2), (ox + L * .72, oy), (ox + L, oy + Wd / 2), (ox + L * .72, oy + Wd), (ox, oy + Wd * .8)]
+        td.polygon([(px + 8 * SS, py + 10 * SS) for px, py in hull], fill=(0, 0, 0, 120))
+        td.polygon(hull, fill=col, outline=INK, width=self.u(5))
+        td.rounded_rectangle([ox + L * .12, oy + Wd * .28, ox + L * .62, oy + Wd * .72], radius=self.u(8), fill=shade(col, .86), outline=INK, width=self.u(3))
+        td.line([(ox + L * .05, oy + Wd * .22), (ox + L * .7, oy + Wd * .04)], fill=trim, width=self.u(6))
+        td.line([(ox + L * .05, oy + Wd * .78), (ox + L * .7, oy + Wd * .96)], fill=trim, width=self.u(6))
+        for fy in (.3, .7):
+            r = Wd * .17; cx, cy = ox + L * .02, oy + Wd * fy
+            td.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(70, 74, 82), outline=INK, width=self.u(3))
+            td.line([(cx - r * .8, cy), (cx + r * .8, cy)], fill=(160, 166, 174), width=self.u(3)); td.line([(cx, cy - r * .8), (cx, cy + r * .8)], fill=(160, 166, 174), width=self.u(3))
+        td.rounded_rectangle([ox + L * .64, oy + Wd * .34, ox + L * .76, oy + Wd * .66], radius=self.u(5), fill=(120, 196, 226), outline=INK, width=self.u(3))
+        tile = tile.rotate(-angle, expand=True, resample=Image.BICUBIC)
+        X, Y = self.p(x) - tile.width // 2, self.p(y) - tile.height // 2
+        if wake:
+            wk = Image.new("L", self.img.size, 0); wd = ImageDraw.Draw(wk)
+            a = -math_rad(angle); bx, by = self.p(x) - math_cos(a) * L * .55, self.p(y) + math_sin(a) * L * .55
+            for k in range(14):
+                t = k * self.u(30); wd.ellipse([bx - math_cos(a) * t - (Wd * .3 + t * .25), by + math_sin(a) * t - (Wd * .3 + t * .25), bx - math_cos(a) * t + (Wd * .3 + t * .25), by + math_sin(a) * t + (Wd * .3 + t * .25)], outline=200 - k * 12, width=self.u(5))
+            self.img.paste((190, 255, 245), (0, 0), wk.filter(ImageFilter.GaussianBlur(self.u(5)))); self.d = ImageDraw.Draw(self.img)
+        self.img.paste(tile, (X, Y), tile); self.d = ImageDraw.Draw(self.img)
+
+    def paint(self, x, y, text, size=40, col=(236, 236, 240), angle=0, alpha=170):
+        """Floor paint (pad numbers, lane markings) that looks worn into the deck."""
+        f = self.font(size, mono=False); tw = int(self.d.textlength(text, font=f)) + self.u(10)
+        t = Image.new("L", (tw, int(size * SS * 1.3)), 0); ImageDraw.Draw(t).text((self.u(5), 0), text, font=f, fill=alpha)
+        t = t.rotate(angle, expand=True)
+        wear = Image.effect_noise(t.size, 60).point(lambda v: 255 if v > 90 else 120)
+        t = ImageChops.multiply(t, wear)
+        self.img.paste(col, (self.p(x) - t.width // 2, self.p(y) - t.height // 2), t); self.d = ImageDraw.Draw(self.img)
+
+    def pad(self, x, y, w, h, number="7"):
+        X1, Y1, X2, Y2 = self.p(x), self.p(y), self.p(x + w), self.p(y + h)
+        self.d.rectangle([X1, Y1, X2, Y2], fill=(84, 90, 98), outline=INK, width=self.u(6))
+        for k in range(0, int(w * 2)):
+            for j in range(0, int(h * 2)):
+                c = shade((84, 90, 98), random.uniform(.94, 1.06)); self.d.rectangle([X1 + k * self.S // 2, Y1 + j * self.S // 2, X1 + (k + 1) * self.S // 2, Y1 + (j + 1) * self.S // 2], fill=c, outline=(70, 76, 84), width=self.u(1))
+        self.hazard(x, y, x + w, y + .35); self.hazard(x, y + h - .35, x + w, y + h); self.hazard(x, y, x + .35, y + h); self.hazard(x + w - .35, y, x + w, y + h)
+        cx, cy, r = (X1 + X2) / 2, (Y1 + Y2) / 2, min(X2 - X1, Y2 - Y1) * .36
+        self.d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=(236, 220, 120), width=self.u(10))
+        for k in range(16):
+            a = k / 16 * 6.283; self.d.ellipse([cx + math_cos(a) * (r + self.u(36)) - self.u(9), cy + math_sin(a) * (r + self.u(36)) - self.u(9), cx + math_cos(a) * (r + self.u(36)) + self.u(9), cy + math_sin(a) * (r + self.u(36)) + self.u(9)], fill=(120, 255, 230), outline=INK, width=self.u(2))
+        self.paint(x + w / 2, y + h / 2, number, size=int(min(w, h) * self.px * .16), col=(236, 220, 120))
+
+    def crane(self, x, y, length, angle=0):
+        a = math_rad(angle); X, Y = self.p(x), self.p(y); L = length * self.S
+        ex, ey = X + math_cos(a) * L, Y + math_sin(a) * L
+        self.circle(x, y, .9, (226, 176, 52))
+        self.d.line([(X, Y), (ex, ey)], fill=INK, width=self.u(30)); self.d.line([(X, Y), (ex, ey)], fill=(226, 176, 52), width=self.u(20))
+        for k in range(1, int(length * 2)):
+            px_, py_ = X + math_cos(a) * L * k / (length * 2), Y + math_sin(a) * L * k / (length * 2)
+            self.d.line([(px_ - math_sin(a) * self.u(9), py_ + math_cos(a) * self.u(9)), (px_ + math_sin(a) * self.u(9), py_ - math_cos(a) * self.u(9))], fill=INK, width=self.u(3))
+        self.d.ellipse([ex - self.u(12), ey - self.u(12), ex + self.u(12), ey + self.u(12)], fill=(70, 74, 82), outline=INK, width=self.u(3))
+
     # ---------- rooms ----------
-    def room(self, name, x1, y1, x2, y2, floor="tile", label=True, no_edge=()):
-        self.rooms.append(dict(name=name, r=(x1, y1, x2, y2), floor=floor, label=label, no_edge=set(no_edge)))
+    def room(self, name, x1, y1, x2, y2, floor="tile", label=True, no_edge=(), walls=True):
+        self.rooms.append(dict(name=name, r=(x1, y1, x2, y2), floor=floor, label=label, no_edge=set(no_edge), walls=walls))
 
     def floors(self):
         md = ImageDraw.Draw(self.floor_mask)
@@ -158,6 +317,7 @@ class Deck:
     def edges(self):
         e = set()
         for rm in self.rooms:
+            if not rm.get("walls", True): continue
             x1, y1, x2, y2 = rm["r"]
             for x in range(x1, x2): e |= {("h", x, y1), ("h", x, y2)}
             for y in range(y1, y2): e |= {("v", x1, y), ("v", x2, y)}
@@ -336,8 +496,8 @@ class Deck:
         return im
 
 
-def scale_walls(ws):
-    return [{**w, "x1": round(w["x1"] * PX), "y1": round(w["y1"] * PX), "x2": round(w["x2"] * PX), "y2": round(w["y2"] * PX)} for w in ws]
+def scale_walls(ws, px=PX):
+    return [{**w, "x1": round(w["x1"] * px), "y1": round(w["y1"] * px), "x2": round(w["x2"] * px), "y2": round(w["y2"] * px)} for w in ws]
 
 
 def file_ver(rel):
