@@ -1006,6 +1006,9 @@ body.tablemode #app>*{pointer-events:auto}
 .tt-walls.editing .tt-wall:hover{stroke:#ff6b6b}
 .tt-door{pointer-events:auto;cursor:pointer}.tt-door circle{fill:#1f2433;stroke:#f59e0b;stroke-width:2}.tt-door path{fill:none;stroke:#f59e0b;stroke-width:1.6}
 .tt-door.open circle{stroke:#38d26b}.tt-door.open path{stroke:#38d26b}
+.tt-door.locked circle{stroke:#ef4444;fill:#2a1416}.tt-door.locked path{stroke:#ef4444}
+.tt-walls .tt-wall.door.locked{stroke:#ef4444}
+.tt-door{transition:transform .1s}.tt-door:hover circle{stroke-width:3}
 .tt-fog{position:absolute;left:0;top:0;pointer-events:none}
 .tt-tokens{position:absolute;left:0;top:0}
 .tt-tok{position:absolute;transition:left .25s ease,top .25s ease;cursor:pointer}
@@ -1306,7 +1309,7 @@ async function flush(path){
     else if(S.exists[path]){const patch={};keys.forEach(k=>patch[k]=clone(d[k]===undefined?null:d[k]));patch.updatedAt=Date.now();await S.db.doc(path).update(patch)}
     else{await S.db.doc(path).set({...clone(d),updatedAt:Date.now()});S.exists[path]=true}
   }catch(err){
-    if(err&&err.code==="permission-denied"){if(path.startsWith("tokens/")){toastMsg("Couldn't move that token. Only its player or the GM can.",true)}else{S.denied[path]=true;toastMsg("Couldn't save that change. You don't have permission to edit this sheet. Ask your GM to check your share access.",true)}render()}
+    if(err&&err.code==="permission-denied"){if(path.startsWith("tokens/")){toastMsg("Couldn't move that token. Only its player or the GM can.",true)}else if(path.startsWith("scenes/")){toastMsg("Couldn't open that door.",true)}else{S.denied[path]=true;toastMsg("Couldn't save that change. You don't have permission to edit this sheet. Ask your GM to check your share access.",true)}render()}
     else if(err&&err.code==="resource-exhausted"){toastMsg("The free database limit for today was hit. Try again later.",true)}
     else{keys.forEach(k=>e.dirty.add(k));e.timer=setTimeout(()=>flush(path),1500+Math.random()*1000)}
   }finally{e.inflight=false;e.inflightKeys=new Set}

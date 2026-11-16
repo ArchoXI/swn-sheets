@@ -1006,6 +1006,9 @@ body.tablemode #app>*{pointer-events:auto}
 .tt-walls.editing .tt-wall:hover{stroke:#ff6b6b}
 .tt-door{pointer-events:auto;cursor:pointer}.tt-door circle{fill:#1f2433;stroke:#f59e0b;stroke-width:2}.tt-door path{fill:none;stroke:#f59e0b;stroke-width:1.6}
 .tt-door.open circle{stroke:#38d26b}.tt-door.open path{stroke:#38d26b}
+.tt-door.locked circle{stroke:#ef4444;fill:#2a1416}.tt-door.locked path{stroke:#ef4444}
+.tt-walls .tt-wall.door.locked{stroke:#ef4444}
+.tt-door{transition:transform .1s}.tt-door:hover circle{stroke-width:3}
 .tt-fog{position:absolute;left:0;top:0;pointer-events:none}
 .tt-tokens{position:absolute;left:0;top:0}
 .tt-tok{position:absolute;transition:left .25s ease,top .25s ease;cursor:pointer}
@@ -1306,7 +1309,7 @@ async function flush(path){
     else if(S.exists[path]){const patch={};keys.forEach(k=>patch[k]=clone(d[k]===undefined?null:d[k]));patch.updatedAt=Date.now();await S.db.doc(path).update(patch)}
     else{await S.db.doc(path).set({...clone(d),updatedAt:Date.now()});S.exists[path]=true}
   }catch(err){
-    if(err&&err.code==="permission-denied"){if(path.startsWith("tokens/")){toastMsg("Couldn't move that token. Only its player or the GM can.",true)}else{S.denied[path]=true;toastMsg("Couldn't save that change. You don't have permission to edit this sheet. Ask your GM to check your share access.",true)}render()}
+    if(err&&err.code==="permission-denied"){if(path.startsWith("tokens/")){toastMsg("Couldn't move that token. Only its player or the GM can.",true)}else if(path.startsWith("scenes/")){toastMsg("Couldn't open that door.",true)}else{S.denied[path]=true;toastMsg("Couldn't save that change. You don't have permission to edit this sheet. Ask your GM to check your share access.",true)}render()}
     else if(err&&err.code==="resource-exhausted"){toastMsg("The free database limit for today was hit. Try again later.",true)}
     else{keys.forEach(k=>e.dirty.add(k));e.timer=setTimeout(()=>flush(path),1500+Math.random()*1000)}
   }finally{e.inflight=false;e.inflightKeys=new Set}
@@ -4918,7 +4921,10 @@ function ttAddToken(o){const sc=ttScene();if(!sc||!ttGM())return;const sid=ttSce
 function ttTokenImgUpload(id,file){readPortrait(file).then(url=>{setField("tokens/"+id,"img",url);render()}).catch(()=>toastMsg("Couldn't read that image.",true))}
 
 /* ---------- geometry / vision ---------- */
-function ttSegs(sc){const {w,h}=ttWorld(sc);const s=(sc.walls||[]).filter(x=>!(x.door&&x.open)).map(x=>[num(x.x1),num(x.y1),num(x.x2),num(x.y2)]);s.push([0,0,w,0],[w,0,w,h],[w,h,0,h],[0,h,0,0]);return s}
+const ttDoorKey=w=>[w.x1,w.y1,w.x2,w.y2].map(v=>Math.round(num(v))).join("_");
+function ttDoorOpen(sc,w){if(!w||!w.door)return false;if(w.locked)return !!w.open;const m=sc.doors||{};const k=ttDoorKey(w);return k in m?!!m[k]:!!w.open}
+const DOOR_ICON={closed:"M-4 -5 L4 -5 L4 5 L-4 5 Z",open:"M-4 -5 L-4 5 M-4 -5 L4 -2 L4 7 L-4 5",locked:"M-4 -1 L4 -1 L4 6 L-4 6 Z M-2.5 -1 L-2.5 -4 Q0 -7.5 2.5 -4 L2.5 -1"};
+function ttSegs(sc){const {w,h}=ttWorld(sc);const s=(sc.walls||[]).filter(x=>!(x.door&&ttDoorOpen(sc,x))).map(x=>[num(x.x1),num(x.y1),num(x.x2),num(x.y2)]);s.push([0,0,w,0],[w,0,w,h],[w,h,0,h],[0,h,0,0]);return s}
 function ttRayHit(ox,oy,dx,dy,segs){let best=Infinity;for(const [x1,y1,x2,y2] of segs){const sx=x2-x1,sy=y2-y1;const den=dx*sy-dy*sx;if(Math.abs(den)<1e-9)continue;
   const t=((x1-ox)*sy-(y1-oy)*sx)/den,u=((x1-ox)*dy-(y1-oy)*dx)/den;if(t>=0&&u>=-1e-6&&u<=1+1e-6&&t<best)best=t}return best}
 function ttVisPoly(ox,oy,segs){const angs=[];for(const [x1,y1,x2,y2] of segs)for(const [px,py] of [[x1,y1],[x2,y2]]){const a=Math.atan2(py-oy,px-ox);angs.push(a-1e-4,a,a+1e-4)}
@@ -4997,9 +5003,16 @@ function ttSync(){
   layer.querySelectorAll(".tt-tok").forEach(el=>{if(!want.has(el.dataset.tok))el.remove()});
   // walls (GM only)
   const ws=r.querySelector(".tt-walls");ws.setAttribute("width",w);ws.setAttribute("height",h);
-  if(ttGM()&&TT.showWalls!==false){const z=TT.view?.z||1;const sw=2.5/z;
-    ws.innerHTML=(sc.walls||[]).map((x,i)=>{const mx=(num(x.x1)+num(x.x2))/2,my=(num(x.y1)+num(x.y2))/2;
-      return `<line x1="${x.x1}" y1="${x.y1}" x2="${x.x2}" y2="${x.y2}" class="tt-wall ${x.door?"door":""} ${x.door&&x.open?"open":""}" stroke-width="${x.door?sw*1.6:sw}" data-wall="${i}"/>`+(x.door?`<g class="tt-door ${x.open?"open":""}" data-door="${i}" transform="translate(${mx} ${my}) scale(${1/z})"><circle r="9"/><path d="${x.open?"M-4 -5 L-4 5 M-4 -5 L4 -2 L4 7 L-4 5":"M-4 -5 L4 -5 L4 5 L-4 5 Z"}"/></g>`:"")}).join("")
+  const z=TT.view?.z||1;const sw=2.5/z;
+  const doorG=(x,i)=>{const mx=(num(x.x1)+num(x.x2))/2,my=(num(x.y1)+num(x.y2))/2;const op=ttDoorOpen(sc,x);
+    return `<g class="tt-door ${op?"open":""} ${x.locked?"locked":""}" data-door="${i}" transform="translate(${mx} ${my}) scale(${1/z})"><title>${x.locked?(op?"Locked door (open)":"Locked door"):(op?"Door (open)":"Door")}</title><circle r="10"/><path d="${x.locked&&!op?DOOR_ICON.locked:op?DOOR_ICON.open:DOOR_ICON.closed}"/></g>`};
+  if(!ttGM()){const g=num(sc.gridPx,70);
+    ws.innerHTML=(sc.walls||[]).map((x,i)=>{if(!x.door)return "";const mx=(num(x.x1)+num(x.x2))/2,my=(num(x.y1)+num(x.y2))/2;
+      const L=Math.hypot(num(x.x2)-num(x.x1),num(x.y2)-num(x.y1))||1;const nx=-(num(x.y2)-num(x.y1))/L*g*.25,ny=(num(x.x2)-num(x.x1))/L*g*.25;
+      return (!V||ttCanSee(V,mx+nx,my+ny)||ttCanSee(V,mx-nx,my-ny))?doorG(x,i):""}).join("");ws.classList.remove("editing")}
+  else if(TT.showWalls!==false){
+    ws.innerHTML=(sc.walls||[]).map((x,i)=>{const op=ttDoorOpen(sc,x);
+      return `<line x1="${x.x1}" y1="${x.y1}" x2="${x.x2}" y2="${x.y2}" class="tt-wall ${x.door?"door":""} ${op?"open":""} ${x.locked?"locked":""}" stroke-width="${x.door?sw*1.6:sw}" data-wall="${i}"/>`+(x.door?doorG(x,i):"")}).join("")
       +(TT.wallDraft?`<polyline points="${TT.wallDraft.pts.concat(TT.wallDraft.hover?[TT.wallDraft.hover]:[]).map(p=>p.join(",")).join(" ")}" class="tt-wall draft ${TT.wallDraft.door?"door":""}" stroke-width="${sw}" fill="none"/>`:"");
     ws.classList.toggle("editing",["wall","door","erase"].includes(TT.tool))}else ws.innerHTML="";
   ttDrawFog(sc,sid,V);
@@ -5013,13 +5026,14 @@ function ttUi(sc,sid){
   const ui=document.querySelector(".tt-ui");if(!ui)return;const a=document.activeElement;const fid=a&&ui.contains(a)?a.id:null;let ss=null,se=null;try{if(fid&&a.selectionStart!=null){ss=a.selectionStart;se=a.selectionEnd}}catch(e){}
   const gm=ttGM();const cfg=ttCfg();const live=sid&&cfg.active===sid;
   const tools=[["select","Move","V","Select and move tokens. Drag empty space to pan."],["ruler","Ruler","R","Drag to measure in meters."],["ping","Ping","P","Click to ping a spot for everyone"+(gm?". Shift-click to pull everyone's view there.":".")]];
-  if(gm)tools.push(["wall","Walls","W","Click to place wall points. Double-click or Esc to finish."],["door","Doors","D","Draw a door. Click a door's icon in Move mode to open or close it."],["erase","Erase","E","Click a wall or door to delete it."]);
+  if(gm)tools.push(["wall","Walls","W","Click to place wall points. Double-click or Esc to finish."],["door","Doors","D","Draw a door. In Move mode click a door's icon to open or close it; Shift-click to lock or unlock it."],["erase","Erase","E","Click a wall or door to delete it."]);
   const scs=gm?ttScenes():[];
   const top=`<div class="tt-top">
     <button class="ttbtn ghost" data-act="tt-exit" title="Back to the sheets">◂ Sheets</button>
     <div class="tt-title"><span class="tt-mark">TABLETOP</span>${sc?`<b>${esc(sc.name||"Map")}</b>${gm?(live?`<span class="tt-live">● Live for players</span>`:`<span class="tt-prep">Prep · players can't see this</span>`):""}`:""}</div>
     ${sc?`<div class="tt-tools">${tools.map(([k,l,key,tip])=>`<button class="tt-tool ${TT.tool===k?"on":""}" data-act="tt-tool" data-tool="${k}" title="${esc(tip)} (${key})">${l}<kbd>${key}</kbd></button>`).join("")}
       ${gm&&["wall","door"].includes(TT.tool)?`<label class="tt-chk" title="Snap wall points to grid corners (hold Alt to place freely)"><input type="checkbox" data-act="tt-snap" ${TT.snap?"checked":""}> Snap</label>`:""}
+      ${gm&&TT.tool==="door"?`<label class="tt-chk" title="New doors start locked: only you can open them"><input type="checkbox" data-act="tt-locknew" ${TT.lockNew?"checked":""}> Locked</label>`:""}
       ${gm&&sc.fog?`<label class="tt-chk" title="See what the party's tokens can see"><input type="checkbox" data-act="tt-preview" ${TT.preview?"checked":""}> Player vision</label>`:""}</div>`:""}
     <div class="tt-right">${sc?`<button class="ttbtn ghost sm" data-act="tt-fit" title="Fit the map to the screen">Fit</button><span id="tt-zoom" class="tt-zoomlbl"></span>`:""}
       <button class="ttbtn ${S.tsheet?"on":""}" data-act="tt-sheet" title="Character sheet (C)">Character <kbd>C</kbd></button></div></div>`;
@@ -5028,7 +5042,7 @@ function ttUi(sc,sid){
     left=`<div class="tt-panel ${TT.ui.hide?"min":""}"><div class="tt-ptabs">${[["scenes","Maps"],["scene","Map setup"],["tokens","Tokens"]].map(([k,l])=>`<button class="${P===k?"on":""}" data-act="tt-panel" data-p="${k}">${l}</button>`).join("")}<button class="tt-pmin" data-act="tt-pmin" title="${TT.ui.hide?"Show panel":"Hide panel"}">${TT.ui.hide?"▸":"◂"}</button></div>
       ${TT.ui.hide?"":`<div class="tt-pbody">${P==="scenes"?ttPanelScenes(scs,cfg):P==="scene"?ttPanelScene(sc,sid):ttPanelTokens(sc,sid)}</div>`}</div>`}
   const insp=TT.sel&&S.docs["tokens/"+TT.sel]?ttInspector(TT.sel):"";
-  ui.innerHTML=top+left+insp+(TT.tool==="wall"||TT.tool==="door"?`<div class="tt-hintbar">${TT.tool==="door"?"Doors":"Walls"}: click to add points · double-click, right-click or Esc to finish · Alt places freely</div>`:"")+(sc?`<div class="tt-scale">1 square = ${num(sc.scale,1)} m</div>`:"");
+  ui.innerHTML=top+left+insp+(TT.tool==="wall"||TT.tool==="door"?`<div class="tt-hintbar">${TT.tool==="door"?`${TT.lockNew?"Locked doors":"Doors"}: click both ends of the doorway · in Move mode click a door to open or close it, Shift-click to lock or unlock`:"Walls: click to add points · double-click, right-click or Esc to finish · Alt places freely"}</div>`:"")+(sc?`<div class="tt-scale">1 square = ${num(sc.scale,1)} m</div>`:"");
   if(fid){const el=document.getElementById(fid);if(el){el.focus({preventScroll:true});try{if(ss!=null)el.setSelectionRange(ss,se)}catch(e){}}}
   Object.entries(S.uiSel||{}).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&el.tagName==="SELECT"&&[...el.options].some(o=>o.value===String(v)))el.value=v});
   ttApplyView();
@@ -5120,10 +5134,10 @@ function ttBindStage(st){
     if(TT.tool==="ping"){ttPing(wp[0],wp[1],e.shiftKey);return}
     if(TT.tool==="ruler"){TT.ruler={a:wp,b:wp};st.setPointerCapture(e.pointerId);ttDrawRuler();return}
     if(TT.tool==="wall"||TT.tool==="door"){const g=num(sc.gridPx,70);const ox=num(sc.offX),oy=num(sc.offY);const pt=TT.snap&&!e.altKey?[Math.round((wp[0]-ox)/g)*g+ox,Math.round((wp[1]-oy)/g)*g+oy]:[Math.round(wp[0]),Math.round(wp[1])];
-      if(!TT.wallDraft)TT.wallDraft={pts:[pt],door:TT.tool==="door"};else{const last=TT.wallDraft.pts[TT.wallDraft.pts.length-1];if(last[0]!==pt[0]||last[1]!==pt[1])TT.wallDraft.pts.push(pt);if(TT.wallDraft.door&&TT.wallDraft.pts.length>=2)ttFinishWall()}
+      if(!TT.wallDraft)TT.wallDraft={pts:[pt],door:TT.tool==="door",locked:TT.tool==="door"&&!!TT.lockNew};else{const last=TT.wallDraft.pts[TT.wallDraft.pts.length-1];if(last[0]!==pt[0]||last[1]!==pt[1])TT.wallDraft.pts.push(pt);if(TT.wallDraft.door&&TT.wallDraft.pts.length>=2)ttFinishWall()}
       ttSync();return}
     if(TT.tool==="erase"){const wl=e.target.closest("[data-wall]")||e.target.closest("[data-door]");if(wl){const i=num(wl.dataset.wall??wl.dataset.door);const arr=clone(sc.walls||[]);arr.splice(i,1);setField("scenes/"+ttSceneId(),"walls",arr);render()}return}
-    if(door&&ttGM()){const i=num(door.dataset.door);const arr=clone(sc.walls||[]);arr[i].open=!arr[i].open;setField("scenes/"+ttSceneId(),"walls",arr);render();return}
+    if(door){ttDoorClick(sc,num(door.dataset.door),e);return}
     if(tokEl){const id=tokEl.dataset.tok;const t=S.docs["tokens/"+id];TT.sel=id;
       if(ttCanMove(t)){TT.drag={id,start:[num(t.x),num(t.y)],pos:[num(t.x),num(t.y)],vis:[num(t.x),num(t.y)],off:[wp[0]-num(t.x),wp[1]-num(t.y)],moved:false};st.setPointerCapture(e.pointerId)}
       ttSync();return}
@@ -5149,8 +5163,18 @@ function ttBindStage(st){
   st.addEventListener("pointerup",up);st.addEventListener("pointercancel",up);
   st.addEventListener("dblclick",e=>{if(TT.wallDraft){e.preventDefault();ttFinishWall()}});
 }
+function ttDoorClick(sc,i,e){const sid=ttSceneId();const P="scenes/"+sid;const w=(sc.walls||[])[i];if(!w||!w.door)return;
+  if(ttGM()){
+    if(e.altKey||e.shiftKey){const arr=clone(sc.walls);arr[i].locked=!arr[i].locked;arr[i].open=arr[i].locked?false:ttDoorOpen(sc,w);setField(P,"walls",arr);
+      if(!arr[i].locked)setField(P,"doors."+ttDoorKey(w),!!arr[i].open);toastMsg(arr[i].locked?"Door locked. Players can't open it.":"Door unlocked. Players can open it.");render();return}
+    if(w.locked){const arr=clone(sc.walls);arr[i].open=!arr[i].open;setField(P,"walls",arr)}else setField(P,"doors."+ttDoorKey(w),!ttDoorOpen(sc,w));render();return}
+  if(w.locked){toastMsg("It's locked.",true);return}
+  const g=num(sc.gridPx,70);const mx=(num(w.x1)+num(w.x2))/2,my=(num(w.y1)+num(w.y2))/2;
+  const near=ttTokens(sid).map(p=>S.docs[p]).filter(ttMine).some(t=>Math.hypot(num(t.x)-mx,num(t.y)-my)<=g*2.2);
+  if(!near){toastMsg("Move your token next to the door first.",true);return}
+  setField(P,"doors."+ttDoorKey(w),!ttDoorOpen(sc,w));render()}
 function ttFinishWall(){const d=TT.wallDraft;TT.wallDraft=null;if(!d||d.pts.length<2){ttSync();return}const sc=ttScene();const arr=clone(sc.walls||[]);
-  for(let i=1;i<d.pts.length;i++){const [a,b]=[d.pts[i-1],d.pts[i]];if(a[0]===b[0]&&a[1]===b[1])continue;arr.push({x1:a[0],y1:a[1],x2:b[0],y2:b[1],...(d.door?{door:true,open:false}:{})})}
+  for(let i=1;i<d.pts.length;i++){const [a,b]=[d.pts[i-1],d.pts[i]];if(a[0]===b[0]&&a[1]===b[1])continue;arr.push({x1:a[0],y1:a[1],x2:b[0],y2:b[1],...(d.door?{door:true,open:false,...(d.locked?{locked:true}:{})}:{})})}
   setField("scenes/"+ttSceneId(),"walls",arr);render()}
 document.addEventListener("keydown",e=>{if(S.view!=="table")return;const tag=(e.target.tagName||"").toLowerCase();if(tag==="input"||tag==="textarea"||tag==="select"||e.target.isContentEditable)return;
   if(e.key===" "){TT.space=true;e.preventDefault();return}
@@ -5171,6 +5195,7 @@ function ttAct(act,t){
     case "tt-sheet":S.tsheet=!S.tsheet;render();return true;
     case "tt-tool":if(TT.wallDraft)ttFinishWall();TT.tool=t.dataset.tool;ttSync();return true;
     case "tt-snap":TT.snap=t.checked;return true;
+    case "tt-locknew":TT.lockNew=t.checked;return true;
     case "tt-preview":TT.preview=t.checked;ttSync();return true;
     case "tt-fit":ttFit(sc);return true;
     case "tt-desel":TT.sel=null;ttSync();return true;
@@ -5214,7 +5239,7 @@ function ttChange(el){
   if(el.id==="tt-upbg-f"&&el.files[0]){const f=el.files[0];el.value="";ttUploadBg(ttSceneId(),f);return true}
   if(el.id==="tt-tokimg-f"&&el.files[0]){const f=el.files[0];el.value="";if(TT.imgFor)ttTokenImgUpload(TT.imgFor,f);return true}
   if(el.id==="tti-link"){const v=el.value;const p="tokens/"+el.dataset.id;setField(p,"sheetId",v.startsWith("s:")?v.slice(2):null);setField(p,"npcId",v.startsWith("n:")?v.slice(2):null);if(v.startsWith("s:"))setField(p,"vision",true);render();return true}
-  if(el.dataset.act==="tt-snap"||el.dataset.act==="tt-preview"){ttAct(el.dataset.act,el);return true}
+  if(["tt-snap","tt-preview","tt-locknew"].includes(el.dataset.act)){ttAct(el.dataset.act,el);return true}
   return false;
 }
 

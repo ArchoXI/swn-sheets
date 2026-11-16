@@ -26,6 +26,9 @@ service cloud.firestore {
     match /scenes/{id} {
       allow read: if isGM() || (signedIn() && exists(/databases/$(database)/documents/config/table) && liveScene() == id);
       allow write: if isGM();
+      // Players can open and close unlocked doors on the live map (locked doors keep their state in 'walls', which only the GM can change).
+      allow update: if signedIn() && exists(/databases/$(database)/documents/config/table) && liveScene() == id
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['doors', 'updatedAt']);
       match /bg/{n} {
         allow read: if isGM() || (signedIn() && exists(/databases/$(database)/documents/config/table) && liveScene() == id);
         allow write: if isGM();
