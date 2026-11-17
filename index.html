@@ -1060,6 +1060,14 @@ kbd{font:10px ui-monospace,monospace;padding:1px 4px;border-radius:3px;border:1p
 .ttin{background:#0b0e18;border:1px solid var(--tt-line);border-radius:6px;color:#e6ebf7;padding:6px 8px;font:inherit;font-size:13px;width:100%;box-sizing:border-box}
 .ttin:focus{outline:none;border-color:#c53131}
 .ttclr{width:100%;height:32px;border:1px solid var(--tt-line);border-radius:6px;background:#0b0e18;padding:2px;cursor:pointer}
+.tt-foldg{margin-bottom:6px}
+.tt-foldh{display:flex;align-items:center;gap:7px;width:100%;text-align:left;background:rgba(255,255,255,.04);border:0;border-radius:7px;padding:5px 8px;color:#dfe4f2;font:700 11.5px/1.2 inherit;letter-spacing:.04em;cursor:pointer;margin-bottom:2px}
+.tt-foldh:hover{background:rgba(255,255,255,.08)}
+.tt-foldh .tt-caret{width:10px;color:#8b96b5}
+.tt-foldh .tt-muted{margin-left:auto;font-weight:600}
+.tt-foldg .tt-scrow{margin-left:10px}
+.ttin.fsel{flex:0 0 68px;width:68px;padding:2px 3px;font-size:10.5px;color:#9aa6c2}
+.tt-foldg .tt-scname{min-width:0}
 .tt-scrow{display:flex;gap:6px;align-items:center;padding:4px;border-radius:8px}.tt-scrow.on{background:rgba(197,49,49,.14);box-shadow:inset 0 0 0 1px rgba(197,49,49,.5)}
 .tt-scname{flex:1;text-align:left;background:none;border:none;color:#e6ebf7;font-size:13px;cursor:pointer;padding:5px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .tt-lib{display:grid;grid-template-columns:84px 1fr;gap:10px;align-items:start}.tt-lib img{width:84px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--tt-line)}
@@ -4910,7 +4918,10 @@ async function ttLibLoad(){if(TT.lib)return;TT.lib="loading";try{const r=await f
   Object.keys(TT.bg).forEach(k=>{if(TT.bg[k]&&TT.bg[k].url&&!String(TT.bg[k].url).startsWith("data:"))delete TT.bg[k]});render()}
 
 /* ---------- scenes ---------- */
-function ttNewScene(from){if(!ttGM())return;const id=rid();const d={name:"New map",gridPx:70,offX:0,offY:0,scale:1,cols:30,rows:20,lighting:"lit",fog:true,walls:[],created:Date.now(),expVer:1};
+function ttFolders(){const z=new Set();ttScenes().forEach(p=>{const f=String(S.docs[p].folder||"").trim();if(f)z.add(f)});return [...z].sort((a,b)=>a.localeCompare(b))}
+function ttFoldState(){if(!TT.ui.fold){let o={};try{o=JSON.parse(localStorage.getItem("tt.fold")||"{}")||{}}catch(e){}TT.ui.fold=o}return TT.ui.fold}
+
+function ttNewScene(from){if(!ttGM())return;const id=rid();const d={folder:String(ttScene()?.folder||""),name:"New map",gridPx:70,offX:0,offY:0,scale:1,cols:30,rows:20,lighting:"lit",fog:true,walls:[],created:Date.now(),expVer:1};
   if(from){Object.assign(d,{name:from.name,bgUrl:from.file,bgW:from.w,bgH:from.h,gridPx:from.gridPx||70,offX:from.offX||0,offY:from.offY||0,scale:from.scale||1,walls:clone(from.walls||[]),notes:from.notes||"",lighting:from.lighting||"lit",fog:from.fog!==false,cols:Math.round(from.w/(from.gridPx||70)),rows:Math.round(from.h/(from.gridPx||70))})}
   createDoc("scenes/"+id,d);TT.sceneId=id;TT.fitPending=true;TT.ui.panel="scene";render()}
 async function ttDeleteScene(sid){ttTokens(sid).forEach(p=>deleteDoc(p));
@@ -5057,10 +5068,20 @@ function ttUi(sc,sid){
 function ttPanelScenes(scs,cfg){
   if(TT.lib===null)ttLibLoad();
   const lib=Array.isArray(TT.lib)?TT.lib:[];
+  const folders=ttFolders(),fold=ttFoldState(),byF=new Map();
+  scs.forEach(p=>{const f=String(S.docs[p].folder||"").trim();if(!byF.has(f))byF.set(f,[]);byF.get(f).push(p)});
+  const order=[...byF.keys()].filter(f=>f).sort((a,b)=>a.localeCompare(b));if(byF.has(""))order.push("");
+  const flat=order.length<2&&!folders.length;
+  const row=p=>{const id=p.split("/")[1],sx=S.docs[p],on=id===ttSceneId(),live=cfg.active===id,cf=String(sx.folder||"").trim();
+    return `<div class="tt-scrow ${on?"on":""}"><button class="tt-scname" data-act="tt-open" data-id="${id}" title="${esc(sx.name||"Map")}">${esc(sx.name||"Map")}${live?` <span class="tt-live sm">● Live</span>`:""}</button>
+      ${folders.length?`<select class="ttin fsel" data-doc="${esc(p)}" data-path="folder" title="Move this map to a folder"><option value="">— none —</option>${folders.map(f=>`<option value="${esc(f)}" ${f===cf?"selected":""}>${esc(f)}</option>`).join("")}</select>`:""}
+      ${live?`<button class="ttbtn sm" data-act="tt-live" data-id="" title="Players stop seeing a map">Close</button>`:`<button class="ttbtn sm pri" data-act="tt-live" data-id="${id}" title="Players see this map">Go live</button>`}</div>`};
+  const list=!scs.length?`<p class="tt-muted">No maps yet.</p>`:flat?byF.get(order[0]).map(row).join(""):order.map(f=>{
+    const items=byF.get(f).slice().sort((a,b)=>String(S.docs[a].name||"").localeCompare(String(S.docs[b].name||"")));
+    const key=f||"\u0000",open=!fold[key];
+    return `<div class="tt-foldg"><button class="tt-foldh" data-act="tt-fold" data-f="${esc(key)}" title="${open?"Collapse":"Expand"}"><span class="tt-caret">${open?"▾":"▸"}</span>${esc(f||"Unfiled")}<span class="tt-muted">${items.length}</span></button>${open?items.map(row).join(""):""}</div>`}).join("");
   return `<div class="tt-sec"><div class="tt-sech">Your maps</div>
-    ${scs.length?scs.map(p=>{const id=p.split("/")[1];const s=S.docs[p];const on=id===ttSceneId();const live=cfg.active===id;
-      return `<div class="tt-scrow ${on?"on":""}"><button class="tt-scname" data-act="tt-open" data-id="${id}">${esc(s.name||"Map")}${live?` <span class="tt-live sm">● Live</span>`:""}</button>
-        ${live?`<button class="ttbtn sm" data-act="tt-live" data-id="" title="Players stop seeing a map">Close</button>`:`<button class="ttbtn sm pri" data-act="tt-live" data-id="${id}" title="Players see this map">Go live</button>`}</div>`}).join(""):`<p class="tt-muted">No maps yet.</p>`}
+    ${list}
     <div class="tt-row"><button class="ttbtn" data-act="tt-new">+ Blank map</button><button class="ttbtn" data-act="tt-upnew">+ Upload image</button><input type="file" id="tt-upnew-f" accept="image/*" hidden></div>
     ${cfg.active?`<button class="ttbtn wide" data-act="tt-pull" title="Opens the map on every player's screen">Bring everyone to the live map</button>`:""}</div>
     <div class="tt-sec"><div class="tt-sech">Map library <span class="tt-muted">· made by Claude</span></div>
@@ -5070,6 +5091,9 @@ function ttPanelScene(sc,sid){
   if(!sc)return `<p class="tt-muted">Open or make a map first.</p>`;const P="scenes/"+sid;
   const ni=(f,o={})=>`<input class="ttin num" type="number" id="tts-${f}" data-doc="${P}" data-path="${f}" value="${esc(String(sc[f]??o.d??""))}" step="${o.step||1}" ${o.min!=null?`min="${o.min}"`:""}>`;
   return `<div class="tt-sec"><label class="tt-lbl">Name<input class="ttin" id="tts-name" data-doc="${P}" data-path="name" value="${esc(sc.name||"")}"></label>
+    <label class="tt-lbl">Folder<input class="ttin" id="tts-folder" data-doc="${P}" data-path="folder" value="${esc(sc.folder||"")}" list="tt-folderlist" placeholder="e.g. Silverfish, Antara" autocomplete="off"></label>
+    <datalist id="tt-folderlist">${ttFolders().map(f=>`<option value="${esc(f)}"></option>`).join("")}</datalist>
+    <p class="tt-muted">Type a new name to make a folder. Maps you add next go into the same folder.</p>
     <div class="tt-row"><button class="ttbtn" data-act="tt-upbg">${sc.bgChunks||sc.bgUrl?"Replace image":"Upload image"}</button><input type="file" id="tt-upbg-f" accept="image/*" hidden>${sc.bgChunks||sc.bgUrl?`<button class="ttbtn" data-act="tt-clearbg">Remove image</button>`:""}</div>
     ${sc.bgChunks||sc.bgUrl?"":`<div class="tt-grid2"><label class="tt-lbl">Width (squares)${ni("cols",{min:1})}</label><label class="tt-lbl">Height (squares)${ni("rows",{min:1})}</label></div>`}</div>
   <div class="tt-sec"><div class="tt-sech">Grid</div>
@@ -5217,6 +5241,7 @@ function ttAct(act,t){
     case "tt-upnew":$("#tt-upnew-f")?.click();return true;
     case "tt-impwalls":$("#tt-impwalls-f")?.click();return true;
     case "tt-open":TT.sceneId=id;TT.fitPending=true;render();return true;
+    case "tt-fold":{const f=t.dataset.f||"";const z=ttFoldState();z[f]=!z[f];try{localStorage.setItem("tt.fold",JSON.stringify(z))}catch(e){}render();return true}
     case "tt-live":ttSetCfg({active:id||null});toastMsg(id?"Players can now see this map.":"Players no longer see a map.");render();return true;
     case "tt-pull":ttSetCfg({pull:rid()});toastMsg("Opening the map for everyone.");return true;
     case "tt-fromlib":{const m=(TT.lib||[])[num(t.dataset.i)];if(m)ttNewScene(m);return true}
@@ -5248,7 +5273,7 @@ function ttChange(el){
     const sc=ttScene();if(!sc||!sid)return;const g=num(o.gridPx)||100,k=(num(sc.gridPx)||g)/g;
     const walls=o.walls.slice(0,3000).map(w=>{const x={x1:Math.round(num(w.x1)*k),y1:Math.round(num(w.y1)*k),x2:Math.round(num(w.x2)*k),y2:Math.round(num(w.y2)*k)};if(w.door)x.door=true;if(w.locked)x.locked=true;return x});
     setField("scenes/"+sid,"walls",walls);setField("scenes/"+sid,"doors",{});render();toastMsg("Imported "+walls.filter(w=>!w.door).length+" walls and "+walls.filter(w=>w.door).length+" doors.")});return true}
-  if(el.id==="tt-upnew-f"&&el.files[0]){const f=el.files[0];el.value="";const id=rid();createDoc("scenes/"+id,{name:f.name.replace(/\.[^.]+$/,"").slice(0,40)||"New map",gridPx:70,offX:0,offY:0,scale:1,cols:30,rows:20,lighting:"lit",fog:true,walls:[],created:Date.now(),expVer:1});TT.sceneId=id;TT.ui.panel="scene";render();setTimeout(()=>ttUploadBg(id,f),300);return true}
+  if(el.id==="tt-upnew-f"&&el.files[0]){const f=el.files[0];el.value="";const id=rid();createDoc("scenes/"+id,{folder:String(ttScene()?.folder||""),name:f.name.replace(/\.[^.]+$/,"").slice(0,40)||"New map",gridPx:70,offX:0,offY:0,scale:1,cols:30,rows:20,lighting:"lit",fog:true,walls:[],created:Date.now(),expVer:1});TT.sceneId=id;TT.ui.panel="scene";render();setTimeout(()=>ttUploadBg(id,f),300);return true}
   if(el.id==="tt-upbg-f"&&el.files[0]){const f=el.files[0];el.value="";ttUploadBg(ttSceneId(),f);return true}
   if(el.id==="tt-tokimg-f"&&el.files[0]){const f=el.files[0];el.value="";if(TT.imgFor)ttTokenImgUpload(TT.imgFor,f);return true}
   if(el.id==="tti-link"){const v=el.value;const p="tokens/"+el.dataset.id;setField(p,"sheetId",v.startsWith("s:")?v.slice(2):null);setField(p,"npcId",v.startsWith("n:")?v.slice(2):null);if(v.startsWith("s:"))setField(p,"vision",true);render();return true}
